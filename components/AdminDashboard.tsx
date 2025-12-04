@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Post } from '../types';
 import { Button } from './Button';
+import { dbService } from '../services/db';
 
 interface AdminDashboardProps {
   posts: Post[];
@@ -12,17 +13,26 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeletePost, onResetData, onClose }) => {
   const totalLikes = posts.reduce((acc, post) => acc + post.likes, 0);
   const totalComments = posts.reduce((acc, post) => acc + post.comments.length, 0);
+  const [storageInfo, setStorageInfo] = useState({ usage: 0, quota: 0, percentage: 0 });
 
-  // Depolama alanı hesaplama (Yaklaşık 5MB limit varsayıyoruz)
-  const storageStats = useMemo(() => {
-    const jsonString = JSON.stringify(posts);
-    const bytes = new Blob([jsonString]).size; // Byte cinsinden boyut
-    const limit = 5 * 1024 * 1024; // 5 MB
-    const percentage = Math.min(100, (bytes / limit) * 100);
-    const usedKB = (bytes / 1024).toFixed(1);
-    
-    return { percentage, usedKB, isHigh: percentage > 80 };
-  }, [posts]);
+  useEffect(() => {
+    const fetchStorage = async () => {
+        const { usage, quota } = await dbService.getStorageEstimate();
+        // Eğer quota 0 dönerse (bazı tarayıcılar privacy mode'da vermeyebilir) %0 göster
+        const percentage = quota > 0 ? (usage / quota) * 100 : 0;
+        setStorageInfo({ usage, quota, percentage });
+    };
+    fetchStorage();
+  }, [posts]); // Posts değişince güncelle
+
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (!+bytes) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -37,27 +47,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
         </div>
       </div>
 
-      {/* Storage Indicator */}
+      {/* Storage Indicator (IndexedDB Version) */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hafıza Kullanımı</span>
-            <span className={`text-xs font-bold ${storageStats.isHigh ? 'text-red-600' : 'text-green-600'}`}>
-                %{storageStats.percentage.toFixed(1)} ({storageStats.usedKB} KB / 5.0 MB)
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Disk Kullanımı</span>
+            <span className="text-xs font-bold text-green-600">
+                {formatBytes(storageInfo.usage)} / {formatBytes(storageInfo.quota)} (Boş Alanın ~%80'i)
             </span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
             <div 
-                className={`h-2.5 rounded-full transition-all duration-500 ${
-                    storageStats.isHigh ? 'bg-red-500' : 'bg-green-500'
-                }`} 
-                style={{ width: `${storageStats.percentage}%` }}
+                className="h-2.5 rounded-full bg-green-500 transition-all duration-500"
+                style={{ width: `${Math.max(1, storageInfo.percentage)}%` }} // En az %1 görünsün ki çalıştığı anlaşılsın
             ></div>
         </div>
-        {storageStats.isHigh && (
-            <p className="text-xs text-red-500 mt-2 font-medium">
-                ⚠️ Hafıza dolmak üzere! Eski gönderileri silerek yer açmalısın.
-            </p>
-        )}
+        <p className="text-xs text-gray-400 mt-2">
+            Veriler tarayıcınızın <b>IndexedDB</b> alanında saklanmaktadır. Bu alan cihazınızın boş disk alanına göre belirlenir (Genellikle GB'larca yeriniz var).
+        </p>
       </div>
 
       {/* Stats Cards */}

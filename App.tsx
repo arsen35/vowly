@@ -4,10 +4,10 @@ import { UploadModal } from './components/UploadModal';
 import { LoginModal } from './components/LoginModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { AdminDashboard } from './components/AdminDashboard';
-import { Button } from './components/Button';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
+import { dbService } from './services/db';
 
-// Mock Initial Data
+// Mock Initial Data (Sadece veritabanı boşsa kullanılacak)
 const INITIAL_POSTS: Post[] = [
   {
     id: '1',
@@ -24,60 +24,45 @@ const INITIAL_POSTS: Post[] = [
     ],
     timestamp: Date.now() - 1000000,
     isLikedByCurrentUser: false
-  },
-  {
-    id: '2',
-    user: { id: 'u2', name: 'Zeynep Demir', avatar: 'https://ui-avatars.com/api/?name=Zeynep+Demir&background=fecdd3&color=881337' },
-    media: [
-      { url: 'https://picsum.photos/id/338/1080/1350', type: 'image' }
-    ],
-    caption: 'Gün batımında "Evet" dedik. Bu anı asla unutmayacağım. ❤️',
-    hashtags: ['#sunsetwedding', '#love', '#bridetobe'],
-    likes: 89,
-    comments: [],
-    timestamp: Date.now() - 5000000,
-    isLikedByCurrentUser: false
   }
 ];
 
 const App: React.FC = () => {
-  // Initialize posts from LocalStorage if available, otherwise use INITIAL_POSTS
-  const [posts, setPosts] = useState<Post[]>(() => {
-    try {
-      const savedPosts = localStorage.getItem('vowly_posts');
-      if (savedPosts) {
-        return JSON.parse(savedPosts);
-      }
-    } catch (error) {
-      console.error("LocalStorage error:", error);
-    }
-    return INITIAL_POSTS;
-  });
-
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  
-  // State for deletion confirmation
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
-  // Save to LocalStorage whenever posts change
+  // App açıldığında veritabanından verileri çek
   useEffect(() => {
-    try {
-        localStorage.setItem('vowly_posts', JSON.stringify(posts));
-    } catch (error) {
-        console.error("LocalStorage quota exceeded or error:", error);
-        // Hata durumunda kullanıcıyı uyar ama uygulamayı çökertme
-        alert("Uyarı: Tarayıcı hafızası doldu! Bu gönderi cihazınıza kalıcı olarak kaydedilemedi. Sayfayı yenilerseniz kaybolabilir.");
-    }
-  }, [posts]);
+    const loadPosts = async () => {
+      try {
+        const storedPosts = await dbService.getAllPosts();
+        if (storedPosts.length > 0) {
+          setPosts(storedPosts);
+        } else {
+          // İlk kez açılıyorsa mock verileri yükle
+          // Not: Mock verileri DB'ye de kaydedebiliriz ama şimdilik state'e atalım
+          setPosts(INITIAL_POSTS);
+          // İsteğe bağlı: Mock verileri DB'ye kaydet
+          // INITIAL_POSTS.forEach(p => dbService.savePost(p));
+        }
+      } catch (error) {
+        console.error("Veritabanı hatası:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPosts();
+  }, []);
 
   const handleUploadClick = () => {
     setViewState(ViewState.UPLOAD);
   };
 
   const handleLoginSubmit = (password: string) => {
-    // Şifre güncellendi: bella#8079
     if (password === "bella#8079") {
         setIsAdmin(true);
         setShowLoginModal(false);
@@ -91,18 +76,15 @@ const App: React.FC = () => {
       setViewState(ViewState.FEED);
   };
 
-  // Reset function for Admin Dashboard
-  const handleResetData = () => {
-    if (window.confirm("Tüm veriler silinecek ve varsayılan verilere dönülecek. Emin misiniz?")) {
+  const handleResetData = async () => {
+    if (window.confirm("Tüm veriler (fotoğraflar dahil) kalıcı olarak silinecek. Emin misiniz?")) {
+        await dbService.clearAll();
         setPosts(INITIAL_POSTS);
-        localStorage.removeItem('vowly_posts');
-        alert("Veriler sıfırlandı!");
+        alert("Veritabanı temizlendi!");
     }
   };
 
-  const handleNewPost = (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string }) => {
-    
-    // Ziyaretçi kullanıcısı oluştur
+  const handleNewPost = async (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string }) => {
     const guestUser: User = {
         id: `guest-${Date.now()}`,
         name: data.userName,
@@ -121,58 +103,94 @@ const App: React.FC = () => {
       isLikedByCurrentUser: false
     };
 
-    setPosts([newPost, ...posts]);
+    // Önce State'i güncelle (Hızlı UI)
+    setPosts(prev => [newPost, ...prev]);
     setViewState(ViewState.FEED);
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Sonra sessizce DB'ye kaydet
+    try {
+        await dbService.savePost(newPost);
+    } catch (error) {
+        console.error("Kayıt hatası:", error);
+        alert("Gönderi tarayıcıya kaydedilemedi, ancak şu an görebilirsiniz.");
+    }
   };
 
-  // Called when user clicks "Delete" in UI - just opens modal
   const handleRequestDelete = (postId: string) => {
     setPostToDelete(postId);
   };
 
-  // Called when user confirms in Modal - performs actual delete
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (postToDelete) {
+        // UI'dan sil
         setPosts(prevPosts => prevPosts.filter(post => post.id !== postToDelete));
+        // DB'den sil
+        await dbService.deletePost(postToDelete);
         setPostToDelete(null);
     }
   };
 
-  const handleLike = (postId: string) => {
+  const handleLike = async (postId: string) => {
+    // Optimistic UI Update
+    let updatedPost: Post | undefined;
+    
     setPosts(prevPosts => prevPosts.map(post => {
         if (post.id === postId) {
             const isLiked = !post.isLikedByCurrentUser;
-            return {
+            updatedPost = {
                 ...post,
                 isLikedByCurrentUser: isLiked,
                 likes: isLiked ? post.likes + 1 : post.likes - 1
             };
+            return updatedPost;
         }
         return post;
     }));
+
+    // DB Update
+    if (updatedPost) {
+        await dbService.savePost(updatedPost);
+    }
   };
 
-  const handleAddComment = (postId: string, text: string) => {
+  const handleAddComment = async (postId: string, text: string) => {
     const newComment: Comment = {
       id: Date.now().toString(),
       userId: `guest-${Date.now()}`,
-      userName: 'Misafir', // Veya input alınabilir, şimdilik Misafir diyelim
+      userName: 'Misafir',
       text: text,
       timestamp: Date.now()
     };
 
+    let updatedPost: Post | undefined;
+
     setPosts(prevPosts => prevPosts.map(post => {
       if (post.id === postId) {
-        return {
+        updatedPost = {
           ...post,
           comments: [...post.comments, newComment]
         };
+        return updatedPost;
       }
       return post;
     }));
+
+    if (updatedPost) {
+        await dbService.savePost(updatedPost);
+    }
   };
+
+  if (isLoading) {
+      return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="animate-pulse flex flex-col items-center">
+                 <div className="w-12 h-12 bg-wedding-200 rounded-lg mb-4"></div>
+                 <div className="h-4 w-32 bg-gray-200 rounded"></div>
+              </div>
+          </div>
+      );
+  }
 
   // If in Admin Dashboard Mode
   if (viewState === ViewState.ADMIN_DASHBOARD) {
@@ -200,11 +218,10 @@ const App: React.FC = () => {
                 onClose={() => setViewState(ViewState.FEED)} 
              />
              
-             {/* Confirmation Modal for Admin Page */}
              <ConfirmationModal 
                 isOpen={!!postToDelete}
                 title="Gönderiyi Sil"
-                message="Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+                message="Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?"
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setPostToDelete(null)}
             />
@@ -216,7 +233,6 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Navbar / Header */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
-        {/* Header container padding synced with main content for alignment */}
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-2" onClick={() => setViewState(ViewState.FEED)}>
              <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">V</div>
@@ -226,7 +242,6 @@ const App: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             {isAdmin ? (
                 <>
-                    {/* "Panele Git" button now visible on mobile too */}
                     <button 
                        onClick={() => setViewState(ViewState.ADMIN_DASHBOARD)}
                        className="text-xs font-bold text-wedding-900 bg-wedding-50 px-3 py-1.5 rounded-full hover:bg-wedding-100 transition-colors"
@@ -252,7 +267,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content - RESPONSIVE CONTAINER & GRID */}
+      {/* Main Content */}
       <main className="w-full pt-6 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-y-4 sm:gap-6">
           {posts.map(post => (
@@ -281,7 +296,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating Action Button (FAB) for Upload */}
       <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40">
         <button 
           onClick={handleUploadClick}
@@ -294,7 +308,6 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* Modals */}
       {viewState === ViewState.UPLOAD && (
         <UploadModal 
           onClose={() => setViewState(ViewState.FEED)}
@@ -309,7 +322,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Confirmation Modal for Main Page */}
       <ConfirmationModal 
         isOpen={!!postToDelete}
         title="Gönderiyi Sil"
