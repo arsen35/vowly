@@ -214,10 +214,10 @@ const App: React.FC = () => {
       {/* Navbar */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">A</div>
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          <div className="flex items-center gap-8 min-w-0">
+            <div className="flex items-center gap-2 cursor-pointer min-w-0" onClick={() => setViewState(ViewState.FEED)}>
+              <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg flex-shrink-0">A</div>
+              <h1 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                 Annabella Bridal
               </h1>
             </div>
@@ -249,7 +249,7 @@ const App: React.FC = () => {
             </nav>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
              {/* Mobile Nav Toggle */}
              <div className="md:hidden flex bg-gray-100 rounded-full p-1 mr-2">
                 <button onClick={() => setViewState(ViewState.FEED)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Akış</button>
@@ -316,14 +316,27 @@ const App: React.FC = () => {
         ) : null}
       </main>
 
-      {/* Floating Action Button (Only on Feed) */}
+      {/* Floating Action Buttons (Only on Feed) */}
       {viewState === ViewState.FEED && (
-        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40">
+        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 flex flex-col gap-4 items-center">
+          
+          {/* Store Button */}
+          <a 
+            href="https://www.annabellabridal.com"
+            className="bg-white hover:bg-gray-50 text-gray-800 w-12 h-12 md:w-14 md:h-14 rounded-full shadow-xl shadow-black/10 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 border border-gray-100 group"
+            title="Mağazaya Git"
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6 text-gray-600 group-hover:text-wedding-900 transition-colors">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+            </svg>
+          </a>
+
+          {/* Upload Button */}
           <button 
             onClick={handleUploadClick}
-            className="bg-wedding-500 hover:bg-wedding-900 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-xl shadow-wedding-500/30 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 group"
+            className="bg-wedding-500 hover:bg-wedding-900 text-white w-12 h-12 md:w-14 md:h-14 rounded-full shadow-xl shadow-wedding-500/30 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 group"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7 md:w-8 md:h-8 group-hover:rotate-90 transition-transform duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 md:w-7 md:h-7 group-hover:rotate-90 transition-transform duration-300">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           </button>

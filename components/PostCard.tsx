@@ -151,7 +151,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   };
 
   return (
-    <div className="bg-white sm:rounded-xl shadow-sm border-y sm:border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+    <div className="bg-white sm:rounded-xl shadow-sm border-y sm:border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full transform hover:scale-[0.98]">
       {/* Header */}
       <div className="p-3 flex items-center gap-3 border-b border-gray-50 relative">
         <img 
@@ -217,7 +217,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                         <img 
                           src={media.url} 
                           alt={`Post media ${index + 1}`} 
-                          className="w-full h-full object-cover select-none pointer-events-none"
+                          className="w-full h-full object-cover select-none pointer-events-none transform transition-transform duration-700 group-hover:scale-105"
                           loading="lazy"
                           draggable={false}
                         />
