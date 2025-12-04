@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Post } from '../types';
 
@@ -87,11 +88,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
     const mediaLink = currentMedia.url.startsWith('http') ? `\n\nMedya Linki: ${currentMedia.url}` : '';
     
     let siteLink = window.location.href;
+    // Eğer localhost veya geliştirme ortamındaysak, varsayılan olarak canlı domaini kullan
     if (siteLink.startsWith('blob:') || siteLink.includes('localhost') || siteLink.includes('content.goog')) {
-        siteLink = "https://vowly.myshopify.com";
+        siteLink = "https://blog.annabellabridal.com";
     }
     
-    const message = `Vowly'de bu ana bak! 💍\n\n"${post.caption}"\n${mediaLink}\n\nDaha fazlası için Vowly'i ziyaret et: ${siteLink}`;
+    const message = `Vowly'de bu ana bak! 💍\n\n"${post.caption}"\n${mediaLink}\n\nDaha fazlası için: ${siteLink}`;
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
   };
