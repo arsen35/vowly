@@ -3,17 +3,19 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Mevcut çalışma dizinindeki env değişkenlerini yükle
-  // Vercel'deki 'VITE_API_KEY'i burada yakalayacağız
   const env = loadEnv(mode, '.', '');
 
   return {
     plugins: [react()],
     define: {
-      // Vercel'de tanımlı 'VITE_API_KEY' (veya 'API_KEY') değerini
-      // kodun içinde kullanılan 'process.env.API_KEY' değerine eşliyoruz.
-      // Bu sayede kod değişikliği yapmadan Vercel ile uyumlu hale geliyoruz.
-      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || env.API_KEY)
+      // API Key ve Firebase Configlerini process.env üzerinden erişilebilir yapıyoruz
+      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || env.API_KEY),
+      'process.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
+      'process.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
+      'process.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
+      'process.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET),
+      'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+      'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID),
     }
   }
 })
