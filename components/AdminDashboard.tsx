@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Post } from '../types';
 import { Button } from './Button';
 
@@ -13,6 +13,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
   const totalLikes = posts.reduce((acc, post) => acc + post.likes, 0);
   const totalComments = posts.reduce((acc, post) => acc + post.comments.length, 0);
 
+  // Depolama alanı hesaplama (Yaklaşık 5MB limit varsayıyoruz)
+  const storageStats = useMemo(() => {
+    const jsonString = JSON.stringify(posts);
+    const bytes = new Blob([jsonString]).size; // Byte cinsinden boyut
+    const limit = 5 * 1024 * 1024; // 5 MB
+    const percentage = Math.min(100, (bytes / limit) * 100);
+    const usedKB = (bytes / 1024).toFixed(1);
+    
+    return { percentage, usedKB, isHigh: percentage > 80 };
+  }, [posts]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -24,6 +35,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
             <Button onClick={onResetData} variant="outline" className="text-xs !py-1">Verileri Sıfırla</Button>
             <Button onClick={onClose} variant="secondary">Panele Dön</Button>
         </div>
+      </div>
+
+      {/* Storage Indicator */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+        <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hafıza Kullanımı</span>
+            <span className={`text-xs font-bold ${storageStats.isHigh ? 'text-red-600' : 'text-green-600'}`}>
+                %{storageStats.percentage.toFixed(1)} ({storageStats.usedKB} KB / 5.0 MB)
+            </span>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+            <div 
+                className={`h-2.5 rounded-full transition-all duration-500 ${
+                    storageStats.isHigh ? 'bg-red-500' : 'bg-green-500'
+                }`} 
+                style={{ width: `${storageStats.percentage}%` }}
+            ></div>
+        </div>
+        {storageStats.isHigh && (
+            <p className="text-xs text-red-500 mt-2 font-medium">
+                ⚠️ Hafıza dolmak üzere! Eski gönderileri silerek yer açmalısın.
+            </p>
+        )}
       </div>
 
       {/* Stats Cards */}
