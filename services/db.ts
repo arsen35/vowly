@@ -19,6 +19,34 @@ import {
 const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
 
+// --- MOCK DATA (Demo Modu İçin) ---
+const MOCK_POSTS: Post[] = [
+  {
+    id: 'mock-1',
+    user: { id: 'u1', name: 'Ayşe & Mehmet', avatar: 'https://ui-avatars.com/api/?name=Ayse+Mehmet&background=fecdd3&color=881337' },
+    media: [{ url: 'https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', type: 'image' }],
+    caption: 'Hayatımızın en özel günü... ✨ Bu gelinliği seçerken Vowly blogundaki yazılardan çok ilham aldım. #düğün #aşk',
+    hashtags: ['#düğün', '#gelinlik', '#mutluluk'],
+    likes: 124,
+    comments: [
+        { id: 'c1', userId: 'u3', userName: 'Zeynep', text: 'Harika görünüyorsunuz! 🌸', timestamp: Date.now() }
+    ],
+    timestamp: Date.now(),
+    isLikedByCurrentUser: false
+  },
+  {
+    id: 'mock-2',
+    user: { id: 'u2', name: 'Selin Yılmaz', avatar: 'https://ui-avatars.com/api/?name=Selin+Yilmaz&background=e0f2fe&color=0369a1' },
+    media: [{ url: 'https://images.unsplash.com/photo-1511285560982-1356c11d4606?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', type: 'image' }],
+    caption: 'Detaylara aşık oldum! 👰‍♀️',
+    hashtags: ['#vowly', '#gelin', '#weddingdress'],
+    likes: 89,
+    comments: [],
+    timestamp: Date.now() - 86400000,
+    isLikedByCurrentUser: true
+  }
+];
+
 // Yardımcı Fonksiyon: Veritabanı hazır mı kontrolü
 const checkDbConnection = () => {
   if (!db || !storage) {
@@ -42,7 +70,10 @@ export const dbService = {
 
   getAllPosts: async (): Promise<Post[]> => {
     try {
-      if (!db) return []; // Beyaz ekranı önlemek için sessizce boş dön
+      if (!db) {
+          console.log("Firebase bağlı değil, Demo verileri gösteriliyor.");
+          return MOCK_POSTS; 
+      }
       
       const postsRef = collection(db, POSTS_COLLECTION);
       const q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
@@ -53,10 +84,13 @@ export const dbService = {
         posts.push(doc.data() as Post);
       });
       
+      // Eğer veritabanı boşsa (ilk açılış), yine de mock data göster ki boş durmasın
+      if (posts.length === 0) return MOCK_POSTS;
+
       return posts;
     } catch (error) {
-      console.error("Firebase veri çekme hatası:", error);
-      return [];
+      console.error("Firebase veri çekme hatası (Demo moduna geçiliyor):", error);
+      return MOCK_POSTS;
     }
   },
 
