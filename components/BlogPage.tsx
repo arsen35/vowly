@@ -15,6 +15,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   
   // Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null); // Düzenlenen yazının ID'si
+  
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editImage, setEditImage] = useState<string | null>(null);
@@ -51,18 +53,36 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
     }
   };
 
+  const handleOpenEditor = (postToEdit?: BlogPost) => {
+      if (postToEdit) {
+          // Düzenleme Modu
+          setEditingPostId(postToEdit.id);
+          setEditTitle(postToEdit.title);
+          setEditContent(postToEdit.content);
+          setEditImage(postToEdit.coverImage);
+          setEditIsFeatured(postToEdit.isFeatured || false);
+          setEditBadge(postToEdit.badge || '');
+      } else {
+          // Yeni Ekleme Modu
+          resetForm();
+      }
+      setIsEditorOpen(true);
+  };
+
   const handleSave = async () => {
     if (!editTitle || !editContent || !editImage) return;
 
     setIsSaving(true);
     try {
+      const postId = editingPostId || Date.now().toString();
+      
       const newPost: BlogPost = {
-        id: Date.now().toString(),
+        id: postId,
         title: editTitle,
         content: editContent,
         coverImage: editImage,
         author: 'Annabella Editör',
-        date: Date.now(),
+        date: editingPostId ? (posts.find(p => p.id === editingPostId)?.date || Date.now()) : Date.now(), // Düzenlemede tarihi koru
         isFeatured: editIsFeatured,
         badge: editBadge.trim()
       };
@@ -108,6 +128,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   };
 
   const resetForm = () => {
+    setEditingPostId(null);
     setEditTitle('');
     setEditContent('');
     setEditImage(null);
@@ -120,7 +141,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const gridPosts = posts.filter(p => p.id !== featuredPost?.id);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fadeIn relative">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fadeIn relative pb-24">
       
       {/* Header Section */}
       <div className="text-center mb-10 relative">
@@ -129,17 +150,6 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         <p className="text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
           Gelinlik trendleri, düğün planlama ipuçları ve ilham verici gerçek düğün hikayeleri.
         </p>
-        
-        {isAdmin && (
-          <div className="mt-8">
-            <Button onClick={() => setIsEditorOpen(true)}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Yeni Yazı Ekle
-            </Button>
-          </div>
-        )}
       </div>
 
       {isLoading ? (
@@ -172,7 +182,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                             <p className="text-gray-200 text-base md:text-lg line-clamp-2 md:line-clamp-3 mb-6 font-light">
                                 {featuredPost.content}
                             </p>
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-wrap items-center gap-4">
                                 <span className="text-white/80 text-sm font-medium border-r border-white/30 pr-4">
                                     {new Date(featuredPost.date).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })}
                                 </span>
@@ -182,14 +192,28 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                                 >
                                     Haberi Oku &rarr;
                                 </button>
+                                
                                 {isAdmin && (
-                                    <button 
-                                        type="button"
-                                        onClick={(e) => requestDelete(featuredPost.id, e)}
-                                        className="ml-auto bg-white/20 hover:bg-red-500 hover:text-white text-white p-2 rounded-full backdrop-blur-md transition-colors z-20"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                    </button>
+                                    <div className="ml-auto flex gap-2">
+                                        <button 
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); handleOpenEditor(featuredPost); }}
+                                            className="bg-white/20 hover:bg-blue-500 hover:text-white text-white p-2 rounded-full backdrop-blur-md transition-colors z-20"
+                                            title="Düzenle"
+                                        >
+                                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                            </svg>
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={(e) => requestDelete(featuredPost.id, e)}
+                                            className="bg-white/20 hover:bg-red-500 hover:text-white text-white p-2 rounded-full backdrop-blur-md transition-colors z-20"
+                                            title="Sil"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -244,15 +268,28 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                         Devamını Oku 
                         <svg className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                     </button>
+                    
                     {isAdmin && (
-                        <button 
-                            type="button"
-                            onClick={(e) => requestDelete(post.id, e)}
-                            className="text-red-400 hover:text-red-600 p-2 z-10 hover:bg-red-50 rounded-full transition-colors"
-                            title="Yazıyı Sil"
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
+                        <div className="flex gap-2">
+                            <button 
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleOpenEditor(post); }}
+                                className="text-blue-400 hover:text-blue-600 p-2 z-10 hover:bg-blue-50 rounded-full transition-colors"
+                                title="Düzenle"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                </svg>
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={(e) => requestDelete(post.id, e)}
+                                className="text-red-400 hover:text-red-600 p-2 z-10 hover:bg-red-50 rounded-full transition-colors"
+                                title="Sil"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
                     )}
                     </div>
                 </div>
@@ -265,6 +302,21 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
             )}
             </div>
         </>
+      )}
+
+      {/* ADMIN FLOATING ACTION BUTTON (New Post) */}
+      {isAdmin && (
+        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40">
+            <button 
+                onClick={() => handleOpenEditor()}
+                className="bg-wedding-500 hover:bg-wedding-900 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-xl shadow-wedding-500/30 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 group"
+                title="Yeni Blog Yazısı Ekle"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7 md:w-8 md:h-8 group-hover:rotate-90 transition-transform duration-300">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+            </button>
+        </div>
       )}
 
       {/* READING MODE MODAL */}
@@ -333,7 +385,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-              <h3 className="font-serif text-xl font-bold">Yeni Blog Yazısı</h3>
+              <h3 className="font-serif text-xl font-bold">{editingPostId ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h3>
               <button onClick={() => setIsEditorOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
