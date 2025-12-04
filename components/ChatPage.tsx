@@ -186,7 +186,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-[#f0f2f5] px-2 py-2 md:px-4 md:py-3 border-t border-gray-200 z-20 flex items-center gap-2">
+        <div className="bg-[#f0f2f5] px-2 py-2 border-t border-gray-200 z-20 flex items-center gap-2">
             <button className="text-gray-500 p-2 hover:bg-gray-200 rounded-full transition-colors hidden sm:block">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -204,17 +204,17 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 <button 
                     type="submit" 
                     disabled={!newMessage.trim()}
-                    className="bg-wedding-500 hover:bg-wedding-600 text-white p-2.5 rounded-full shadow-md disabled:opacity-50 disabled:shadow-none transition-all transform active:scale-95 flex-shrink-0"
+                    className={`
+                        p-3 rounded-full transition-all duration-200 flex items-center justify-center shadow-md flex-shrink-0
+                        ${newMessage.trim() 
+                            ? 'bg-wedding-500 hover:bg-wedding-600 text-white transform active:scale-95' 
+                            : 'bg-transparent text-gray-400 shadow-none cursor-default'
+                        }
+                    `}
                 >
-                    {newMessage.trim() ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">
-                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-                        </svg>
-                    )}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">
+                        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                    </svg>
                 </button>
             </form>
         </div>

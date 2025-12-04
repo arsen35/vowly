@@ -218,7 +218,8 @@ const App: React.FC = () => {
           <div className="flex items-center gap-8 min-w-0">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
               <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg flex-shrink-0">A</div>
-              <h1 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+              {/* MOBİL DÜZELTME: Yazı mobilde (hidden), tabletten itibaren (sm:block) görünür */}
+              <h1 className="hidden sm:block font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                 Annabella Bridal
               </h1>
             </div>
