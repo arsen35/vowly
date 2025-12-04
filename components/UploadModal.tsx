@@ -23,7 +23,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // Helper to compress image to WebP
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -33,8 +32,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             img.src = event.target?.result as string;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                // Web için optimize edilmiş boyutlar (Max 1000px yeterli)
-                const MAX_WIDTH = 1000;
+                const MAX_WIDTH = 1200; // Firebase için makul boyut
                 const scaleSize = MAX_WIDTH / img.width;
                 const width = Math.min(img.width, MAX_WIDTH);
                 const height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
@@ -44,15 +42,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
                 
-                // WebP formatı ve 0.65 kalite (İnanılmaz tasarruf sağlar)
-                let compressedBase64 = canvas.toDataURL('image/webp', 0.65);
-                
-                // Eğer tarayıcı WebP desteklemiyorsa (çok eski cihazlar) JPEG'e dön
-                if (!compressedBase64.startsWith('data:image/webp')) {
-                    compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                }
-                
-                resolve(compressedBase64);
+                resolve(canvas.toDataURL('image/webp', 0.8));
             };
         };
     });
@@ -66,50 +56,46 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
       try {
         for (const file of files) {
-           const isVideo = file.type.startsWith('video/');
            let finalUrl = '';
-           
-           if (isVideo) {
-               finalUrl = await new Promise<string>((resolve) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => resolve(reader.result as string);
-                  reader.readAsDataURL(file);
+           let type: 'image' | 'video' = 'image';
+
+           if (file.type.startsWith('video/')) {
+               type = 'video';
+               // Video dosyasını Data URL'e çevir
+               finalUrl = await new Promise((resolve) => {
+                   const reader = new FileReader();
+                   reader.readAsDataURL(file);
+                   reader.onload = () => resolve(reader.result as string);
                });
            } else {
                finalUrl = await compressImage(file);
            }
            
-           newMediaItems.push({
-               url: finalUrl,
-               type: isVideo ? 'video' : 'image'
-           });
+           newMediaItems.push({ url: finalUrl, type });
         }
   
-        setSelectedMedia(newMediaItems);
-        setCurrentPreviewIndex(0);
-  
-        // AI Otomatik Caption
         if (newMediaItems.length > 0) {
-          const firstMedia = newMediaItems[0];
-          if (firstMedia.type === 'image') {
-              generateAICaption(firstMedia.url);
-          } else {
-             setCaption("Bu özel anı ölümsüzleştirdik... 🎥✨");
-             setHashtags(["#düğünvideosu", "#mutluanlar", "#vowly"]);
-          }
+            setSelectedMedia(newMediaItems);
+            setCurrentPreviewIndex(0);
+      
+            // Sadece resimse ve henüz caption yoksa AI caption üret
+            if (newMediaItems[0].type === 'image' && !caption) {
+                generateAICaption(newMediaItems[0].url);
+            }
         }
+        
       } catch (err) {
           console.error("Dosya işleme hatası:", err);
-          alert("Dosyalar yüklenirken bir hata oluştu.");
+          alert("Dosyalar işlenirken bir hata oluştu.");
       } finally {
           setIsProcessing(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
       }
     }
   };
 
   const generateAICaption = async (base64Image: string) => {
     setIsGeneratingAI(true);
-    // data:image/webp;base64, kısmını temizle
     const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|webp);base64,/, "");
     
     try {
@@ -135,7 +121,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     }
   };
 
-  // ... (Navigasyon fonksiyonları aynı)
+  // Navigasyon
   const nextPreview = () => {
       if (currentPreviewIndex < selectedMedia.length - 1) {
           setCurrentPreviewIndex(currentPreviewIndex + 1);
@@ -148,15 +134,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       }
   };
 
+  // Touch
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
+  const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
@@ -166,12 +149,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   return (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-end md:items-center justify-center md:p-4 backdrop-blur-sm">
-      {/* 
-         LAYOUT YAPISI DEĞİŞTİ:
-         1. h-[95vh] ile mobilde ekranın tepesinden azıcık boşluk bıraktık.
-         2. rounded-t-2xl ile mobilde alttan açılan bir kart görünümü verdik.
-         3. Flex-col yapısı ile Footer'ı (butonları) içerikten tamamen ayırdık.
-      */}
       <div className={`bg-white rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
           ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[85vh]' : 'max-w-lg md:h-auto'}
           h-[95vh] md:h-auto transition-all duration-300
@@ -187,11 +164,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
           </button>
         </div>
 
-        {/* Main Content Area - Scrollable but Footers are separated */}
+        {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
           
           {selectedMedia.length === 0 ? (
-            // EMPTY STATE
             <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50">
                 <div 
                   className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 transition-all group relative bg-white"
@@ -203,7 +179,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          <p className="text-gray-600 font-medium">Fotoğraflar Hazırlanıyor...</p>
+                          <p className="text-gray-600 font-medium">Dosyalar Hazırlanıyor...</p>
                       </div>
                   ) : (
                       <>
@@ -220,8 +196,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             </div>
           ) : (
             <>
-              {/* MEDIA PREVIEW SECTION */}
-              {/* Mobile: Top (Fixed Height), Desktop: Left (Full Height) */}
+              {/* Preview */}
               <div className="w-full md:w-3/5 h-[40vh] md:h-full bg-black flex items-center justify-center relative group shrink-0">
                  <div 
                     className="w-full h-full flex items-center justify-center touch-pan-y"
@@ -230,13 +205,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                     onTouchEnd={onTouchEnd}
                  >
                     {selectedMedia[currentPreviewIndex].type === 'video' ? (
-                      <video src={selectedMedia[currentPreviewIndex].url} controls className="max-w-full max-h-full object-contain" />
+                        <video 
+                            src={selectedMedia[currentPreviewIndex].url} 
+                            controls 
+                            className="max-w-full max-h-full" 
+                        />
                     ) : (
-                      <img src={selectedMedia[currentPreviewIndex].url} alt="Preview" className="max-w-full max-h-full object-contain pointer-events-none select-none" />
+                        <img 
+                            src={selectedMedia[currentPreviewIndex].url} 
+                            alt="Preview" 
+                            className="max-w-full max-h-full object-contain pointer-events-none select-none" 
+                        />
                     )}
                  </div>
 
-                {/* Remove Button */}
                 <button 
                   onClick={() => {
                       const newMedia = selectedMedia.filter((_, i) => i !== currentPreviewIndex);
@@ -252,7 +234,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                   </svg>
                 </button>
 
-                 {/* Navigation Dots */}
                  {selectedMedia.length > 1 && (
                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                          {selectedMedia.map((_, idx) => (
@@ -262,14 +243,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                  )}
               </div>
 
-              {/* FORM SECTION */}
-              {/* Flex Column to separate Input Area (Scroll) from Buttons (Fixed) */}
+              {/* Form */}
               <div className="w-full md:w-2/5 bg-white flex flex-col h-full overflow-hidden">
-                 
-                 {/* Scrollable Input Area */}
                  <div className="flex-1 overflow-y-auto p-5 pb-4">
                      <div className="space-y-5">
-                         {/* Name Input */}
                          <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">Görünecek İsim <span className="text-red-500">*</span></label>
                             <input 
@@ -281,12 +258,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             />
                          </div>
 
-                         {/* Caption & AI */}
                          <div>
                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                                  Açıklama
-                                </label>
+                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">Açıklama</label>
                                 {isGeneratingAI && (
                                     <span className="flex items-center gap-1 text-xs text-wedding-500 font-medium animate-pulse">
                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10a1 1 0 11-2 0 1 1 0 012 0zm-5 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
@@ -296,12 +270,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             </div>
                             
                             <div className="bg-wedding-50 rounded-xl p-3 border border-wedding-100">
-                                 {selectedMedia[0]?.type === 'image' && !caption && !isGeneratingAI && (
+                                 {!caption && !isGeneratingAI && (
                                      <div className="mb-2 text-xs text-wedding-600 bg-white/60 p-2 rounded flex items-start gap-2">
                                          <p>✨ Gemini AI fotoğrafını inceliyor...</p>
                                      </div>
                                  )}
-                                 
                                 <textarea
                                   className="w-full bg-transparent border-none p-0 text-sm text-gray-800 focus:ring-0 placeholder-gray-400 resize-none min-h-[100px]"
                                   rows={4}
@@ -309,30 +282,24 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                   value={caption}
                                   onChange={(e) => setCaption(e.target.value)}
                                 />
-                                
                                 <div className="mt-2 flex flex-wrap gap-2">
                                    {hashtags.map((tag, idx) => (
-                                     <span key={idx} className="text-[10px] bg-white text-wedding-600 px-2 py-1 rounded-md font-medium border border-wedding-100">
-                                         {tag}
-                                     </span>
+                                     <span key={idx} className="text-[10px] bg-white text-wedding-600 px-2 py-1 rounded-md font-medium border border-wedding-100">{tag}</span>
                                    ))}
                                 </div>
                             </div>
                          </div>
-                         
-                         {/* Spacer for mobile to ensure last input is visible above keyboard if needed */}
                          <div className="h-4 md:h-0"></div>
                      </div>
                  </div>
 
-                 {/* FIXED FOOTER AREA - This is now outside the scroll view */}
+                 {/* Fixed Footer */}
                  <div className="p-4 border-t bg-white shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
                     <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1">
-                        {isProcessing ? 'Sıkıştırılıyor...' : 'Paylaş'}
+                        {isProcessing ? 'Hazırlanıyor...' : 'Paylaş'}
                     </Button>
                  </div>
-
               </div>
             </>
           )}

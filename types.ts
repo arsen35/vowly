@@ -29,9 +29,19 @@ export interface Post {
   isLikedByCurrentUser?: boolean;
 }
 
+export interface BlogPost {
+  id: string;
+  title: string;
+  content: string; // Paragraflar için düz metin
+  coverImage: string;
+  author: string;
+  date: number;
+}
+
 export enum ViewState {
   FEED = 'FEED',
   UPLOAD = 'UPLOAD',
   LOGIN = 'LOGIN',
-  ADMIN_DASHBOARD = 'ADMIN_DASHBOARD'
+  ADMIN_DASHBOARD = 'ADMIN_DASHBOARD',
+  BLOG = 'BLOG'
 }

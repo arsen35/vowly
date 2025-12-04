@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 // Firebase yapılandırması
 // Bu bilgileri Firebase Console -> Project Settings -> General kısmından alıp
@@ -14,14 +14,34 @@ const firebaseConfig = {
   appId: process.env.VITE_FIREBASE_APP_ID
 };
 
-// Yapılandırma kontrolü
-if (!firebaseConfig.projectId) {
-  console.error("🚨 HATA: Firebase Project ID bulunamadı!");
-  console.error("Lütfen projenizin ana dizininde '.env' dosyası oluşturun ve Firebase bilgilerini girin.");
-  console.error("Örnek için '.env.example' dosyasına bakabilirsiniz.");
+let app: FirebaseApp;
+let db: Firestore;
+let storage: FirebaseStorage;
+
+try {
+  // Yapılandırma kontrolü
+  if (!firebaseConfig.projectId) {
+    throw new Error("Firebase Project ID bulunamadı! Lütfen .env dosyasını kontrol edin.");
+  }
+  
+  if (!firebaseConfig.apiKey) {
+    throw new Error("Firebase API Key bulunamadı! Lütfen .env dosyasını kontrol edin.");
+  }
+
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  
+  console.log("✅ Firebase bağlantısı başarılı:", firebaseConfig.projectId);
+
+} catch (error) {
+  console.error("🚨 FIREBASE BAĞLANTI HATASI:", error);
+  console.error("Lütfen .env dosyanızın dolu olduğundan emin olun.");
+  
+  // Uygulamanın tamamen çökmemesi için dummy objeler oluşturabilir veya
+  // hatayı yukarı fırlatabiliriz. Şimdilik hatayı fırlatıyoruz ki kullanıcı sorunu görsün.
+  // Ancak production'da fallback mekanizması kurulabilir.
+  throw error;
 }
 
-const app = initializeApp(firebaseConfig);
-
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+export { db, storage };
