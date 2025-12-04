@@ -219,8 +219,8 @@ const App: React.FC = () => {
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-8 min-w-0">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              {/* LOGO KALDIRILDI, SADECE YAZI */}
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+              {/* MOBIL DÜZELTME: 'text-xl' yerine 'text-lg' yaparak mobilde küçülttük */}
+              <h1 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                 Annabella Blog
               </h1>
             </div>
