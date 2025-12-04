@@ -15,7 +15,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [userName, setUserName] = useState('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false); // New state for compression
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Touch state
@@ -23,7 +23,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // Helper to compress image
+  // Helper to compress image to WebP
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -33,8 +33,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             img.src = event.target?.result as string;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                // Maksimum genişlik 800px olsun (Dosya boyutunu küçültmek için)
-                const MAX_WIDTH = 800;
+                // Web için optimize edilmiş boyutlar (Max 1000px yeterli)
+                const MAX_WIDTH = 1000;
                 const scaleSize = MAX_WIDTH / img.width;
                 const width = Math.min(img.width, MAX_WIDTH);
                 const height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
@@ -44,8 +44,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
                 
-                // JPEG olarak ve 0.7 kalite ile sıkıştır
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                // WebP formatı ve 0.65 kalite (İnanılmaz tasarruf sağlar)
+                let compressedBase64 = canvas.toDataURL('image/webp', 0.65);
+                
+                // Eğer tarayıcı WebP desteklemiyorsa (çok eski cihazlar) JPEG'e dön
+                if (!compressedBase64.startsWith('data:image/webp')) {
+                    compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                }
+                
                 resolve(compressedBase64);
             };
         };
@@ -59,20 +65,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       const newMediaItems: MediaItem[] = [];
 
       try {
-        // Dosyaları oku ve sıkıştır
         for (const file of files) {
            const isVideo = file.type.startsWith('video/');
            let finalUrl = '';
            
            if (isVideo) {
-               // Videoları şimdilik olduğu gibi alıyoruz (LocalStorage'ı çabuk doldurur!)
                finalUrl = await new Promise<string>((resolve) => {
                   const reader = new FileReader();
                   reader.onloadend = () => resolve(reader.result as string);
                   reader.readAsDataURL(file);
                });
            } else {
-               // Fotoğrafları sıkıştır
                finalUrl = await compressImage(file);
            }
            
@@ -85,7 +88,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         setSelectedMedia(newMediaItems);
         setCurrentPreviewIndex(0);
   
-        // AI sadece ilk fotoğraf için çalışsın
+        // AI Otomatik Caption
         if (newMediaItems.length > 0) {
           const firstMedia = newMediaItems[0];
           if (firstMedia.type === 'image') {
@@ -106,7 +109,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   const generateAICaption = async (base64Image: string) => {
     setIsGeneratingAI(true);
-    const cleanBase64 = base64Image.split(',')[1];
+    // data:image/webp;base64, kısmını temizle
+    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|webp);base64,/, "");
     
     try {
       const result = await generateWeddingCaption(cleanBase64);
@@ -131,6 +135,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     }
   };
 
+  // ... (Navigasyon fonksiyonları aynı)
   const nextPreview = () => {
       if (currentPreviewIndex < selectedMedia.length - 1) {
           setCurrentPreviewIndex(currentPreviewIndex + 1);
@@ -143,7 +148,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       }
   };
 
-  // Touch Handlers
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
@@ -155,49 +159,42 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    if (isLeftSwipe) {
-      nextPreview();
-    }
-    if (isRightSwipe) {
-      prevPreview();
-    }
+    if (distance > minSwipeDistance) nextPreview();
+    if (distance < -minSwipeDistance) prevPreview();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-end md:items-center justify-center md:p-4 backdrop-blur-sm">
       {/* 
-         Responsive Container:
-         Mobile: max-w-lg, height auto (max 90vh)
-         Desktop (md): max-w-4xl, fixed height (80vh) for split view
+         LAYOUT YAPISI DEĞİŞTİ:
+         1. h-[95vh] ile mobilde ekranın tepesinden azıcık boşluk bıraktık.
+         2. rounded-t-2xl ile mobilde alttan açılan bir kart görünümü verdik.
+         3. Flex-col yapısı ile Footer'ı (butonları) içerikten tamamen ayırdık.
       */}
-      <div className={`bg-white rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
-          ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[85vh]' : 'max-w-lg'}
-          max-h-[90vh] transition-all duration-300
+      <div className={`bg-white rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
+          ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[85vh]' : 'max-w-lg md:h-auto'}
+          h-[95vh] md:h-auto transition-all duration-300
       `}>
         
         {/* Header */}
-        <div className="p-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
-          <h2 className="text-xl font-serif font-bold text-gray-800">Anını Paylaş</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+        <div className="p-4 border-b flex justify-between items-center bg-gray-50 shrink-0 h-14">
+          <h2 className="text-lg font-serif font-bold text-gray-800">Anını Paylaş</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-200 p-1.5 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className={`flex-1 overflow-hidden flex flex-col ${selectedMedia.length > 0 ? 'md:flex-row' : ''}`}>
+        {/* Main Content Area - Scrollable but Footers are separated */}
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
           
           {selectedMedia.length === 0 ? (
-            // Empty State (Upload Prompt)
-            <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
+            // EMPTY STATE
+            <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50">
                 <div 
-                  className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 transition-all group relative"
+                  className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 transition-all group relative bg-white"
                   onClick={() => !isProcessing && fileInputRef.current?.click()}
                 >
                   {isProcessing ? (
@@ -216,15 +213,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             </svg>
                         </div>
                         <p className="text-gray-700 font-bold text-lg">Fotoğraf veya Video Seç</p>
-                        <p className="text-gray-400 text-sm mt-2 text-center px-4">Sürükle bırak veya galeriden seç.<br/>En mutlu anlarını paylaş.</p>
+                        <p className="text-gray-400 text-sm mt-2 text-center px-4">Anılarını bizimle paylaş.</p>
                       </>
                   )}
                 </div>
             </div>
           ) : (
             <>
-              {/* Left Side (Desktop): Media Preview */}
-              <div className="w-full md:w-3/5 bg-black flex items-center justify-center relative group md:h-full shrink-0 aspect-[4/5] md:aspect-auto">
+              {/* MEDIA PREVIEW SECTION */}
+              {/* Mobile: Top (Fixed Height), Desktop: Left (Full Height) */}
+              <div className="w-full md:w-3/5 h-[40vh] md:h-full bg-black flex items-center justify-center relative group shrink-0">
                  <div 
                     className="w-full h-full flex items-center justify-center touch-pan-y"
                     onTouchStart={onTouchStart}
@@ -248,106 +246,93 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                       }
                   }}
                   className="absolute top-4 right-4 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-md transition-colors z-20"
-                  title="Sil"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                   </svg>
                 </button>
 
-                 {/* Desktop Nav Buttons */}
+                 {/* Navigation Dots */}
                  {selectedMedia.length > 1 && (
-                     <>
-                        <button onClick={prevPreview} className={`absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-all ${currentPreviewIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                        </button>
-                        <button onClick={nextPreview} className={`absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-all ${currentPreviewIndex === selectedMedia.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </button>
-                        
-                        {/* Pagination Dots */}
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                            {selectedMedia.map((_, idx) => (
-                                <div key={idx} className={`w-2 h-2 rounded-full transition-all ${idx === currentPreviewIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />
-                            ))}
-                        </div>
-                     </>
+                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                         {selectedMedia.map((_, idx) => (
+                             <div key={idx} className={`w-2 h-2 rounded-full transition-all ${idx === currentPreviewIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />
+                         ))}
+                     </div>
                  )}
               </div>
 
-              {/* Right Side (Desktop) / Bottom (Mobile): Form */}
-              <div className="w-full md:w-2/5 p-6 overflow-y-auto bg-white flex flex-col">
-                 <div className="flex-1 space-y-5">
-                     
-                     {/* Name Input */}
-                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Görünecek İsim <span className="text-red-500">*</span></label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                </svg>
-                            </div>
+              {/* FORM SECTION */}
+              {/* Flex Column to separate Input Area (Scroll) from Buttons (Fixed) */}
+              <div className="w-full md:w-2/5 bg-white flex flex-col h-full overflow-hidden">
+                 
+                 {/* Scrollable Input Area */}
+                 <div className="flex-1 overflow-y-auto p-5 pb-4">
+                     <div className="space-y-5">
+                         {/* Name Input */}
+                         <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Görünecek İsim <span className="text-red-500">*</span></label>
                             <input 
                               type="text" 
                               value={userName}
                               onChange={(e) => setUserName(e.target.value)}
-                              className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 p-3 text-sm text-gray-800 focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500 transition-all"
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800 focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500 transition-all"
                               placeholder="Adınız Soyadınız"
                             />
-                        </div>
-                     </div>
+                         </div>
 
-                     {/* Caption & AI */}
-                     <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                              Açıklama
-                            </label>
-                            {isGeneratingAI && (
-                                <span className="flex items-center gap-1 text-xs text-wedding-500 font-medium animate-pulse">
-                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10a1 1 0 11-2 0 1 1 0 012 0zm-5 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
-                                    AI Yazıyor...
-                                </span>
-                            )}
-                        </div>
-                        
-                        <div className="bg-wedding-50 rounded-xl p-3 border border-wedding-100">
-                             {selectedMedia[0]?.type === 'image' && !caption && !isGeneratingAI && (
-                                 <div className="mb-2 text-xs text-wedding-600 bg-white/60 p-2 rounded flex items-start gap-2">
-                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mt-0.5 shrink-0">
-                                        <path fillRule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813a3.75 3.75 0 002.576-2.576l.813-2.846A.75.75 0 019 4.5zM6.97 11.03a.75.75 0 111.06-1.06l.75.75a.75.75 0 01-1.06 1.06l-.75-.75z" clipRule="evenodd" />
-                                     </svg>
-                                     <p>Gemini AI fotoğrafını analiz etti ve senin için bir açıklama taslağı oluşturdu. Düzenleyebilirsin!</p>
-                                 </div>
-                             )}
-                             
-                            <textarea
-                              className="w-full bg-transparent border-none p-0 text-sm text-gray-800 focus:ring-0 placeholder-gray-400 resize-none"
-                              rows={5}
-                              placeholder="En güzel anını anlat..."
-                              value={caption}
-                              onChange={(e) => setCaption(e.target.value)}
-                            />
-                            
-                            <div className="mt-3 flex flex-wrap gap-2">
-                               {hashtags.map((tag, idx) => (
-                                 <span key={idx} className="text-xs bg-white text-wedding-600 px-2 py-1 rounded-md font-medium shadow-sm border border-wedding-100">
-                                     {tag}
-                                 </span>
-                               ))}
+                         {/* Caption & AI */}
+                         <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                  Açıklama
+                                </label>
+                                {isGeneratingAI && (
+                                    <span className="flex items-center gap-1 text-xs text-wedding-500 font-medium animate-pulse">
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10a1 1 0 11-2 0 1 1 0 012 0zm-5 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
+                                        AI Yazıyor...
+                                    </span>
+                                )}
                             </div>
-                        </div>
+                            
+                            <div className="bg-wedding-50 rounded-xl p-3 border border-wedding-100">
+                                 {selectedMedia[0]?.type === 'image' && !caption && !isGeneratingAI && (
+                                     <div className="mb-2 text-xs text-wedding-600 bg-white/60 p-2 rounded flex items-start gap-2">
+                                         <p>✨ Gemini AI fotoğrafını inceliyor...</p>
+                                     </div>
+                                 )}
+                                 
+                                <textarea
+                                  className="w-full bg-transparent border-none p-0 text-sm text-gray-800 focus:ring-0 placeholder-gray-400 resize-none min-h-[100px]"
+                                  rows={4}
+                                  placeholder="En güzel anını anlat..."
+                                  value={caption}
+                                  onChange={(e) => setCaption(e.target.value)}
+                                />
+                                
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                   {hashtags.map((tag, idx) => (
+                                     <span key={idx} className="text-[10px] bg-white text-wedding-600 px-2 py-1 rounded-md font-medium border border-wedding-100">
+                                         {tag}
+                                     </span>
+                                   ))}
+                                </div>
+                            </div>
+                         </div>
+                         
+                         {/* Spacer for mobile to ensure last input is visible above keyboard if needed */}
+                         <div className="h-4 md:h-0"></div>
                      </div>
                  </div>
 
-                 {/* Mobile Footer (Inside form) / Desktop Footer */}
-                 <div className="mt-6 pt-4 border-t flex justify-end gap-3 sticky bottom-0 bg-white">
+                 {/* FIXED FOOTER AREA - This is now outside the scroll view */}
+                 <div className="p-4 border-t bg-white shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
-                    <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1 md:flex-none">
-                        {isProcessing ? 'İşleniyor...' : 'Paylaş'}
+                    <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1">
+                        {isProcessing ? 'Sıkıştırılıyor...' : 'Paylaş'}
                     </Button>
                  </div>
+
               </div>
             </>
           )}
