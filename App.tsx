@@ -182,6 +182,7 @@ const App: React.FC = () => {
           <div className="min-h-screen bg-gray-50">
              <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm h-16 flex items-center px-6 justify-between">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
+                    {/* Admin Logosu Kalabilir veya kaldırılabilir, burada tuttum */}
                     <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">A</div>
                     <h1 className="font-serif text-2xl font-bold text-gray-900 tracking-tight">Annabella</h1>
                 </div>
@@ -218,10 +219,9 @@ const App: React.FC = () => {
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-8 min-w-0">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg flex-shrink-0">A</div>
-              {/* MOBİL DÜZELTME: Yazı mobilde (hidden), tabletten itibaren (sm:block) görünür */}
-              <h1 className="hidden sm:block font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                Annabella Bridal
+              {/* LOGO KALDIRILDI, SADECE YAZI */}
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                Annabella Blog
               </h1>
             </div>
 

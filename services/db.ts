@@ -22,6 +22,7 @@ import {
 const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
 const CHAT_COLLECTION = 'chat_messages';
+const MAX_CHAT_MESSAGES = 50; // Sohbet geçmişi limiti
 
 // --- MOCK DATA (Demo Modu İçin) ---
 const MOCK_POSTS: Post[] = [
@@ -175,7 +176,7 @@ export const dbService = {
     if (!db) return () => {};
 
     const chatRef = collection(db, CHAT_COLLECTION);
-    // Son 100 mesajı getir, eskiden yeniye sırala
+    // Son 100 mesajı getir, eskiden yeniye sırala (UI için)
     const q = query(chatRef, orderBy("timestamp", "asc"), limit(100));
 
     // Realtime Listener
@@ -194,7 +195,26 @@ export const dbService = {
     try {
         const { dbInstance } = checkDbConnection();
         const chatRef = collection(dbInstance, CHAT_COLLECTION);
+        
+        // 1. Yeni mesajı ekle
         await addDoc(chatRef, message);
+
+        // 2. OTOMATİK TEMİZLİK (Storage Optimization)
+        // Tüm mesajları tarihe göre al
+        const q = query(chatRef, orderBy("timestamp", "asc"));
+        const snapshot = await getDocs(q);
+
+        // Eğer limit aşıldıysa, en eskileri sil
+        if (snapshot.size > MAX_CHAT_MESSAGES) {
+            const deleteCount = snapshot.size - MAX_CHAT_MESSAGES;
+            // Sadece silinmesi gereken kadarını döngüye sok
+            const docsToDelete = snapshot.docs.slice(0, deleteCount);
+            
+            // Promise.all ile paralel silme işlemi
+            await Promise.all(docsToDelete.map(doc => deleteDoc(doc.ref)));
+            console.log(`${deleteCount} eski mesaj otomatik olarak temizlendi.`);
+        }
+
     } catch (error) {
         console.error("Mesaj gönderme hatası:", error);
         throw error;
