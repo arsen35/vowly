@@ -93,7 +93,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         siteLink = "https://blog.annabellabridal.com";
     }
     
-    const message = `Vowly'de bu ana bak! 💍\n\n"${post.caption}"\n${mediaLink}\n\nDaha fazlası için: ${siteLink}`;
+    const message = `Annabella Bridal Blog'da bu ana bak! 💍\n\n"${post.caption}"\n${mediaLink}\n\nDaha fazlası için: ${siteLink}`;
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
   };

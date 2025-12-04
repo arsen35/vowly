@@ -61,7 +61,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         title: editTitle,
         content: editContent,
         coverImage: editImage,
-        author: 'Vowly Editör',
+        author: 'Annabella Editör',
         date: Date.now(),
         isFeatured: editIsFeatured,
         badge: editBadge.trim()
@@ -125,7 +125,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
       {/* Header Section */}
       <div className="text-center mb-10 relative">
         <span className="text-wedding-500 font-bold tracking-widest text-xs uppercase mb-2 block">Düğün Rehberi</span>
-        <h2 className="text-4xl md:text-5xl font-serif font-medium text-gray-900 mb-6">Vowly Blog</h2>
+        <h2 className="text-4xl md:text-5xl font-serif font-medium text-gray-900 mb-6">Annabella Blog</h2>
         <p className="text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
           Gelinlik trendleri, düğün planlama ipuçları ve ilham verici gerçek düğün hikayeleri.
         </p>
@@ -303,7 +303,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                         
                         <div className="flex items-center gap-4 text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-wedding-100 flex items-center justify-center text-wedding-700 font-bold font-serif">V</div>
+                                <div className="w-8 h-8 rounded-full bg-wedding-100 flex items-center justify-center text-wedding-700 font-bold font-serif">A</div>
                                 <span>{selectedPost.author}</span>
                              </div>
                              <span>•</span>

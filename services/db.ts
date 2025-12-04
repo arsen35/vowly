@@ -1,3 +1,4 @@
+
 import { Post, BlogPost } from '../types';
 import { db, storage } from './firebase';
 import { 
@@ -25,7 +26,7 @@ const MOCK_POSTS: Post[] = [
     id: 'mock-1',
     user: { id: 'u1', name: 'Ayşe & Mehmet', avatar: 'https://ui-avatars.com/api/?name=Ayse+Mehmet&background=fecdd3&color=881337' },
     media: [{ url: 'https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', type: 'image' }],
-    caption: 'Hayatımızın en özel günü... ✨ Bu gelinliği seçerken Vowly blogundaki yazılardan çok ilham aldım. #düğün #aşk',
+    caption: 'Hayatımızın en özel günü... ✨ Bu gelinliği seçerken Annabella Bridal blogundaki yazılardan çok ilham aldım. #düğün #aşk',
     hashtags: ['#düğün', '#gelinlik', '#mutluluk'],
     likes: 124,
     comments: [
@@ -39,7 +40,7 @@ const MOCK_POSTS: Post[] = [
     user: { id: 'u2', name: 'Selin Yılmaz', avatar: 'https://ui-avatars.com/api/?name=Selin+Yilmaz&background=e0f2fe&color=0369a1' },
     media: [{ url: 'https://images.unsplash.com/photo-1511285560982-1356c11d4606?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', type: 'image' }],
     caption: 'Detaylara aşık oldum! 👰‍♀️',
-    hashtags: ['#vowly', '#gelin', '#weddingdress'],
+    hashtags: ['#annabellabridal', '#gelin', '#weddingdress'],
     likes: 89,
     comments: [],
     timestamp: Date.now() - 86400000,
