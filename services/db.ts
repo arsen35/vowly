@@ -1,5 +1,5 @@
 
-import { Post, BlogPost } from '../types';
+import { Post, BlogPost, ChatMessage } from '../types';
 import { db, storage } from './firebase';
 import { 
   collection, 
@@ -9,7 +9,9 @@ import {
   deleteDoc, 
   query, 
   orderBy,
-  limit
+  limit,
+  onSnapshot,
+  addDoc
 } from "firebase/firestore";
 import { 
   ref, 
@@ -19,6 +21,7 @@ import {
 
 const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
+const CHAT_COLLECTION = 'chat_messages';
 
 // --- MOCK DATA (Demo Modu İçin) ---
 const MOCK_POSTS: Post[] = [
@@ -164,6 +167,38 @@ export const dbService = {
   deleteBlogPost: async (id: string): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     await deleteDoc(doc(dbInstance, BLOG_COLLECTION, id));
+  },
+
+  // --- CHAT (Canlı Sohbet) ---
+
+  subscribeToChat: (callback: (messages: ChatMessage[]) => void) => {
+    if (!db) return () => {};
+
+    const chatRef = collection(db, CHAT_COLLECTION);
+    // Son 100 mesajı getir, eskiden yeniye sırala
+    const q = query(chatRef, orderBy("timestamp", "asc"), limit(100));
+
+    // Realtime Listener
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const messages: ChatMessage[] = [];
+        snapshot.forEach((doc) => {
+            messages.push({ id: doc.id, ...doc.data() } as ChatMessage);
+        });
+        callback(messages);
+    });
+
+    return unsubscribe;
+  },
+
+  sendChatMessage: async (message: Omit<ChatMessage, 'id'>) => {
+    try {
+        const { dbInstance } = checkDbConnection();
+        const chatRef = collection(dbInstance, CHAT_COLLECTION);
+        await addDoc(chatRef, message);
+    } catch (error) {
+        console.error("Mesaj gönderme hatası:", error);
+        throw error;
+    }
   },
 
   // --- GENEL ---

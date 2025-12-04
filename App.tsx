@@ -6,6 +6,7 @@ import { LoginModal } from './components/LoginModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BlogPage } from './components/BlogPage';
+import { ChatPage } from './components/ChatPage';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
 
@@ -215,7 +216,7 @@ const App: React.FC = () => {
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-8 min-w-0">
-            <div className="flex items-center gap-2 cursor-pointer min-w-0" onClick={() => setViewState(ViewState.FEED)}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
               <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg flex-shrink-0">A</div>
               <h1 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                 Annabella Bridal
@@ -236,6 +237,13 @@ const App: React.FC = () => {
                >
                  BLOG
                </button>
+               <button 
+                  onClick={() => setViewState(ViewState.CHAT)} 
+                  className={`text-sm font-bold tracking-wide transition-colors flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-500 hover:text-gray-900'}`}
+               >
+                 SOHBET
+                 <span className="bg-wedding-100 text-wedding-600 text-[9px] px-1.5 rounded-full animate-pulse">CANLI</span>
+               </button>
                {/* Dönüş Bileti: Ana Siteye Link (Aynı sekmede açılır) */}
                <a 
                   href="https://www.annabellabridal.com"
@@ -251,9 +259,10 @@ const App: React.FC = () => {
           
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
              {/* Mobile Nav Toggle */}
-             <div className="md:hidden flex bg-gray-100 rounded-full p-1 mr-2">
-                <button onClick={() => setViewState(ViewState.FEED)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Akış</button>
-                <button onClick={() => setViewState(ViewState.BLOG)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Blog</button>
+             <div className="md:hidden flex bg-gray-100 rounded-full p-1 mr-2 gap-1">
+                <button onClick={() => setViewState(ViewState.FEED)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Akış</button>
+                <button onClick={() => setViewState(ViewState.BLOG)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Blog</button>
+                <button onClick={() => setViewState(ViewState.CHAT)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.CHAT ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Sohbet</button>
              </div>
 
             {isAdmin ? (
@@ -313,6 +322,8 @@ const App: React.FC = () => {
             </div>
         ) : viewState === ViewState.BLOG ? (
             <BlogPage isAdmin={isAdmin} />
+        ) : viewState === ViewState.CHAT ? (
+            <ChatPage isAdmin={isAdmin} />
         ) : null}
       </main>
 

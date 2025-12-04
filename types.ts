@@ -41,10 +41,21 @@ export interface BlogPost {
   badge?: string; // "Ayın Gelinliği", "İmza Ürün" gibi etiketler
 }
 
+export interface ChatMessage {
+  id: string;
+  text: string;
+  userId: string;
+  userName: string;
+  avatar: string;
+  timestamp: number;
+  isAdmin?: boolean;
+}
+
 export enum ViewState {
   FEED = 'FEED',
   UPLOAD = 'UPLOAD',
   LOGIN = 'LOGIN',
   ADMIN_DASHBOARD = 'ADMIN_DASHBOARD',
-  BLOG = 'BLOG'
+  BLOG = 'BLOG',
+  CHAT = 'CHAT'
 }
