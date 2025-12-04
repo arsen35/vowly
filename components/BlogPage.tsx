@@ -11,9 +11,9 @@ interface BlogPageProps {
 export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   // Editor State
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editImage, setEditImage] = useState<string | null>(null);
@@ -21,6 +21,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const [editBadge, setEditBadge] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reading Mode State
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
   useEffect(() => {
     loadBlogPosts();
@@ -75,9 +78,21 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Bu yazıyı silmek istediğinize emin misiniz?")) {
-      await dbService.deleteBlogPost(id);
-      loadBlogPosts();
+    try {
+        if (window.confirm("Bu yazıyı silmek istediğinize emin misiniz?")) {
+            // Optimistic UI: Listeden hemen kaldır
+            setPosts(prev => prev.filter(p => p.id !== id));
+            // Okuma modu açıksa kapat
+            if (selectedPost?.id === id) setSelectedPost(null);
+            
+            // DB'den sil
+            await dbService.deleteBlogPost(id);
+        }
+    } catch (error) {
+        alert("Silme işlemi sırasında bir hata oluştu.");
+        console.error(error);
+        // Hata olursa listeyi geri yüklemek için yeniden çek
+        loadBlogPosts();
     }
   };
 
@@ -94,7 +109,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const gridPosts = posts.filter(p => p.id !== featuredPost?.id);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fadeIn relative">
       
       {/* Header Section */}
       <div className="text-center mb-10 relative">
@@ -124,7 +139,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         <>
             {/* FEATURED POST (HERO SECTION) */}
             {featuredPost && (
-                <div className="mb-16 rounded-3xl overflow-hidden shadow-2xl relative aspect-[16/9] md:aspect-[21/9] group cursor-pointer">
+                <div 
+                    onClick={() => setSelectedPost(featuredPost)}
+                    className="mb-16 rounded-3xl overflow-hidden shadow-2xl relative aspect-[16/9] md:aspect-[21/9] group cursor-pointer"
+                >
                     <img 
                         src={featuredPost.coverImage} 
                         alt={featuredPost.title} 
@@ -152,8 +170,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                                 </button>
                                 {isAdmin && (
                                     <button 
+                                        type="button"
                                         onClick={(e) => { e.stopPropagation(); handleDelete(featuredPost.id); }}
-                                        className="ml-auto bg-white/20 hover:bg-red-500 hover:text-white text-white p-2 rounded-full backdrop-blur-md transition-colors"
+                                        className="ml-auto bg-white/20 hover:bg-red-500 hover:text-white text-white p-2 rounded-full backdrop-blur-md transition-colors z-20"
                                     >
                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
@@ -168,11 +187,14 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {gridPosts.map((post) => (
                 <article key={post.id} className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
-                <div className="aspect-[4/3] overflow-hidden relative">
+                <div 
+                    className="aspect-[4/3] overflow-hidden relative cursor-pointer"
+                    onClick={() => setSelectedPost(post)}
+                >
                     <img 
-                    src={post.coverImage} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                        src={post.coverImage} 
+                        alt={post.title} 
+                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
@@ -189,22 +211,29 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                 </div>
                 
                 <div className="p-6 flex-1 flex flex-col">
-                    <h3 className="text-xl font-serif font-bold text-gray-900 mb-3 group-hover:text-wedding-500 transition-colors line-clamp-2">
-                    {post.title}
+                    <h3 
+                        onClick={() => setSelectedPost(post)}
+                        className="text-xl font-serif font-bold text-gray-900 mb-3 group-hover:text-wedding-500 transition-colors line-clamp-2 cursor-pointer"
+                    >
+                        {post.title}
                     </h3>
                     <div className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 flex-1 whitespace-pre-line">
-                    {post.content}
+                        {post.content}
                     </div>
                     
                     <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
-                    <button className="text-wedding-500 font-bold text-sm flex items-center gap-1 group/btn">
+                    <button 
+                        onClick={() => setSelectedPost(post)}
+                        className="text-wedding-500 font-bold text-sm flex items-center gap-1 group/btn hover:text-wedding-900 transition-colors"
+                    >
                         Devamını Oku 
                         <svg className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                     </button>
                     {isAdmin && (
                         <button 
+                            type="button"
                             onClick={() => handleDelete(post.id)}
-                            className="text-red-400 hover:text-red-600 p-2"
+                            className="text-red-400 hover:text-red-600 p-2 z-10"
                             title="Yazıyı Sil"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -223,9 +252,61 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         </>
       )}
 
+      {/* READING MODE MODAL */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto animate-in slide-in-from-bottom-5 duration-300">
+             {/* Sticky Navigation */}
+             <div className="sticky top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 md:px-8 h-16 flex items-center justify-between z-10">
+                 <button 
+                    onClick={() => setSelectedPost(null)}
+                    className="flex items-center gap-2 text-gray-500 hover:text-wedding-500 transition-colors font-medium text-sm"
+                 >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    Blog'a Dön
+                 </button>
+                 <span className="font-serif font-bold text-gray-900 hidden sm:block truncate max-w-xs">{selectedPost.title}</span>
+                 <div className="w-8"></div> {/* Spacer for balance */}
+             </div>
+
+             {/* Content */}
+             <div className="max-w-4xl mx-auto pb-20">
+                <div className="w-full aspect-video md:aspect-[21/9] relative">
+                    <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+                </div>
+
+                <div className="px-4 sm:px-8 md:px-12 -mt-20 relative">
+                     <div className="bg-white rounded-t-3xl p-6 md:p-10 shadow-sm border border-gray-50">
+                        {selectedPost.badge && (
+                            <span className="text-wedding-500 font-bold tracking-widest text-xs uppercase mb-4 block">
+                                {selectedPost.badge}
+                            </span>
+                        )}
+                        <h1 className="text-3xl md:text-5xl font-serif font-bold text-gray-900 mb-6 leading-tight">
+                            {selectedPost.title}
+                        </h1>
+                        
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
+                             <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-wedding-100 flex items-center justify-center text-wedding-700 font-bold font-serif">V</div>
+                                <span>{selectedPost.author}</span>
+                             </div>
+                             <span>•</span>
+                             <span>{new Date(selectedPost.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric'})}</span>
+                        </div>
+
+                        <div className="prose prose-lg prose-wedding max-w-none text-gray-700 leading-relaxed whitespace-pre-line font-serif">
+                            {selectedPost.content}
+                        </div>
+                     </div>
+                </div>
+             </div>
+        </div>
+      )}
+
       {/* Admin Blog Editor Modal */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
               <h3 className="font-serif text-xl font-bold">Yeni Blog Yazısı</h3>
