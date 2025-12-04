@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from './Button';
 import { generateWeddingCaption } from '../services/geminiService';
@@ -57,21 +58,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       try {
         for (const file of files) {
            let finalUrl = '';
-           let type: 'image' | 'video' = 'image';
-
-           if (file.type.startsWith('video/')) {
-               type = 'video';
-               // Video dosyasını Data URL'e çevir
-               finalUrl = await new Promise((resolve) => {
-                   const reader = new FileReader();
-                   reader.readAsDataURL(file);
-                   reader.onload = () => resolve(reader.result as string);
-               });
-           } else {
+           // Video kontrolü kaldırıldı, sadece resim işleniyor
+           if (file.type.startsWith('image/')) {
                finalUrl = await compressImage(file);
+               newMediaItems.push({ url: finalUrl, type: 'image' });
            }
-           
-           newMediaItems.push({ url: finalUrl, type });
         }
   
         if (newMediaItems.length > 0) {
@@ -79,7 +70,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setCurrentPreviewIndex(0);
       
             // Sadece resimse ve henüz caption yoksa AI caption üret
-            if (newMediaItems[0].type === 'image' && !caption) {
+            if (!caption) {
                 generateAICaption(newMediaItems[0].url);
             }
         }
@@ -188,8 +179,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                             </svg>
                         </div>
-                        <p className="text-gray-700 font-bold text-lg">Fotoğraf veya Video Seç</p>
-                        <p className="text-gray-400 text-sm mt-2 text-center px-4">Anılarını bizimle paylaş.</p>
+                        <p className="text-gray-700 font-bold text-lg">Fotoğraf Seç</p>
+                        <p className="text-gray-400 text-sm mt-2 text-center px-4">En güzel anılarını paylaş. (Sadece Fotoğraf)</p>
                       </>
                   )}
                 </div>
@@ -204,19 +195,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                     onTouchMove={onTouchMove}
                     onTouchEnd={onTouchEnd}
                  >
-                    {selectedMedia[currentPreviewIndex].type === 'video' ? (
-                        <video 
-                            src={selectedMedia[currentPreviewIndex].url} 
-                            controls 
-                            className="max-w-full max-h-full" 
-                        />
-                    ) : (
-                        <img 
-                            src={selectedMedia[currentPreviewIndex].url} 
-                            alt="Preview" 
-                            className="max-w-full max-h-full object-contain pointer-events-none select-none" 
-                        />
-                    )}
+                    <img 
+                        src={selectedMedia[currentPreviewIndex].url} 
+                        alt="Preview" 
+                        className="max-w-full max-h-full object-contain pointer-events-none select-none" 
+                    />
                  </div>
 
                 <button 
@@ -308,7 +291,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
-            accept="image/*,video/*" 
+            accept="image/*" 
             multiple
             className="hidden" 
           />

@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -36,6 +37,8 @@ export interface BlogPost {
   coverImage: string;
   author: string;
   date: number;
+  isFeatured?: boolean; // Vitrin/Manşet özelliği
+  badge?: string; // "Ayın Gelinliği", "İmza Ürün" gibi etiketler
 }
 
 export enum ViewState {

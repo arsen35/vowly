@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { PostCard } from './components/PostCard';
 import { UploadModal } from './components/UploadModal';
@@ -213,7 +214,9 @@ const App: React.FC = () => {
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
               <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">V</div>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Vowly</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                {viewState === ViewState.BLOG ? 'Vowly Blog' : 'Vowly'}
+              </h1>
             </div>
 
             {/* Nav Links */}
@@ -234,7 +237,7 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3">
-             {/* Mobile Nav Toggle could go here, but using tabs for simplicity */}
+             {/* Mobile Nav Toggle */}
              <div className="md:hidden flex bg-gray-100 rounded-full p-1 mr-2">
                 <button onClick={() => setViewState(ViewState.FEED)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Akış</button>
                 <button onClick={() => setViewState(ViewState.BLOG)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Blog</button>
