@@ -6,7 +6,7 @@ import { getStorage } from "firebase/storage";
 // Bu bilgileri Firebase Console -> Project Settings -> General kısmından alıp
 // .env dosyanıza eklemeniz gerekmektedir.
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.API_KEY, // Fallback for demo purpose
+  apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.API_KEY, 
   authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
@@ -14,9 +14,11 @@ const firebaseConfig = {
   appId: process.env.VITE_FIREBASE_APP_ID
 };
 
-// Eğer API key yoksa uyarı ver (Geliştirme aşamasında anlaşılması için)
-if (!firebaseConfig.projectId && !process.env.API_KEY) {
-  console.warn("⚠️ Firebase yapılandırması eksik! Lütfen .env dosyanızı düzenleyin.");
+// Yapılandırma kontrolü
+if (!firebaseConfig.projectId) {
+  console.error("🚨 HATA: Firebase Project ID bulunamadı!");
+  console.error("Lütfen projenizin ana dizininde '.env' dosyası oluşturun ve Firebase bilgilerini girin.");
+  console.error("Örnek için '.env.example' dosyasına bakabilirsiniz.");
 }
 
 const app = initializeApp(firebaseConfig);
