@@ -76,7 +76,7 @@ const App: React.FC = () => {
       isLikedByCurrentUser: false
     };
 
-    // UI Güncelle
+    // UI Güncelle (Hızlı tepki için)
     setPosts(prev => [newPost, ...prev]);
     setViewState(ViewState.FEED);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -86,7 +86,7 @@ const App: React.FC = () => {
         await dbService.savePost(newPost);
     } catch (error) {
         console.error("Kayıt hatası:", error);
-        alert("Gönderi kaydedilirken bir sorun oluştu.");
+        alert("Bağlantı hatası: Gönderi veritabanına kaydedilemedi ama geçici olarak ekranda görünüyor.");
     }
   };
 
@@ -97,7 +97,11 @@ const App: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (postToDelete) {
         setPosts(prevPosts => prevPosts.filter(post => post.id !== postToDelete));
-        await dbService.deletePost(postToDelete);
+        try {
+          await dbService.deletePost(postToDelete);
+        } catch (e) {
+          console.error("Silme hatası", e);
+        }
         setPostToDelete(null);
     }
   };
@@ -119,7 +123,9 @@ const App: React.FC = () => {
     }));
 
     if (updatedPost) {
-        await dbService.savePost(updatedPost);
+        try {
+          await dbService.savePost(updatedPost);
+        } catch(e) { console.warn("Like kaydedilemedi"); }
     }
   };
 
@@ -146,7 +152,9 @@ const App: React.FC = () => {
     }));
 
     if (updatedPost) {
-        await dbService.savePost(updatedPost);
+        try {
+          await dbService.savePost(updatedPost);
+        } catch(e) { console.warn("Yorum kaydedilemedi"); }
     }
   };
 
@@ -278,6 +286,10 @@ const App: React.FC = () => {
               
               {posts.length === 0 && (
                   <div className="text-center py-20 animate-fadeIn">
+                    <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-xl inline-block mb-4 max-w-md">
+                        <p className="font-bold text-sm">Kurulum Gerekli</p>
+                        <p className="text-xs mt-1">Firebase kurulumu henüz tamamlanmadı. Veriler kaydedilmeyecek.</p>
+                    </div>
                     <p className="text-wedding-900 font-serif text-xl font-medium">Henüz anı paylaşılmamış</p>
                     <p className="text-gray-500 text-sm mt-2">İlk anı sen paylaş!</p>
                   </div>

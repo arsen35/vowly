@@ -3,8 +3,6 @@ import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
 // Firebase yapılandırması
-// Bu bilgileri Firebase Console -> Project Settings -> General kısmından alıp
-// .env dosyanıza eklemeniz gerekmektedir.
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.API_KEY, 
   authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -14,34 +12,24 @@ const firebaseConfig = {
   appId: process.env.VITE_FIREBASE_APP_ID
 };
 
-let app: FirebaseApp;
-let db: Firestore;
-let storage: FirebaseStorage;
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let storage: FirebaseStorage | undefined;
 
 try {
-  // Yapılandırma kontrolü
-  if (!firebaseConfig.projectId) {
-    throw new Error("Firebase Project ID bulunamadı! Lütfen .env dosyasını kontrol edin.");
+  // Basit bir kontrol: API Key veya Project ID yoksa başlatma
+  if (firebaseConfig.projectId && firebaseConfig.apiKey) {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    console.log("✅ Firebase bağlantısı başlatıldı.");
+  } else {
+    console.warn("⚠️ Firebase yapılandırması eksik. Uygulama 'Demo Modu'nda çalışacak veya veri çekemeyecek.");
   }
-  
-  if (!firebaseConfig.apiKey) {
-    throw new Error("Firebase API Key bulunamadı! Lütfen .env dosyasını kontrol edin.");
-  }
-
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  storage = getStorage(app);
-  
-  console.log("✅ Firebase bağlantısı başarılı:", firebaseConfig.projectId);
 
 } catch (error) {
   console.error("🚨 FIREBASE BAĞLANTI HATASI:", error);
-  console.error("Lütfen .env dosyanızın dolu olduğundan emin olun.");
-  
-  // Uygulamanın tamamen çökmemesi için dummy objeler oluşturabilir veya
-  // hatayı yukarı fırlatabiliriz. Şimdilik hatayı fırlatıyoruz ki kullanıcı sorunu görsün.
-  // Ancak production'da fallback mekanizması kurulabilir.
-  throw error;
+  // Hata fırlatmıyoruz, böylece ekran beyaz kalmıyor.
 }
 
 export { db, storage };
