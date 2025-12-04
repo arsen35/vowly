@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BlogPost } from '../types';
 import { dbService } from '../services/db';
 import { Button } from './Button';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface BlogPageProps {
   isAdmin: boolean;
@@ -22,8 +23,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reading Mode State
+  // Reading Mode & Delete State
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadBlogPosts();
@@ -77,22 +79,31 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  // Silme işlemini başlatan fonksiyon (sadece ID set eder)
+  const requestDelete = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Kartın açılmasını engelle
+    setPostToDelete(id);
+  };
+
+  // Gerçek silme işlemini yapan fonksiyon
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+
     try {
-        if (window.confirm("Bu yazıyı silmek istediğinize emin misiniz?")) {
-            // Optimistic UI: Listeden hemen kaldır
-            setPosts(prev => prev.filter(p => p.id !== id));
-            // Okuma modu açıksa kapat
-            if (selectedPost?.id === id) setSelectedPost(null);
-            
-            // DB'den sil
-            await dbService.deleteBlogPost(id);
-        }
+        // Optimistic UI: Listeden hemen kaldır
+        setPosts(prev => prev.filter(p => p.id !== postToDelete));
+        
+        // Okuma modu açıksa ve silinen post ise kapat
+        if (selectedPost?.id === postToDelete) setSelectedPost(null);
+        
+        // DB'den sil
+        await dbService.deleteBlogPost(postToDelete);
     } catch (error) {
+        console.error("Silme hatası:", error);
         alert("Silme işlemi sırasında bir hata oluştu.");
-        console.error(error);
-        // Hata olursa listeyi geri yüklemek için yeniden çek
-        loadBlogPosts();
+        loadBlogPosts(); // Hata varsa geri yükle
+    } finally {
+        setPostToDelete(null); // Modalı kapat
     }
   };
 
@@ -165,13 +176,16 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                                 <span className="text-white/80 text-sm font-medium border-r border-white/30 pr-4">
                                     {new Date(featuredPost.date).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })}
                                 </span>
-                                <button className="text-white font-bold text-sm uppercase tracking-wide hover:underline decoration-wedding-500 decoration-2 underline-offset-4">
+                                <button 
+                                    className="text-white font-bold text-sm uppercase tracking-wide hover:underline decoration-wedding-500 decoration-2 underline-offset-4"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedPost(featuredPost); }}
+                                >
                                     Haberi Oku &rarr;
                                 </button>
                                 {isAdmin && (
                                     <button 
                                         type="button"
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(featuredPost.id); }}
+                                        onClick={(e) => requestDelete(featuredPost.id, e)}
                                         className="ml-auto bg-white/20 hover:bg-red-500 hover:text-white text-white p-2 rounded-full backdrop-blur-md transition-colors z-20"
                                     >
                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -186,11 +200,12 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
             {/* GRID SECTION */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {gridPosts.map((post) => (
-                <article key={post.id} className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
-                <div 
-                    className="aspect-[4/3] overflow-hidden relative cursor-pointer"
+                <article 
+                    key={post.id} 
+                    className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer"
                     onClick={() => setSelectedPost(post)}
                 >
+                <div className="aspect-[4/3] overflow-hidden relative">
                     <img 
                         src={post.coverImage} 
                         alt={post.title} 
@@ -211,10 +226,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                 </div>
                 
                 <div className="p-6 flex-1 flex flex-col">
-                    <h3 
-                        onClick={() => setSelectedPost(post)}
-                        className="text-xl font-serif font-bold text-gray-900 mb-3 group-hover:text-wedding-500 transition-colors line-clamp-2 cursor-pointer"
-                    >
+                    <h3 className="text-xl font-serif font-bold text-gray-900 mb-3 group-hover:text-wedding-500 transition-colors line-clamp-2">
                         {post.title}
                     </h3>
                     <div className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 flex-1 whitespace-pre-line">
@@ -223,7 +235,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                     
                     <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
                     <button 
-                        onClick={() => setSelectedPost(post)}
+                        onClick={(e) => {
+                             e.stopPropagation();
+                             setSelectedPost(post);
+                        }}
                         className="text-wedding-500 font-bold text-sm flex items-center gap-1 group/btn hover:text-wedding-900 transition-colors"
                     >
                         Devamını Oku 
@@ -232,8 +247,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                     {isAdmin && (
                         <button 
                             type="button"
-                            onClick={() => handleDelete(post.id)}
-                            className="text-red-400 hover:text-red-600 p-2 z-10"
+                            onClick={(e) => requestDelete(post.id, e)}
+                            className="text-red-400 hover:text-red-600 p-2 z-10 hover:bg-red-50 rounded-full transition-colors"
                             title="Yazıyı Sil"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -303,6 +318,15 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
              </div>
         </div>
       )}
+
+      {/* Confirmation Modal (Custom Delete Alert) */}
+      <ConfirmationModal 
+        isOpen={!!postToDelete}
+        title="Yazıyı Sil"
+        message="Bu blog yazısını kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        onConfirm={confirmDelete}
+        onCancel={() => setPostToDelete(null)}
+      />
 
       {/* Admin Blog Editor Modal */}
       {isEditorOpen && (
