@@ -211,7 +211,8 @@ const App: React.FC = () => {
 
   // Main Layout
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    // DÜZELTME: Sohbet modunda pb-0 (alt boşluk yok), diğer modlarda pb-24 (butonlar için boşluk)
+    <div className={`min-h-screen bg-gray-50 ${viewState === ViewState.CHAT ? 'pb-0' : 'pb-24'}`}>
       {/* Navbar */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">

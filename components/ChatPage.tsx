@@ -117,8 +117,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
   }
 
   // 2. SOHBET EKRANI
+  // h-[calc(100dvh-64px)] -> Mobilde adres çubuğunu hesaba katan dinamik yükseklik
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-[#fff5f7] relative">
+    <div className="flex flex-col h-[calc(100dvh-64px)] bg-[#fff5f7] relative">
         {/* Background Pattern - Fixed */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-80" 
              style={{ 
