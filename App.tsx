@@ -236,11 +236,9 @@ const App: React.FC = () => {
                >
                  BLOG
                </button>
-               {/* Dönüş Bileti: Ana Siteye Link */}
+               {/* Dönüş Bileti: Ana Siteye Link (Aynı sekmede açılır) */}
                <a 
                   href="https://www.annabellabridal.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-sm font-bold tracking-wide text-gray-400 hover:text-wedding-900 transition-colors flex items-center gap-1"
                >
                  MAĞAZA
