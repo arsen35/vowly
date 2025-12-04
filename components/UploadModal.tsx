@@ -15,6 +15,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [userName, setUserName] = useState('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // New state for compression
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Touch state
@@ -22,38 +23,83 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
+  // Helper to compress image
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                // Maksimum genişlik 800px olsun (Dosya boyutunu küçültmek için)
+                const MAX_WIDTH = 800;
+                const scaleSize = MAX_WIDTH / img.width;
+                const width = Math.min(img.width, MAX_WIDTH);
+                const height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                
+                // JPEG olarak ve 0.7 kalite ile sıkıştır
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                resolve(compressedBase64);
+            };
+        };
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      setIsProcessing(true);
       const files: File[] = Array.from(e.target.files);
       const newMediaItems: MediaItem[] = [];
 
-      // Dosyaları oku
-      for (const file of files) {
-         const base64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-         });
-         
-         const isVideo = file.type.startsWith('video/');
-         newMediaItems.push({
-             url: base64,
-             type: isVideo ? 'video' : 'image'
-         });
-      }
-
-      setSelectedMedia(newMediaItems);
-      setCurrentPreviewIndex(0);
-
-      // AI sadece ilk fotoğraf için çalışsın
-      if (newMediaItems.length > 0) {
-        const firstMedia = newMediaItems[0];
-        if (firstMedia.type === 'image') {
-            generateAICaption(firstMedia.url);
-        } else {
-           setCaption("Bu özel anı ölümsüzleştirdik... 🎥✨");
-           setHashtags(["#düğünvideosu", "#mutluanlar", "#vowly"]);
+      try {
+        // Dosyaları oku ve sıkıştır
+        for (const file of files) {
+           const isVideo = file.type.startsWith('video/');
+           let finalUrl = '';
+           
+           if (isVideo) {
+               // Videoları şimdilik olduğu gibi alıyoruz (LocalStorage'ı çabuk doldurur!)
+               finalUrl = await new Promise<string>((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.readAsDataURL(file);
+               });
+           } else {
+               // Fotoğrafları sıkıştır
+               finalUrl = await compressImage(file);
+           }
+           
+           newMediaItems.push({
+               url: finalUrl,
+               type: isVideo ? 'video' : 'image'
+           });
         }
+  
+        setSelectedMedia(newMediaItems);
+        setCurrentPreviewIndex(0);
+  
+        // AI sadece ilk fotoğraf için çalışsın
+        if (newMediaItems.length > 0) {
+          const firstMedia = newMediaItems[0];
+          if (firstMedia.type === 'image') {
+              generateAICaption(firstMedia.url);
+          } else {
+             setCaption("Bu özel anı ölümsüzleştirdik... 🎥✨");
+             setHashtags(["#düğünvideosu", "#mutluanlar", "#vowly"]);
+          }
+        }
+      } catch (err) {
+          console.error("Dosya işleme hatası:", err);
+          alert("Dosyalar yüklenirken bir hata oluştu.");
+      } finally {
+          setIsProcessing(false);
       }
     }
   };
@@ -151,16 +197,28 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             // Empty State (Upload Prompt)
             <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
                 <div 
-                  className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 transition-all group"
-                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 transition-all group relative"
+                  onClick={() => !isProcessing && fileInputRef.current?.click()}
                 >
-                  <div className="bg-wedding-50 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-wedding-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                      </svg>
-                  </div>
-                  <p className="text-gray-700 font-bold text-lg">Fotoğraf veya Video Seç</p>
-                  <p className="text-gray-400 text-sm mt-2 text-center px-4">Sürükle bırak veya galeriden seç.<br/>En mutlu anlarını paylaş.</p>
+                  {isProcessing ? (
+                      <div className="flex flex-col items-center">
+                          <svg className="animate-spin h-10 w-10 text-wedding-500 mb-3" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <p className="text-gray-600 font-medium">Fotoğraflar Hazırlanıyor...</p>
+                      </div>
+                  ) : (
+                      <>
+                        <div className="bg-wedding-50 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-wedding-500">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                        </div>
+                        <p className="text-gray-700 font-bold text-lg">Fotoğraf veya Video Seç</p>
+                        <p className="text-gray-400 text-sm mt-2 text-center px-4">Sürükle bırak veya galeriden seç.<br/>En mutlu anlarını paylaş.</p>
+                      </>
+                  )}
                 </div>
             </div>
           ) : (
@@ -286,8 +344,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                  {/* Mobile Footer (Inside form) / Desktop Footer */}
                  <div className="mt-6 pt-4 border-t flex justify-end gap-3 sticky bottom-0 bg-white">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
-                    <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || !userName.trim()} className="flex-1 md:flex-none">
-                        Paylaş
+                    <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1 md:flex-none">
+                        {isProcessing ? 'İşleniyor...' : 'Paylaş'}
                     </Button>
                  </div>
               </div>

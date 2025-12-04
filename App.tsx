@@ -63,7 +63,13 @@ const App: React.FC = () => {
 
   // Save to LocalStorage whenever posts change
   useEffect(() => {
-    localStorage.setItem('vowly_posts', JSON.stringify(posts));
+    try {
+        localStorage.setItem('vowly_posts', JSON.stringify(posts));
+    } catch (error) {
+        console.error("LocalStorage quota exceeded or error:", error);
+        // Hata durumunda kullanıcıyı uyar ama uygulamayı çökertme
+        alert("Uyarı: Tarayıcı hafızası doldu! Bu gönderi cihazınıza kalıcı olarak kaydedilemedi. Sayfayı yenilerseniz kaybolabilir.");
+    }
   }, [posts]);
 
   const handleUploadClick = () => {
