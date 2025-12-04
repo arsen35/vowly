@@ -181,8 +181,8 @@ const App: React.FC = () => {
           <div className="min-h-screen bg-gray-50">
              <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm h-16 flex items-center px-6 justify-between">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-                    <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">V</div>
-                    <h1 className="font-serif text-2xl font-bold text-gray-900 tracking-tight">Vowly</h1>
+                    <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">A</div>
+                    <h1 className="font-serif text-2xl font-bold text-gray-900 tracking-tight">Annabella</h1>
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-500 hidden sm:block">Yönetici Modu</span>
@@ -216,9 +216,9 @@ const App: React.FC = () => {
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">V</div>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                {viewState === ViewState.BLOG ? 'Vowly Blog' : 'Vowly'}
+              <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">A</div>
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                Annabella Bridal
               </h1>
             </div>
 
