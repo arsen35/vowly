@@ -41,13 +41,30 @@ const INITIAL_POSTS: Post[] = [
 ];
 
 const App: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  // Initialize posts from LocalStorage if available, otherwise use INITIAL_POSTS
+  const [posts, setPosts] = useState<Post[]>(() => {
+    try {
+      const savedPosts = localStorage.getItem('vowly_posts');
+      if (savedPosts) {
+        return JSON.parse(savedPosts);
+      }
+    } catch (error) {
+      console.error("LocalStorage error:", error);
+    }
+    return INITIAL_POSTS;
+  });
+
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   
   // State for deletion confirmation
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
+
+  // Save to LocalStorage whenever posts change
+  useEffect(() => {
+    localStorage.setItem('vowly_posts', JSON.stringify(posts));
+  }, [posts]);
 
   const handleUploadClick = () => {
     setViewState(ViewState.UPLOAD);
@@ -66,6 +83,15 @@ const App: React.FC = () => {
   const handleLogout = () => {
       setIsAdmin(false);
       setViewState(ViewState.FEED);
+  };
+
+  // Reset function for Admin Dashboard
+  const handleResetData = () => {
+    if (window.confirm("Tüm veriler silinecek ve varsayılan verilere dönülecek. Emin misiniz?")) {
+        setPosts(INITIAL_POSTS);
+        localStorage.removeItem('vowly_posts');
+        alert("Veriler sıfırlandı!");
+    }
   };
 
   const handleNewPost = (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string }) => {
@@ -109,7 +135,17 @@ const App: React.FC = () => {
   };
 
   const handleLike = (postId: string) => {
-    console.log(`Liked post ${postId}`);
+    setPosts(prevPosts => prevPosts.map(post => {
+        if (post.id === postId) {
+            const isLiked = !post.isLikedByCurrentUser;
+            return {
+                ...post,
+                isLikedByCurrentUser: isLiked,
+                likes: isLiked ? post.likes + 1 : post.likes - 1
+            };
+        }
+        return post;
+    }));
   };
 
   const handleAddComment = (postId: string, text: string) => {
@@ -154,6 +190,7 @@ const App: React.FC = () => {
              <AdminDashboard 
                 posts={posts} 
                 onDeletePost={handleRequestDelete} 
+                onResetData={handleResetData}
                 onClose={() => setViewState(ViewState.FEED)} 
              />
              

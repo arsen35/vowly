@@ -5,10 +5,11 @@ import { Button } from './Button';
 interface AdminDashboardProps {
   posts: Post[];
   onDeletePost: (postId: string) => void;
+  onResetData: () => void;
   onClose: () => void;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeletePost, onClose }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeletePost, onResetData, onClose }) => {
   const totalLikes = posts.reduce((acc, post) => acc + post.likes, 0);
   const totalComments = posts.reduce((acc, post) => acc + post.comments.length, 0);
 
@@ -19,7 +20,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
            <h2 className="text-2xl font-serif font-bold text-gray-900">Yönetici Paneli</h2>
            <p className="text-sm text-gray-500">İçerikleri buradan yönetebilirsiniz.</p>
         </div>
-        <Button onClick={onClose} variant="secondary">Panele Dön</Button>
+        <div className="flex gap-2">
+            <Button onClick={onResetData} variant="outline" className="text-xs !py-1">Verileri Sıfırla</Button>
+            <Button onClick={onClose} variant="secondary">Panele Dön</Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
