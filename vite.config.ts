@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ mode }) => {
   // Mevcut çalışma dizinindeki env değişkenlerini yükle
   // Vercel'deki 'VITE_API_KEY'i burada yakalayacağız
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, '.', '');
 
   return {
     plugins: [react()],
