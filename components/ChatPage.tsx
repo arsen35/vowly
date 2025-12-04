@@ -19,6 +19,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load User from LocalStorage or Admin
   useEffect(() => {
@@ -52,9 +53,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
   // Auto scroll to bottom whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isNameSet, selectedImage]); // Resim seçince de scroll et
+  }, [messages, isNameSet, selectedImage]); 
 
-  // AGRESİF SIKIŞTIRMA FONKSİYONU (Max 600px width, Düşük Kalite)
+  // AGRESİF SIKIŞTIRMA FONKSİYONU
   const compressImageForChat = (file: File): Promise<string> => {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -64,7 +65,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
             img.src = event.target?.result as string;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; // Sohbet için küçük boyut yeterli
+                const MAX_WIDTH = 600; 
                 const scaleSize = MAX_WIDTH / img.width;
                 const width = Math.min(img.width, MAX_WIDTH);
                 const height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
@@ -74,7 +75,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
                 
-                // WebP formatı ve 0.7 kalite ile sıkıştır
                 resolve(canvas.toDataURL('image/webp', 0.7));
             };
         };
@@ -94,7 +94,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
             alert("Resim yüklenirken bir hata oluştu.");
           }
       }
-      // Reset input
       if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -118,7 +117,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
     const textToSend = newMessage;
     const imageToSend = selectedImage;
 
-    // UI'ı hemen temizle
     setNewMessage(''); 
     setSelectedImage(null);
 
@@ -134,7 +132,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
         });
     } catch (error) {
         console.error("Mesaj gönderilemedi", error);
-        // Hata olursa geri yükle (basitçe)
         alert("Mesaj gönderilemedi.");
         setNewMessage(textToSend);
         setSelectedImage(imageToSend);
@@ -143,7 +140,32 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
     }
   };
 
-  // Özel Wedding Texture (SVG Pattern)
+  const handleDeleteMessage = async (messageId: string) => {
+      if (window.confirm("Bu mesajı silmek istediğine emin misin?")) {
+          try {
+              await dbService.deleteChatMessage(messageId);
+          } catch (error) {
+              console.error("Silme hatası:", error);
+              alert("Mesaj silinemedi.");
+          }
+      }
+  };
+
+  // --- Long Press Logic for Mobile ---
+  const handleTouchStart = (messageId: string, isOwner: boolean) => {
+      if (!isOwner) return;
+      longPressTimer.current = setTimeout(() => {
+          handleDeleteMessage(messageId);
+      }, 600); // 600ms basılı tutma süresi
+  };
+
+  const handleTouchEnd = () => {
+      if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+      }
+  };
+
   const weddingPattern = `data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23881337' stroke-width='0.8' fill='none' fill-rule='evenodd' opacity='0.07'%3E%3Cpath d='M10 10 C 10 5, 15 5, 17 8 C 19 5, 24 5, 24 10 C 24 15, 17 20, 17 20 C 17 20, 10 15, 10 10' /%3E%3Ccircle cx='50' cy='50' r='8' /%3E%3Cpath d='M50 42 L53 38 L47 38 Z' /%3E%3Cpath d='M80 80 C 75 75, 70 80, 75 85 C 70 90, 75 95, 80 90 C 85 95, 90 90, 85 85 C 90 80, 85 75, 80 80' /%3E%3Cpath d='M20 80 L20 90 M15 85 L25 85' /%3E%3Cpath d='M80 15 L80 25 L85 25 L85 15 Z' /%3E%3C/g%3E%3C/svg%3E`;
 
   // 1. GİRİŞ EKRANI
@@ -201,6 +223,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 {messages.map((msg, index) => {
                     const isMe = msg.userId === userId;
                     const isPrevSame = index > 0 && messages[index - 1].userId === msg.userId;
+                    const canDelete = isMe || isAdmin;
 
                     return (
                         <div key={msg.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
@@ -211,16 +234,34 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                 </div>
 
                                 {/* Bubble */}
-                                <div className={`
-                                    p-1.5 shadow-sm relative break-words text-sm
-                                    ${isMe 
-                                        ? 'bg-[#e7ffdb] text-gray-900 rounded-l-lg rounded-br-lg' 
-                                        : msg.isAdmin 
-                                            ? 'bg-wedding-50 border border-wedding-200 text-gray-900 rounded-r-lg rounded-bl-lg'
-                                            : 'bg-white text-gray-900 rounded-r-lg rounded-bl-lg'
-                                    }
-                                    ${isPrevSame ? (isMe ? 'rounded-tr-lg mt-0.5' : 'rounded-tl-lg mt-0.5') : 'rounded-t-lg mt-2'}
-                                `}>
+                                <div 
+                                    className={`
+                                        p-1.5 shadow-sm relative break-words text-sm group select-none
+                                        ${isMe 
+                                            ? 'bg-[#e7ffdb] text-gray-900 rounded-l-lg rounded-br-lg' 
+                                            : msg.isAdmin 
+                                                ? 'bg-wedding-50 border border-wedding-200 text-gray-900 rounded-r-lg rounded-bl-lg'
+                                                : 'bg-white text-gray-900 rounded-r-lg rounded-bl-lg'
+                                        }
+                                        ${isPrevSame ? (isMe ? 'rounded-tr-lg mt-0.5' : 'rounded-tl-lg mt-0.5') : 'rounded-t-lg mt-2'}
+                                    `}
+                                    onTouchStart={() => handleTouchStart(msg.id, canDelete)}
+                                    onTouchEnd={handleTouchEnd}
+                                    onTouchMove={handleTouchEnd} // Parmağını kaydırırsa iptal et
+                                >
+                                    {/* DELETE BUTTON (Desktop Hover) */}
+                                    {canDelete && (
+                                        <button 
+                                            onClick={() => handleDeleteMessage(msg.id)}
+                                            className="hidden group-hover:flex absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full items-center justify-center shadow-md z-10 hover:bg-red-600 transition-colors cursor-pointer"
+                                            title="Mesajı Sil"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
+
                                     {!isMe && !isPrevSame && (
                                         <p className={`text-[11px] font-bold mb-1 mx-1.5 ${msg.isAdmin ? 'text-wedding-600 flex items-center gap-1' : 'text-orange-600'}`}>
                                             {msg.userName}

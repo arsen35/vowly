@@ -230,6 +230,16 @@ export const dbService = {
     }
   },
 
+  deleteChatMessage: async (id: string): Promise<void> => {
+    try {
+      const { dbInstance } = checkDbConnection();
+      await deleteDoc(doc(dbInstance, CHAT_COLLECTION, id));
+    } catch (error) {
+      console.error("Mesaj silme hatası:", error);
+      throw error;
+    }
+  },
+
   // --- GENEL ---
 
   clearAll: async (): Promise<void> => {
