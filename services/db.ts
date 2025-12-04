@@ -196,8 +196,17 @@ export const dbService = {
         const { dbInstance } = checkDbConnection();
         const chatRef = collection(dbInstance, CHAT_COLLECTION);
         
+        let finalMessage = { ...message };
+
+        // Eğer resim varsa ve base64 formatındaysa, önce Storage'a yükle
+        if (message.image && message.image.startsWith('data:')) {
+             const path = `chat_images/${Date.now()}_img`;
+             const imageUrl = await uploadImageToStorage(message.image, path);
+             finalMessage.image = imageUrl;
+        }
+
         // 1. Yeni mesajı ekle
-        await addDoc(chatRef, message);
+        await addDoc(chatRef, finalMessage);
 
         // 2. OTOMATİK TEMİZLİK (Storage Optimization)
         // Tüm mesajları tarihe göre al

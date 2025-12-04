@@ -44,6 +44,7 @@ export interface BlogPost {
 export interface ChatMessage {
   id: string;
   text: string;
+  image?: string; // Opsiyonel resim alanı
   userId: string;
   userName: string;
   avatar: string;
