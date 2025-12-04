@@ -1,0 +1,8 @@
+{
+  "name": "Vowly - Wedding Moments",
+  "description": "Gelinlerin düğün fotoğraflarını paylaştığı, Gemini AI destekli interaktif topluluk sayfası.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
