@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// API Key must be obtained exclusively from process.env.API_KEY
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+// Assume this variable is pre-configured, valid, and accessible.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateWeddingCaption = async (base64Image: string): Promise<{ caption: string; hashtags: string[] }> => {
