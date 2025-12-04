@@ -12,7 +12,10 @@ import { dbService } from './services/db';
 const App: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Varsayılan olarak her zaman FEED (Akış) açılsın
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
+  
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
