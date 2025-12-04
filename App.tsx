@@ -228,7 +228,7 @@ const App: React.FC = () => {
                   onClick={() => setViewState(ViewState.FEED)} 
                   className={`text-sm font-bold tracking-wide transition-colors ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-500 hover:text-gray-900'}`}
                >
-                 AKIS
+                 AKIŞ
                </button>
                <button 
                   onClick={() => setViewState(ViewState.BLOG)} 
@@ -236,6 +236,18 @@ const App: React.FC = () => {
                >
                  BLOG
                </button>
+               {/* Dönüş Bileti: Ana Siteye Link */}
+               <a 
+                  href="https://www.annabellabridal.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-bold tracking-wide text-gray-400 hover:text-wedding-900 transition-colors flex items-center gap-1"
+               >
+                 MAĞAZA
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                 </svg>
+               </a>
             </nav>
           </div>
           
