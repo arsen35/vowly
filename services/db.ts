@@ -62,13 +62,14 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// GÜNCELLENMİŞ VE SADELEŞTİRİLMİŞ YÜKLEME FONKSİYONU
+// GÜNCELLENMİŞ VE KESİNLEŞTİRİLMİŞ YÜKLEME FONKSİYONU
+// File nesnesi yerine ArrayBuffer kullanarak "invalid-argument" hatasını bypass eder.
 const uploadImageToStorage = async (input: File | Blob | string, path: string): Promise<string> => {
   if (!input) {
       throw new Error("Yüklenecek dosya bulunamadı (Input boş).");
   }
 
-  // Zaten web URL'i ise (örn: daha önce yüklenmiş veya Unsplash), olduğu gibi döndür.
+  // Zaten web URL'i ise işlem yapma
   if (typeof input === 'string' && input.startsWith('http') && !input.startsWith('http://localhost') && !input.startsWith('blob:')) {
       return input;
   }
@@ -77,26 +78,37 @@ const uploadImageToStorage = async (input: File | Blob | string, path: string): 
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Durum: Input gerçek bir Dosya (File) veya Blob nesnesi ise
-      // Firebase SDK'sı bunu en iyi şekilde yönetir.
+      // 1. Durum: Input bir Dosya (File) veya Blob ise
       if (input instanceof File || input instanceof Blob) {
-          const snapshot = await uploadBytes(storageRef, input);
+          // FILE NESNESİNİ SAF BYTE DİZİSİNE ÇEVİRİYORUZ
+          // Bu adım, "File" nesnesinin tarayıcı tarafından yanlış referanslanmasını engeller.
+          const arrayBuffer = await input.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          
+          const snapshot = await uploadBytes(storageRef, uint8Array, { 
+              contentType: input.type || 'image/jpeg' 
+          });
           return await getDownloadURL(snapshot.ref);
       }
       
-      // 2. Durum: Input bir Base64 string ise (data:image/...)
+      // 2. Durum: Input bir Base64 string ise
       if (typeof input === 'string' && input.startsWith('data:')) {
           const snapshot = await uploadString(storageRef, input, 'data_url');
           return await getDownloadURL(snapshot.ref);
       }
 
       // 3. Durum: Input bir Blob URL ise (blob:...)
-      // Bu durumda fetch ile veriyi çekip Blob'a çevirmemiz gerekir.
       if (typeof input === 'string' && input.startsWith('blob:')) {
           const response = await fetch(input);
           if (!response.ok) throw new Error("Blob verisi okunamadı.");
+          
           const blob = await response.blob();
-          const snapshot = await uploadBytes(storageRef, blob);
+          const arrayBuffer = await blob.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          
+          const snapshot = await uploadBytes(storageRef, uint8Array, { 
+              contentType: blob.type || 'image/jpeg' 
+          });
           return await getDownloadURL(snapshot.ref);
       }
 
@@ -104,9 +116,8 @@ const uploadImageToStorage = async (input: File | Blob | string, path: string): 
 
   } catch (error: any) {
       console.error("Storage yükleme hatası:", error);
-      // Hata mesajını daha anlaşılır hale getir
       if (error.code === 'storage/invalid-argument') {
-          throw new Error("Dosya formatı geçersiz (invalid-argument). Lütfen sayfayı yenileyip tekrar deneyin.");
+          throw new Error("Dosya formatı reddedildi. Sayfayı yenileyip tekrar deneyin.");
       }
       throw new Error(`Resim yüklenemedi: ${error.message || 'Bilinmeyen Hata'}`);
   }
@@ -149,14 +160,12 @@ export const dbService = {
         // Benzersiz dosya adı oluştur
         const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
         
-        // KRİTİK DÜZELTME:
-        // Eğer elimizde gerçek 'file' nesnesi varsa, ASLA 'url' (blob url) kullanma.
-        // File nesnesi bellekte kalıcıdır, Blob URL geçicidir ve hata yaratır.
+        // Öncelik gerçek 'file' nesnesinde, yoksa 'url'
         const source = item.file ? item.file : item.url;
         
         if (!source) {
             console.warn("Yüklenecek kaynak yok, atlanıyor:", item);
-            return item; // Değişiklik yapmadan dön
+            return item; 
         }
 
         const downloadURL = await uploadImageToStorage(source, path);
