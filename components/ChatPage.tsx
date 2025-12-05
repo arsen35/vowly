@@ -166,14 +166,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
       }
   };
 
-  const weddingPattern = `data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23881337' stroke-width='0.8' fill='none' fill-rule='evenodd' opacity='0.07'%3E%3Cpath d='M10 10 C 10 5, 15 5, 17 8 C 19 5, 24 5, 24 10 C 24 15, 17 20, 17 20 C 17 20, 10 15, 10 10' /%3E%3Ccircle cx='50' cy='50' r='8' /%3E%3Cpath d='M50 42 L53 38 L47 38 Z' /%3E%3Cpath d='M80 80 C 75 75, 70 80, 75 85 C 70 90, 75 95, 80 90 C 85 95, 90 90, 85 85 C 90 80, 85 75, 80 80' /%3E%3Cpath d='M20 80 L20 90 M15 85 L25 85' /%3E%3Cpath d='M80 15 L80 25 L85 25 L85 15 Z' /%3E%3C/g%3E%3C/svg%3E`;
+  const weddingPattern = `data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23D34A7D' stroke-width='0.8' fill='none' fill-rule='evenodd' opacity='0.07'%3E%3Cpath d='M10 10 C 10 5, 15 5, 17 8 C 19 5, 24 5, 24 10 C 24 15, 17 20, 17 20 C 17 20, 10 15, 10 10' /%3E%3Ccircle cx='50' cy='50' r='8' /%3E%3Cpath d='M50 42 L53 38 L47 38 Z' /%3E%3Cpath d='M80 80 C 75 75, 70 80, 75 85 C 70 90, 75 95, 80 90 C 85 95, 90 90, 85 85 C 90 80, 85 75, 80 80' /%3E%3Cpath d='M20 80 L20 90 M15 85 L25 85' /%3E%3Cpath d='M80 15 L80 25 L85 25 L85 15 Z' /%3E%3C/g%3E%3C/svg%3E`;
 
   // 1. GİRİŞ EKRANI
   if (!isNameSet) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-[#fff5f7]" style={{ backgroundImage: `url("${weddingPattern}")` }}>
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-wedding-50" style={{ backgroundImage: `url("${weddingPattern}")` }}>
             <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-wedding-100">
-                <div className="w-16 h-16 bg-wedding-100 rounded-full flex items-center justify-center mx-auto mb-4 text-wedding-600 animate-pulse">
+                <div className="w-16 h-16 bg-wedding-100 rounded-full flex items-center justify-center mx-auto mb-4 text-wedding-500 animate-pulse">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.197.388-1.609.208-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
                     </svg>
@@ -199,7 +199,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
 
   // 2. SOHBET EKRANI
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] bg-[#fff5f7] relative">
+    <div className="flex flex-col h-[calc(100dvh-64px)] bg-wedding-50 relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-80" 
              style={{ 
@@ -214,7 +214,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 
                 {messages.length === 0 && (
                     <div className="text-center py-10 opacity-60 self-center mb-auto mt-20">
-                        <div className="bg-[#fff3cd] border border-[#ffeeba] text-[#856404] px-4 py-2 rounded-lg inline-block shadow-sm text-sm">
+                        <div className="bg-white/80 border border-wedding-200 text-wedding-900 px-4 py-2 rounded-lg inline-block shadow-sm text-sm">
                             🔒 Mesajlar uçtan uca şifrelenmese de kalpten kalbe şifrelidir. ❤️
                         </div>
                     </div>
@@ -238,9 +238,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                     className={`
                                         p-1.5 shadow-sm relative break-words text-sm group select-none
                                         ${isMe 
-                                            ? 'bg-[#e7ffdb] text-gray-900 rounded-l-lg rounded-br-lg' 
+                                            ? 'bg-wedding-500 text-white rounded-l-lg rounded-br-lg' 
                                             : msg.isAdmin 
-                                                ? 'bg-wedding-50 border border-wedding-200 text-gray-900 rounded-r-lg rounded-bl-lg'
+                                                ? 'bg-white border-2 border-wedding-500 text-gray-900 rounded-r-lg rounded-bl-lg'
                                                 : 'bg-white text-gray-900 rounded-r-lg rounded-bl-lg'
                                         }
                                         ${isPrevSame ? (isMe ? 'rounded-tr-lg mt-0.5' : 'rounded-tl-lg mt-0.5') : 'rounded-t-lg mt-2'}
@@ -263,10 +263,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                     )}
 
                                     {!isMe && !isPrevSame && (
-                                        <p className={`text-[11px] font-bold mb-1 mx-1.5 ${msg.isAdmin ? 'text-wedding-600 flex items-center gap-1' : 'text-orange-600'}`}>
+                                        <p className={`text-[11px] font-bold mb-1 mx-1.5 ${msg.isAdmin ? 'text-wedding-500 flex items-center gap-1' : 'text-wedding-500'}`}>
                                             {msg.userName}
                                             {msg.isAdmin && (
-                                                <span className="bg-wedding-600 text-white text-[9px] px-1 rounded-[3px] uppercase tracking-wider">Yönetici</span>
+                                                <span className="bg-wedding-500 text-white text-[9px] px-1 rounded-[3px] uppercase tracking-wider">Yönetici</span>
                                             )}
                                         </p>
                                     )}
@@ -283,9 +283,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                         <p className="whitespace-pre-wrap leading-snug mx-1.5 mb-0.5">{msg.text}</p>
                                     )}
 
-                                    <span className={`text-[10px] block text-right mt-0.5 mx-1.5 ${isMe ? 'text-green-800/60' : 'text-gray-400'}`}>
+                                    <span className={`text-[10px] block text-right mt-0.5 mx-1.5 ${isMe ? 'text-white/80' : 'text-gray-400'}`}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        {isMe && <span className="ml-1 text-blue-400">✓✓</span>}
+                                        {isMe && <span className="ml-1 text-white/90">✓✓</span>}
                                     </span>
                                 </div>
                             </div>
@@ -297,7 +297,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-[#f0f2f5] px-2 py-2 border-t border-gray-200 z-20 flex flex-col gap-2">
+        <div className="bg-white px-2 py-2 border-t border-gray-200 z-20 flex flex-col gap-2">
             
             {/* Image Preview (If selected) */}
             {selectedImage && (
@@ -326,7 +326,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 {/* Plus/Attach Button */}
                 <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-gray-500 p-3 mb-1 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-sm active:scale-95 border border-gray-100"
+                    className="text-gray-500 p-3 mb-1 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors shadow-sm active:scale-95 border border-gray-100"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -335,7 +335,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
 
                 <form onSubmit={handleSendMessage} className="flex-1 flex gap-2 items-end">
                     <textarea 
-                        className="flex-1 bg-white border-0 rounded-2xl px-4 py-3 text-sm focus:ring-0 focus:outline-none placeholder-gray-500 shadow-sm resize-none min-h-[44px] max-h-[120px]"
+                        className="flex-1 bg-gray-50 border-0 rounded-2xl px-4 py-3 text-sm focus:ring-0 focus:outline-none placeholder-gray-500 shadow-sm resize-none min-h-[44px] max-h-[120px]"
                         placeholder="Bir mesaj yazın..."
                         rows={1}
                         value={newMessage}

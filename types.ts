@@ -29,7 +29,6 @@ export interface Post {
   timestamp: number;
   isLikedByCurrentUser?: boolean;
   productUrl?: string; // SATIN ALMA LİNKİ
-  productName?: string; // ÜRÜN ADI
 }
 
 export interface BlogPost {

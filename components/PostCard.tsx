@@ -59,7 +59,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         id: Date.now() + i,
         x: (Math.random() - 0.5) * 40, // -20px to +20px horizontal drift
         delay: Math.random() * 0.3,
-        color: Math.random() > 0.5 ? '#f43f5e' : '#e11d48' // rose-500 or rose-600
+        color: Math.random() > 0.5 ? '#f43f5e' : '#D34A7D'
       });
     }
     setHearts(prev => [...prev, ...newHearts]);
@@ -88,7 +88,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
     const mediaLink = currentMedia.url.startsWith('http') ? `\n\nMedya Linki: ${currentMedia.url}` : '';
     
     let siteLink = window.location.href;
-    // Eğer localhost veya geliştirme ortamındaysak, varsayılan olarak canlı domaini kullan
     if (siteLink.startsWith('blob:') || siteLink.includes('localhost') || siteLink.includes('content.goog')) {
         siteLink = "https://blog.annabellabridal.com";
     }
@@ -194,7 +193,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         )}
       </div>
 
-      {/* Carousel Media Container with Smooth Slide Transition */}
+      {/* Carousel Media Container */}
       <div 
         className="relative w-full aspect-[4/5] bg-gray-100 group touch-pan-y overflow-hidden"
         onTouchStart={onTouchStart}
@@ -226,10 +225,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
             ))}
         </div>
 
-        {/* Carousel Controls (Desktop Only - Mobile uses swipe) */}
+        {/* Carousel Controls */}
         {post.media.length > 1 && (
           <>
-            {/* Prev Button */}
             <button 
                 onClick={prevSlide}
                 className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-1.5 rounded-full shadow-lg transition-all duration-200 hidden md:block z-10 ${
@@ -241,7 +239,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 </svg>
             </button>
 
-            {/* Next Button */}
             <button 
                 onClick={nextSlide}
                 className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-1.5 rounded-full shadow-lg transition-all duration-200 hidden md:block z-10 ${
@@ -253,7 +250,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 </svg>
             </button>
 
-            {/* Pagination Dots */}
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 p-1.5 rounded-full bg-black/10 backdrop-blur-[2px]">
               {post.media.map((_, idx) => (
                 <div 
@@ -267,7 +263,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
           </>
         )}
         
-        {/* Multi-photo indicator (top right) */}
         {post.media.length > 1 && (
           <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md font-medium pointer-events-none z-10">
             {currentMediaIndex + 1}/{post.media.length}
@@ -275,35 +270,39 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         )}
       </div>
       
-      {/* SHOPPABLE LINK BUTTON (If Product Exists) */}
+      {/* SHOPPABLE LINK BUTTON (Updated Style) */}
       {post.productUrl && (
           <a 
             href={post.productUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-full bg-wedding-50 hover:bg-wedding-100 text-wedding-900 font-bold text-xs py-3 flex items-center justify-center gap-2 transition-colors border-b border-gray-100 group"
+            className="w-full bg-wedding-500 hover:bg-wedding-600 text-white font-bold text-sm py-3 flex items-center justify-between px-4 transition-colors group relative"
           >
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-             </svg>
-             {post.productName ? `${post.productName} İncele` : 'Bu Ürünü İncele'}
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 group-hover:translate-x-1 transition-transform">
+             <div className="flex items-center gap-2">
+                 <span className="bg-white/20 p-1 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                 </span>
+                 <span>Mağazayı Gör</span>
+             </div>
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 group-hover:translate-x-1 transition-transform">
                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
              </svg>
           </a>
       )}
 
-      {/* Actions & Details */}
+      {/* Actions & Details (Instagram Style Icons) */}
       <div className="p-3 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            {/* LIKE BUTTON WITH HEARTS */}
+          <div className="flex items-center gap-4">
+            {/* LIKE BUTTON */}
             <div className="relative">
                 <button 
                   onClick={handleLike}
-                  className={`relative z-10 transition-transform duration-200 active:scale-75 hover:scale-110 ${isLiked ? 'text-wedding-500' : 'text-gray-400 hover:text-wedding-500'}`}
+                  className={`relative z-10 transition-transform duration-200 active:scale-75 hover:scale-110 ${isLiked ? 'text-wedding-500' : 'text-gray-900'}`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill={isLiked ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill={isLiked ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                   </svg>
                 </button>
@@ -327,27 +326,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
             {/* COMMENT BUTTON */}
             <button 
               onClick={() => setIsCommentOpen(!isCommentOpen)}
-              className={`relative transition-all duration-200 active:scale-90 hover:scale-110 ${isCommentOpen ? 'text-wedding-900' : 'text-gray-400 hover:text-gray-600'}`}
+              className="relative transition-all duration-200 active:scale-90 hover:scale-110 text-gray-900"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 -rotate-90">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
               </svg>
-              {/* Comment Badge */}
-              {post.comments.length > 0 && !isCommentOpen && (
-                  <span className="absolute -top-1 -right-1 bg-wedding-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
-                      {post.comments.length}
-                  </span>
-              )}
             </button>
 
-            {/* WHATSAPP BUTTON */}
-            <button onClick={handleShare} className="text-gray-400 hover:text-[#25D366] transition-all hover:scale-110 active:scale-90">
-               <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+            {/* SHARE / WHATSAPP BUTTON (Paper Plane) */}
+            <button onClick={handleShare} className="text-gray-900 transition-all hover:scale-110 active:scale-90">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 -mt-1">
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                </svg>
             </button>
           </div>
-          <div className="font-bold text-xs text-gray-900">{likesCount} beğenme</div>
+          <div className="font-bold text-sm text-gray-900">{likesCount} beğenme</div>
         </div>
         
         <div className="text-gray-900 text-sm mb-2 leading-relaxed line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">

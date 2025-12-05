@@ -6,7 +6,7 @@ import { MediaItem } from '../types';
 
 interface UploadModalProps {
   onClose: () => void;
-  onUpload: (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl?: string; productName?: string }) => void;
+  onUpload: (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl?: string }) => void;
 }
 
 export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
@@ -18,7 +18,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   
   // Shoppable Fields
   const [productUrl, setProductUrl] = useState('');
-  const [productName, setProductName] = useState('');
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -112,8 +111,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         caption,
         hashtags,
         userName: userName.trim(),
-        productUrl: productUrl.trim() || undefined,
-        productName: productName.trim() || undefined
+        productUrl: productUrl.trim() || undefined
       });
       onClose();
     }
@@ -286,23 +284,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-wedding-500">
                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                  </svg>
-                                 <label className="text-sm font-bold text-gray-700">Ürün Etiketle (Opsiyonel)</label>
+                                 <label className="text-sm font-bold text-gray-700">Ürün Bağlantısı (Opsiyonel)</label>
                              </div>
                              
                              <div className="space-y-3">
-                                 <input 
-                                   type="text" 
-                                   value={productName}
-                                   onChange={(e) => setProductName(e.target.value)}
-                                   className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm text-gray-800 focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500"
-                                   placeholder="Ürün Adı (Örn: Dantel Prenses Gelinlik)"
-                                 />
                                  <input 
                                    type="url" 
                                    value={productUrl}
                                    onChange={(e) => setProductUrl(e.target.value)}
                                    className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm text-gray-800 focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500"
-                                   placeholder="Ürün Linki (https://...)"
+                                   placeholder="https://annabellabridal.com/urun..."
                                  />
                                  <p className="text-[10px] text-gray-400">Takipçiler bu linke tıklayarak ürünü satın alabilir.</p>
                              </div>

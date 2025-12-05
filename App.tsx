@@ -62,7 +62,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNewPost = async (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl?: string; productName?: string }) => {
+  const handleNewPost = async (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl?: string }) => {
     const guestUser: User = {
         id: `guest-${Date.now()}`,
         name: data.userName,
@@ -79,8 +79,7 @@ const App: React.FC = () => {
       comments: [],
       timestamp: Date.now(),
       isLikedByCurrentUser: false,
-      productUrl: data.productUrl,
-      productName: data.productName
+      productUrl: data.productUrl
     };
 
     // UI Güncelle (Hızlı tepki için)
