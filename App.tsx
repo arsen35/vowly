@@ -213,14 +213,13 @@ const App: React.FC = () => {
 
   // Main Layout
   return (
-    // DÜZELTME: Sohbet modunda pb-0 (alt boşluk yok), diğer modlarda pb-24 (butonlar için boşluk)
+    // DÜZELTME: pt-6 -> pt-1 yapıldı (Header ile post arası boşluk azaltıldı)
     <div className={`min-h-screen bg-gray-50 ${viewState === ViewState.CHAT ? 'pb-0' : 'pb-24'}`}>
       {/* Navbar */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-8 min-w-0">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              {/* MOBIL DÜZELTME: 'text-xl' yerine 'text-lg' yaparak mobilde küçülttük */}
               <h1 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                 Annabella Blog
               </h1>
@@ -247,7 +246,6 @@ const App: React.FC = () => {
                  SOHBET
                  <span className="bg-wedding-100 text-wedding-600 text-[9px] px-1.5 rounded-full animate-pulse">CANLI</span>
                </button>
-               {/* Dönüş Bileti: Ana Siteye Link (Aynı sekmede açılır) */}
                <a 
                   href="https://www.annabellabridal.com"
                   className="text-sm font-bold tracking-wide text-gray-400 hover:text-wedding-900 transition-colors flex items-center gap-1"
@@ -298,7 +296,8 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="w-full">
         {viewState === ViewState.FEED ? (
-            <div className="pt-6 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
+            // DÜZELTME: pt-6 yerine pt-1, md:pt-4
+            <div className="pt-1 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-y-4 sm:gap-6">
                 {posts.map(post => (
                   <PostCard 
