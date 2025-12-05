@@ -28,7 +28,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // DÜZELTME: Canvas sıkıştırması kaldırıldı. Standart okuma yapılıyor.
+  // Önizleme için dosyayı okur (Hızlı gösterim)
   const readFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -52,11 +52,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
       try {
         for (const file of files) {
-           let finalUrl = '';
+           let previewUrl = '';
            if (file.type.startsWith('image/')) {
-               // Canvas işlemi iptal edildi, doğrudan dosya okunuyor
-               finalUrl = await readFile(file);
-               newMediaItems.push({ url: finalUrl, type: 'image' });
+               // Önizleme URL'si oluştur
+               previewUrl = await readFile(file);
+               // ÖNEMLİ: Orijinal dosyayı (file) da saklıyoruz, upload için bunu kullanacağız
+               newMediaItems.push({ url: previewUrl, type: 'image', file: file });
            }
         }
   
@@ -64,7 +65,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
       
-            // Sadece resimse ve henüz caption yoksa AI caption üret
+            // AI Caption için ilk resmin base64 önizlemesini kullanabiliriz
             if (!caption) {
                 generateAICaption(newMediaItems[0].url);
             }

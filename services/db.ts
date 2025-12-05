@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { 
   ref, 
-  uploadBytes, // uploadString yerine uploadBytes kullanacağız
+  uploadBytes, 
   getDownloadURL, 
 } from "firebase/storage";
 
@@ -61,7 +61,7 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// Yardımcı Fonksiyon: Base64 string'i Blob'a çevirir (Daha güvenli yükleme için)
+// Yardımcı Fonksiyon: Base64 string'i Blob'a çevirir
 const base64ToBlob = (base64: string, mimeType: string = 'image/webp') => {
   // Data URL başlığını temizle (data:image/jpeg;base64, kısmı)
   const byteString = atob(base64.split(',')[1]);
@@ -73,18 +73,25 @@ const base64ToBlob = (base64: string, mimeType: string = 'image/webp') => {
   return new Blob([ab], { type: mimeType });
 };
 
-const uploadImageToStorage = async (base64Data: string, path: string): Promise<string> => {
-  // Eğer zaten bir URL ise (http ile başlıyorsa) yüklemeye gerek yok
-  if (base64Data.startsWith('http')) return base64Data;
+// GÜNCELLENDİ: Artık 'fileInput' parametresi ile File objesi veya Base64 string alabilir
+const uploadImageToStorage = async (fileInput: File | string, path: string): Promise<string> => {
+  // Eğer string ise ve http ile başlıyorsa zaten URL'dir, yükleme.
+  if (typeof fileInput === 'string' && fileInput.startsWith('http')) return fileInput;
   
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // Base64'ü Blob'a çevirip yükle (Bu yöntem çok daha kararlıdır)
-      // MIME type'ı base64 içinden al
-      const mimeType = base64Data.substring(base64Data.indexOf(':') + 1, base64Data.indexOf(';')) || 'image/webp';
-      const blob = base64ToBlob(base64Data, mimeType);
+      let blob: Blob | File;
+
+      if (fileInput instanceof File) {
+          // Eğer doğrudan File objesi geldiyse, en güvenli ve hızlı yöntem budur.
+          blob = fileInput;
+      } else {
+          // Base64 string geldiyse (fallback)
+          const mimeType = fileInput.substring(fileInput.indexOf(':') + 1, fileInput.indexOf(';')) || 'image/webp';
+          blob = base64ToBlob(fileInput, mimeType);
+      }
       
       const snapshot = await uploadBytes(storageRef, blob);
       return await getDownloadURL(snapshot.ref);
@@ -130,8 +137,12 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         // Benzersiz dosya adı oluştur
         const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
-        const downloadURL = await uploadImageToStorage(item.url, path);
-        return { ...item, url: downloadURL };
+        // Eğer 'file' özelliği varsa (yeni sistem), onu kullan. Yoksa 'url' (eski sistem base64) kullan.
+        const downloadURL = await uploadImageToStorage(item.file || item.url, path);
+        
+        // Kaydettikten sonra 'file' nesnesini temizle (Firestore'a kaydedilmez) ve URL'i güncelle
+        const { file, ...rest } = item;
+        return { ...rest, url: downloadURL };
       }));
 
       const postToSave = { ...post, media: updatedMedia };

@@ -14,8 +14,9 @@ export interface Comment {
 }
 
 export interface MediaItem {
-  url: string;
+  url: string; // Önizleme için (blob: veya base64)
   type: 'image' | 'video';
+  file?: File; // Yükleme için orijinal dosya
 }
 
 export interface Post {
