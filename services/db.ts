@@ -17,6 +17,7 @@ import {
   ref, 
   uploadBytes, 
   getDownloadURL, 
+  uploadString
 } from "firebase/storage";
 
 const POSTS_COLLECTION = 'posts';
@@ -61,40 +62,6 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// Yardımcı Fonksiyon: Base64 string'i Blob'a çevirir
-const base64ToBlob = (base64: string, mimeType: string = 'image/webp') => {
-  try {
-    const byteString = atob(base64.split(',')[1]);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeType });
-  } catch (e) {
-    console.error("Base64 çevrim hatası:", e);
-    throw new Error("Resim formatı geçersiz.");
-  }
-};
-
-// YENİ: Dosyayı güvenli bir şekilde ArrayBuffer -> Uint8Array'e çevirir.
-// Bu yöntem File objesindeki uyumsuzlukları ortadan kaldırır.
-const readFileAsUint8Array = (file: File): Promise<Uint8Array> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            if (event.target?.result) {
-                // ArrayBuffer'ı Uint8Array'e çevir (Firebase bunu sever)
-                resolve(new Uint8Array(event.target.result as ArrayBuffer));
-            } else {
-                reject(new Error("Dosya okunamadı (Boş sonuç)"));
-            }
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsArrayBuffer(file);
-    });
-};
-
 const uploadImageToStorage = async (fileInput: File | string, path: string): Promise<string> => {
   // Eğer string ise ve http ile başlıyorsa zaten URL'dir, yükleme.
   if (typeof fileInput === 'string' && fileInput.startsWith('http')) return fileInput;
@@ -103,26 +70,23 @@ const uploadImageToStorage = async (fileInput: File | string, path: string): Pro
   const storageRef = ref(storageInstance, path);
   
   try {
-      let dataToUpload: Uint8Array | Blob;
-      let metadata = {};
-
       if (fileInput instanceof File) {
-          // --- GÜNCELLEME BURADA ---
-          // File objesini doğrudan vermek yerine, içindeki ham veriyi okuyup gönderiyoruz.
-          // Bu, mobil tarayıcılardaki 'invalid-argument' hatasını çözer.
-          dataToUpload = await readFileAsUint8Array(fileInput);
-          metadata = { contentType: fileInput.type }; // Dosya türünü belirtelim (örn: image/jpeg)
+          // GÜNCELLEME: Dosyayı güvenli bir şekilde Blob'a çevirip gönderiyoruz.
+          // Bu, 'invalid-argument' hatasını çözer.
+          const blob = new Blob([fileInput], { type: fileInput.type });
+          const snapshot = await uploadBytes(storageRef, blob);
+          return await getDownloadURL(snapshot.ref);
+
+      } else if (typeof fileInput === 'string' && fileInput.startsWith('data:')) {
+          // GÜNCELLEME: Base64 için uploadString kullanıyoruz (daha güvenli ve kolay)
+          const snapshot = await uploadString(storageRef, fileInput, 'data_url');
+          return await getDownloadURL(snapshot.ref);
+
       } else {
-          // Base64 string geldiyse (fallback)
-          const mimeType = fileInput.substring(fileInput.indexOf(':') + 1, fileInput.indexOf(';')) || 'image/webp';
-          dataToUpload = base64ToBlob(fileInput, mimeType);
-          metadata = { contentType: mimeType };
+          console.error("Geçersiz dosya formatı:", fileInput);
+          throw new Error("Dosya formatı tanınamadı (Ne Dosya ne Base64).");
       }
       
-      // uploadBytes, Uint8Array veya Blob kabul eder
-      const snapshot = await uploadBytes(storageRef, dataToUpload, metadata);
-      return await getDownloadURL(snapshot.ref);
-
   } catch (error: any) {
       console.error("Storage yükleme hatası:", error);
       throw new Error(`Resim yüklenemedi: ${error.message || 'Bilinmeyen Hata'}`);
@@ -165,8 +129,13 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         // Benzersiz dosya adı oluştur
         const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
-        // Eğer 'file' özelliği varsa (yeni sistem), onu kullan. Yoksa 'url' (eski sistem base64) kullan.
-        const downloadURL = await uploadImageToStorage(item.file || item.url, path);
+        // Eğer 'file' özelliği varsa onu kullan. Yoksa 'url' (eski sistem veya blob url) kontrol et
+        const source = item.file || item.url;
+        
+        // Eğer source bir Blob URL ise (createObjectURL ile oluşturulmuş), ve file yoksa hata olabilir.
+        // Ancak UploadModal her zaman 'file' özelliğini set ediyor.
+        
+        const downloadURL = await uploadImageToStorage(source, path);
         
         // Kaydettikten sonra 'file' nesnesini temizle (Firestore'a kaydedilmez) ve URL'i güncelle
         const { file, ...rest } = item;

@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 import { generateWeddingCaption } from '../services/geminiService';
 import { MediaItem } from '../types';
@@ -28,8 +28,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // Önizleme için dosyayı okur (Hızlı gösterim)
-  const readFile = (file: File): Promise<string> => {
+  // Cleanup object URLs to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      selectedMedia.forEach(media => {
+        if (media.url.startsWith('blob:')) {
+          URL.revokeObjectURL(media.url);
+        }
+      });
+    };
+  }, [selectedMedia]);
+
+  // AI için Base64 okuma yardımcısı (Sadece AI gerektiğinde kullanılır)
+  const readFileAsBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -51,13 +62,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       const newMediaItems: MediaItem[] = [];
 
       try {
+        // 1. Dosyaları Hızlı Önizleme İçin Hazırla (Blob URL)
+        // Bu yöntem çok hızlıdır ve bellek tüketmez.
         for (const file of files) {
-           let previewUrl = '';
            if (file.type.startsWith('image/')) {
-               // Önizleme URL'si oluştur
-               previewUrl = await readFile(file);
-               // ÖNEMLİ: Orijinal dosyayı (file) da saklıyoruz, upload için bunu kullanacağız
-               newMediaItems.push({ url: previewUrl, type: 'image', file: file });
+               const objectUrl = URL.createObjectURL(file);
+               newMediaItems.push({ url: objectUrl, type: 'image', file: file });
            }
         }
   
@@ -65,9 +75,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
       
-            // AI Caption için ilk resmin base64 önizlemesini kullanabiliriz
+            // 2. Sadece ilk görseli AI analizi için Base64'e çevir (Arka planda)
             if (!caption) {
-                generateAICaption(newMediaItems[0].url);
+                readFileAsBase64(files[0]).then(base64 => {
+                    generateAICaption(base64);
+                }).catch(err => console.warn("AI için resim okunamadı", err));
             }
         }
         
