@@ -62,31 +62,40 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-const uploadImageToStorage = async (fileInput: File | string, path: string): Promise<string> => {
-  // Eğer string ise ve http ile başlıyorsa zaten URL'dir, yükleme.
-  if (typeof fileInput === 'string' && fileInput.startsWith('http')) return fileInput;
-  
+// GÜNCELLENMİŞ YÜKLEME FONKSİYONU
+// Android/Mobile cihazlarda "invalid-argument" hatasını önlemek için
+// Blob URL'leri (blob:http...) fetch ile indirip saf veri olarak yükler.
+const uploadImageToStorage = async (input: File | Blob | string, path: string): Promise<string> => {
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      if (fileInput instanceof File) {
-          // GÜNCELLEME: Dosyayı güvenli bir şekilde Blob'a çevirip gönderiyoruz.
-          // Bu, 'invalid-argument' hatasını çözer.
-          const blob = new Blob([fileInput], { type: fileInput.type });
-          const snapshot = await uploadBytes(storageRef, blob);
-          return await getDownloadURL(snapshot.ref);
+      // 1. Zaten uzak sunucudaysa (http/https), işlem yapma
+      if (typeof input === 'string' && input.startsWith('http')) return input;
 
-      } else if (typeof fileInput === 'string' && fileInput.startsWith('data:')) {
-          // GÜNCELLEME: Base64 için uploadString kullanıyoruz (daha güvenli ve kolay)
-          const snapshot = await uploadString(storageRef, fileInput, 'data_url');
-          return await getDownloadURL(snapshot.ref);
+      let blobToUpload: Blob;
 
+      if (typeof input === 'string') {
+         if (input.startsWith('blob:')) {
+            // CRITICAL FIX: Blob URL'yi fetch ile indir. 
+            // Bu yöntem "File object lost" hatalarını çözer.
+            const response = await fetch(input);
+            blobToUpload = await response.blob();
+         } else if (input.startsWith('data:')) {
+            // Base64 ise uploadString kullan
+            const snapshot = await uploadString(storageRef, input, 'data_url');
+            return await getDownloadURL(snapshot.ref);
+         } else {
+             throw new Error("Bilinmeyen dosya formatı (String)");
+         }
       } else {
-          console.error("Geçersiz dosya formatı:", fileInput);
-          throw new Error("Dosya formatı tanınamadı (Ne Dosya ne Base64).");
+         // File veya Blob objesi ise direkt kullan
+         blobToUpload = input;
       }
       
+      const snapshot = await uploadBytes(storageRef, blobToUpload);
+      return await getDownloadURL(snapshot.ref);
+
   } catch (error: any) {
       console.error("Storage yükleme hatası:", error);
       throw new Error(`Resim yüklenemedi: ${error.message || 'Bilinmeyen Hata'}`);
@@ -129,11 +138,10 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         // Benzersiz dosya adı oluştur
         const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
-        // Eğer 'file' özelliği varsa onu kullan. Yoksa 'url' (eski sistem veya blob url) kontrol et
-        const source = item.file || item.url;
         
-        // Eğer source bir Blob URL ise (createObjectURL ile oluşturulmuş), ve file yoksa hata olabilir.
-        // Ancak UploadModal her zaman 'file' özelliğini set ediyor.
+        // ÖNEMLİ: Eğer 'blob:' ile başlayan bir URL varsa onu kullanmaya zorla.
+        // Çünkü fetch(blobUrl) yöntemi Android'de File objesinden daha güvenilirdir.
+        const source = (item.url && item.url.startsWith('blob:')) ? item.url : (item.file || item.url);
         
         const downloadURL = await uploadImageToStorage(source, path);
         
@@ -228,7 +236,7 @@ export const dbService = {
         
         let finalMessage = { ...message };
 
-        if (message.image && message.image.startsWith('data:')) {
+        if (message.image) {
              const path = `chat_images/${Date.now()}_img.webp`;
              const imageUrl = await uploadImageToStorage(message.image, path);
              finalMessage.image = imageUrl;
