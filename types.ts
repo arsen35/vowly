@@ -28,6 +28,8 @@ export interface Post {
   comments: Comment[];
   timestamp: number;
   isLikedByCurrentUser?: boolean;
+  productUrl?: string; // SATIN ALMA LİNKİ
+  productName?: string; // ÜRÜN ADI
 }
 
 export interface BlogPost {
