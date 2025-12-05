@@ -194,9 +194,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
       </div>
 
       {/* Carousel Media Container */}
-      {/* UPDATE: bg-gray-200 eklendi, görsel yoksa gri alan görünür */}
       <div 
-        className="relative w-full aspect-[4/5] bg-gray-200 group touch-pan-y overflow-hidden"
+        className="relative w-full aspect-[4/5] bg-gray-100 group touch-pan-y overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -214,11 +213,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                           className="w-full h-full object-cover"
                         />
                     ) : (
-                        // UPDATE: absolute inset-0 eklendi, görselin kutuya tam oturması garanti edildi
                         <img 
                           src={media.url} 
                           alt={`Post media ${index + 1}`} 
-                          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transform transition-transform duration-700 group-hover:scale-105 block bg-gray-200"
+                          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transform transition-transform duration-700 group-hover:scale-105 block"
                           loading="lazy"
                           draggable={false}
                         />
@@ -286,7 +284,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                     </svg>
                  </span>
-                 {/* UPDATE: Metin güncellendi */}
                  <span>Ürünü Gör</span>
              </div>
              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 group-hover:translate-x-1 transition-transform">
@@ -338,7 +335,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
             {/* SHARE / WHATSAPP BUTTON (Paper Plane) */}
             <button onClick={handleShare} className="text-gray-900 transition-all hover:scale-110 active:scale-90">
-               {/* UPDATE: -rotate-12 eklendi */}
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 -mt-1 -rotate-12">
                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                </svg>

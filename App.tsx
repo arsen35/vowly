@@ -9,6 +9,8 @@ import { BlogPage } from './components/BlogPage';
 import { ChatPage } from './components/ChatPage';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
+import { signInAnonymously } from "firebase/auth";
+import { auth } from './services/firebase';
 
 const App: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -21,9 +23,20 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
-  // App açıldığında Feed verilerini çek
+  // App açıldığında Feed verilerini çek ve Anonim Giriş yap
   useEffect(() => {
-    const loadPosts = async () => {
+    const initApp = async () => {
+      // 1. Anonim Giriş Yap (Veritabanı yazma izni için)
+      if (auth) {
+        try {
+          await signInAnonymously(auth);
+          console.log("Misafir girişi başarılı");
+        } catch (error) {
+          console.error("Misafir girişi hatası:", error);
+        }
+      }
+
+      // 2. Postları Çek
       try {
         const storedPosts = await dbService.getAllPosts();
         setPosts(storedPosts);
@@ -33,7 +46,8 @@ const App: React.FC = () => {
         setIsLoading(false);
       }
     };
-    loadPosts();
+
+    initApp();
   }, []);
 
   const handleUploadClick = () => {
@@ -92,7 +106,7 @@ const App: React.FC = () => {
         await dbService.savePost(newPost);
     } catch (error) {
         console.error("Kayıt hatası:", error);
-        alert("Bağlantı hatası: Gönderi veritabanına kaydedilemedi ama geçici olarak ekranda görünüyor.");
+        alert("Bağlantı hatası: Fotoğraf yüklenirken bir sorun oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.");
     }
   };
 
@@ -213,7 +227,6 @@ const App: React.FC = () => {
 
   // Main Layout
   return (
-    // DÜZELTME: pt-6 -> pt-1 yapıldı (Header ile post arası boşluk azaltıldı)
     <div className={`min-h-screen bg-gray-50 ${viewState === ViewState.CHAT ? 'pb-0' : 'pb-24'}`}>
       {/* Navbar */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
@@ -296,7 +309,6 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="w-full">
         {viewState === ViewState.FEED ? (
-            // DÜZELTME: pt-6 yerine pt-1, md:pt-4
             <div className="pt-1 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-y-4 sm:gap-6">
                 {posts.map(post => (

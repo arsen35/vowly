@@ -1,6 +1,8 @@
+
 import * as firebaseApp from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getAuth, Auth } from "firebase/auth";
 
 // ---------------------------------------------------------------------------
 // ADIM 1: Firebase ekranında sana verilen 'const firebaseConfig = { ... }'
@@ -23,6 +25,7 @@ const firebaseConfig = {
 let app: any;
 let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
+let auth: Auth | undefined;
 
 try {
   // Config kontrolü: Eğer anahtarlar boşsa uyarı verir ama uygulamayı çökertmez
@@ -38,6 +41,7 @@ try {
         app = initApp(firebaseConfig);
         db = getFirestore(app);
         storage = getStorage(app);
+        auth = getAuth(app);
         console.log("✅ Firebase bağlantısı kuruldu.");
     } else {
         console.error("Firebase initializeApp bulunamadı (Import sorunu).");
@@ -51,4 +55,4 @@ try {
   console.error("🚨 Firebase başlatılamadı:", error);
 }
 
-export { db, storage };
+export { db, storage, auth };
