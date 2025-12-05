@@ -15,14 +15,14 @@ import {
 } from "firebase/firestore";
 import { 
   ref, 
-  uploadString, 
+  uploadBytes, // uploadString yerine uploadBytes kullanacağız
   getDownloadURL, 
 } from "firebase/storage";
 
 const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
 const CHAT_COLLECTION = 'chat_messages';
-const MAX_CHAT_MESSAGES = 50; // Sohbet geçmişi limiti
+const MAX_CHAT_MESSAGES = 50;
 
 // --- MOCK DATA (Demo Modu İçin) ---
 const MOCK_POSTS: Post[] = [
@@ -61,13 +61,37 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
+// Yardımcı Fonksiyon: Base64 string'i Blob'a çevirir (Daha güvenli yükleme için)
+const base64ToBlob = (base64: string, mimeType: string = 'image/webp') => {
+  // Data URL başlığını temizle (data:image/jpeg;base64, kısmı)
+  const byteString = atob(base64.split(',')[1]);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeType });
+};
+
 const uploadImageToStorage = async (base64Data: string, path: string): Promise<string> => {
+  // Eğer zaten bir URL ise (http ile başlıyorsa) yüklemeye gerek yok
   if (base64Data.startsWith('http')) return base64Data;
   
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
-  await uploadString(storageRef, base64Data, 'data_url');
-  return await getDownloadURL(storageRef);
+  
+  try {
+      // Base64'ü Blob'a çevirip yükle (Bu yöntem çok daha kararlıdır)
+      // MIME type'ı base64 içinden al
+      const mimeType = base64Data.substring(base64Data.indexOf(':') + 1, base64Data.indexOf(';')) || 'image/webp';
+      const blob = base64ToBlob(base64Data, mimeType);
+      
+      const snapshot = await uploadBytes(storageRef, blob);
+      return await getDownloadURL(snapshot.ref);
+  } catch (error) {
+      console.error("Storage yükleme hatası:", error);
+      throw new Error("Resim sunucuya yüklenemedi.");
+  }
 };
 
 export const dbService = {
@@ -89,7 +113,6 @@ export const dbService = {
         posts.push(doc.data() as Post);
       });
       
-      // Eğer veritabanı boşsa (ilk açılış), yine de mock data göster ki boş durmasın
       if (posts.length === 0) return MOCK_POSTS;
 
       return posts;
@@ -105,7 +128,8 @@ export const dbService = {
 
       // Medyaları Storage'a yükle
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
-        const path = `posts/${post.id}/media_${index}_${Date.now()}`;
+        // Benzersiz dosya adı oluştur
+        const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
         const downloadURL = await uploadImageToStorage(item.url, path);
         return { ...item, url: downloadURL };
       }));
@@ -114,7 +138,7 @@ export const dbService = {
       await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), postToSave);
 
     } catch (error) {
-      console.error("Post kayıt hatası:", error);
+      console.error("Post kayıt hatası detay:", error);
       throw error;
     }
   },
@@ -154,7 +178,7 @@ export const dbService = {
     try {
       const { dbInstance } = checkDbConnection();
       
-      const path = `blog/${post.id}/cover_${Date.now()}`;
+      const path = `blog/${post.id}/cover_${Date.now()}.webp`;
       const imageUrl = await uploadImageToStorage(post.coverImage, path);
 
       const blogToSave = { ...post, coverImage: imageUrl };
@@ -176,10 +200,8 @@ export const dbService = {
     if (!db) return () => {};
 
     const chatRef = collection(db, CHAT_COLLECTION);
-    // Son 100 mesajı getir, eskiden yeniye sırala (UI için)
     const q = query(chatRef, orderBy("timestamp", "asc"), limit(100));
 
-    // Realtime Listener
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const messages: ChatMessage[] = [];
         snapshot.forEach((doc) => {
@@ -198,30 +220,21 @@ export const dbService = {
         
         let finalMessage = { ...message };
 
-        // Eğer resim varsa ve base64 formatındaysa, önce Storage'a yükle
         if (message.image && message.image.startsWith('data:')) {
-             const path = `chat_images/${Date.now()}_img`;
+             const path = `chat_images/${Date.now()}_img.webp`;
              const imageUrl = await uploadImageToStorage(message.image, path);
              finalMessage.image = imageUrl;
         }
 
-        // 1. Yeni mesajı ekle
         await addDoc(chatRef, finalMessage);
 
-        // 2. OTOMATİK TEMİZLİK (Storage Optimization)
-        // Tüm mesajları tarihe göre al
         const q = query(chatRef, orderBy("timestamp", "asc"));
         const snapshot = await getDocs(q);
 
-        // Eğer limit aşıldıysa, en eskileri sil
         if (snapshot.size > MAX_CHAT_MESSAGES) {
             const deleteCount = snapshot.size - MAX_CHAT_MESSAGES;
-            // Sadece silinmesi gereken kadarını döngüye sok
             const docsToDelete = snapshot.docs.slice(0, deleteCount);
-            
-            // Promise.all ile paralel silme işlemi
             await Promise.all(docsToDelete.map(doc => deleteDoc(doc.ref)));
-            console.log(`${deleteCount} eski mesaj otomatik olarak temizlendi.`);
         }
 
     } catch (error) {

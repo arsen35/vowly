@@ -104,9 +104,14 @@ const App: React.FC = () => {
     // DB Kaydet
     try {
         await dbService.savePost(newPost);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Kayıt hatası:", error);
-        alert("Bağlantı hatası: Fotoğraf yüklenirken bir sorun oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.");
+        // Hata mesajını daha anlaşılır yap
+        let errorMsg = "Fotoğraf yüklenirken bir sorun oluştu.";
+        if (error.code === 'storage/unauthorized') errorMsg = "Yükleme izniniz yok.";
+        if (error.code === 'storage/retry-limit-exceeded') errorMsg = "Bağlantı zaman aşımına uğradı.";
+        
+        alert(`Bağlantı hatası: ${errorMsg} Lütfen internet bağlantınızı kontrol edip tekrar deneyin. (Hata Kodu: ${error.code || 'Bilinmiyor'})`);
     }
   };
 
@@ -309,7 +314,8 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="w-full">
         {viewState === ViewState.FEED ? (
-            <div className="pt-1 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
+            // DÜZELTME: pt-1 yerine pt-0 (Header ile post arası boşluk SIFIRLANDI)
+            <div className="pt-0 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-y-4 sm:gap-6">
                 {posts.map(post => (
                   <PostCard 

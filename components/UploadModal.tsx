@@ -37,17 +37,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             img.src = event.target?.result as string;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 1200; // Firebase için makul boyut
-                const scaleSize = MAX_WIDTH / img.width;
-                const width = Math.min(img.width, MAX_WIDTH);
-                const height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
+                // OPTIMIZASYON: Mobilde RAM sorununu önlemek için boyutu 1000px ile sınırla
+                const MAX_WIDTH = 1000; 
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
 
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
                 
-                resolve(canvas.toDataURL('image/webp', 0.8));
+                if (ctx) {
+                    // Beyaz arka plan (PNG saydamlığı siyaha dönüşmesin diye)
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height);
+                }
+                
+                // Kaliteyi 0.75'e çekerek dosya boyutunu düşür ve yüklemeyi hızlandır
+                resolve(canvas.toDataURL('image/jpeg', 0.75));
             };
         };
     });
@@ -62,7 +74,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       try {
         for (const file of files) {
            let finalUrl = '';
-           // Video kontrolü kaldırıldı, sadece resim işleniyor
            if (file.type.startsWith('image/')) {
                finalUrl = await compressImage(file);
                newMediaItems.push({ url: finalUrl, type: 'image' });
