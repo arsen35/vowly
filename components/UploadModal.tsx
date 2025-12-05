@@ -28,40 +28,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
+  // DÜZELTME: Canvas sıkıştırması kaldırıldı. Standart okuma yapılıyor.
+  const readFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(file);
         reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target?.result as string;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                // OPTIMIZASYON: Mobilde RAM sorununu önlemek için boyutu 1000px ile sınırla
-                const MAX_WIDTH = 1000; 
-                let width = img.width;
-                let height = img.height;
-
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                
-                if (ctx) {
-                    // Beyaz arka plan (PNG saydamlığı siyaha dönüşmesin diye)
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, width, height);
-                    ctx.drawImage(img, 0, 0, width, height);
-                }
-                
-                // Kaliteyi 0.75'e çekerek dosya boyutunu düşür ve yüklemeyi hızlandır
-                resolve(canvas.toDataURL('image/jpeg', 0.75));
-            };
+            if (event.target?.result) {
+                resolve(event.target.result as string);
+            } else {
+                reject(new Error("Dosya okunamadı"));
+            }
         };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
     });
   };
 
@@ -75,7 +54,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         for (const file of files) {
            let finalUrl = '';
            if (file.type.startsWith('image/')) {
-               finalUrl = await compressImage(file);
+               // Canvas işlemi iptal edildi, doğrudan dosya okunuyor
+               finalUrl = await readFile(file);
                newMediaItems.push({ url: finalUrl, type: 'image' });
            }
         }
@@ -102,7 +82,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   const generateAICaption = async (base64Image: string) => {
     setIsGeneratingAI(true);
-    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|webp);base64,/, "");
+    // Base64 başlığını temizle
+    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
     
     try {
       const result = await generateWeddingCaption(cleanBase64);
