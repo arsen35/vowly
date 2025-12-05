@@ -62,42 +62,52 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// GÜNCELLENMİŞ YÜKLEME FONKSİYONU
-// Android/Mobile cihazlarda "invalid-argument" hatasını önlemek için
-// Blob URL'leri (blob:http...) fetch ile indirip saf veri olarak yükler.
+// GÜNCELLENMİŞ VE SADELEŞTİRİLMİŞ YÜKLEME FONKSİYONU
 const uploadImageToStorage = async (input: File | Blob | string, path: string): Promise<string> => {
+  if (!input) {
+      throw new Error("Yüklenecek dosya bulunamadı (Input boş).");
+  }
+
+  // Zaten web URL'i ise (örn: daha önce yüklenmiş veya Unsplash), olduğu gibi döndür.
+  if (typeof input === 'string' && input.startsWith('http') && !input.startsWith('http://localhost') && !input.startsWith('blob:')) {
+      return input;
+  }
+
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Zaten uzak sunucudaysa (http/https), işlem yapma
-      if (typeof input === 'string' && input.startsWith('http')) return input;
-
-      let blobToUpload: Blob;
-
-      if (typeof input === 'string') {
-         if (input.startsWith('blob:')) {
-            // CRITICAL FIX: Blob URL'yi fetch ile indir. 
-            // Bu yöntem "File object lost" hatalarını çözer.
-            const response = await fetch(input);
-            blobToUpload = await response.blob();
-         } else if (input.startsWith('data:')) {
-            // Base64 ise uploadString kullan
-            const snapshot = await uploadString(storageRef, input, 'data_url');
-            return await getDownloadURL(snapshot.ref);
-         } else {
-             throw new Error("Bilinmeyen dosya formatı (String)");
-         }
-      } else {
-         // File veya Blob objesi ise direkt kullan
-         blobToUpload = input;
+      // 1. Durum: Input gerçek bir Dosya (File) veya Blob nesnesi ise
+      // Firebase SDK'sı bunu en iyi şekilde yönetir.
+      if (input instanceof File || input instanceof Blob) {
+          const snapshot = await uploadBytes(storageRef, input);
+          return await getDownloadURL(snapshot.ref);
       }
       
-      const snapshot = await uploadBytes(storageRef, blobToUpload);
-      return await getDownloadURL(snapshot.ref);
+      // 2. Durum: Input bir Base64 string ise (data:image/...)
+      if (typeof input === 'string' && input.startsWith('data:')) {
+          const snapshot = await uploadString(storageRef, input, 'data_url');
+          return await getDownloadURL(snapshot.ref);
+      }
+
+      // 3. Durum: Input bir Blob URL ise (blob:...)
+      // Bu durumda fetch ile veriyi çekip Blob'a çevirmemiz gerekir.
+      if (typeof input === 'string' && input.startsWith('blob:')) {
+          const response = await fetch(input);
+          if (!response.ok) throw new Error("Blob verisi okunamadı.");
+          const blob = await response.blob();
+          const snapshot = await uploadBytes(storageRef, blob);
+          return await getDownloadURL(snapshot.ref);
+      }
+
+      throw new Error("Bilinmeyen veya desteklenmeyen dosya formatı.");
 
   } catch (error: any) {
       console.error("Storage yükleme hatası:", error);
+      // Hata mesajını daha anlaşılır hale getir
+      if (error.code === 'storage/invalid-argument') {
+          throw new Error("Dosya formatı geçersiz (invalid-argument). Lütfen sayfayı yenileyip tekrar deneyin.");
+      }
       throw new Error(`Resim yüklenemedi: ${error.message || 'Bilinmeyen Hata'}`);
   }
 };
@@ -139,10 +149,16 @@ export const dbService = {
         // Benzersiz dosya adı oluştur
         const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
         
-        // ÖNEMLİ: Eğer 'blob:' ile başlayan bir URL varsa onu kullanmaya zorla.
-        // Çünkü fetch(blobUrl) yöntemi Android'de File objesinden daha güvenilirdir.
-        const source = (item.url && item.url.startsWith('blob:')) ? item.url : (item.file || item.url);
+        // KRİTİK DÜZELTME:
+        // Eğer elimizde gerçek 'file' nesnesi varsa, ASLA 'url' (blob url) kullanma.
+        // File nesnesi bellekte kalıcıdır, Blob URL geçicidir ve hata yaratır.
+        const source = item.file ? item.file : item.url;
         
+        if (!source) {
+            console.warn("Yüklenecek kaynak yok, atlanıyor:", item);
+            return item; // Değişiklik yapmadan dön
+        }
+
         const downloadURL = await uploadImageToStorage(source, path);
         
         // Kaydettikten sonra 'file' nesnesini temizle (Firestore'a kaydedilmez) ve URL'i güncelle
