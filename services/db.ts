@@ -63,17 +63,38 @@ const checkDbConnection = () => {
 
 // Yardımcı Fonksiyon: Base64 string'i Blob'a çevirir
 const base64ToBlob = (base64: string, mimeType: string = 'image/webp') => {
-  // Data URL başlığını temizle (data:image/jpeg;base64, kısmı)
-  const byteString = atob(base64.split(',')[1]);
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
+  try {
+    const byteString = atob(base64.split(',')[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeType });
+  } catch (e) {
+    console.error("Base64 çevrim hatası:", e);
+    throw new Error("Resim formatı geçersiz.");
   }
-  return new Blob([ab], { type: mimeType });
 };
 
-// GÜNCELLENDİ: Artık 'fileInput' parametresi ile File objesi veya Base64 string alabilir
+// YENİ: Dosyayı güvenli bir şekilde ArrayBuffer -> Uint8Array'e çevirir.
+// Bu yöntem File objesindeki uyumsuzlukları ortadan kaldırır.
+const readFileAsUint8Array = (file: File): Promise<Uint8Array> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            if (event.target?.result) {
+                // ArrayBuffer'ı Uint8Array'e çevir (Firebase bunu sever)
+                resolve(new Uint8Array(event.target.result as ArrayBuffer));
+            } else {
+                reject(new Error("Dosya okunamadı (Boş sonuç)"));
+            }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsArrayBuffer(file);
+    });
+};
+
 const uploadImageToStorage = async (fileInput: File | string, path: string): Promise<string> => {
   // Eğer string ise ve http ile başlıyorsa zaten URL'dir, yükleme.
   if (typeof fileInput === 'string' && fileInput.startsWith('http')) return fileInput;
@@ -82,22 +103,29 @@ const uploadImageToStorage = async (fileInput: File | string, path: string): Pro
   const storageRef = ref(storageInstance, path);
   
   try {
-      let blob: Blob | File;
+      let dataToUpload: Uint8Array | Blob;
+      let metadata = {};
 
       if (fileInput instanceof File) {
-          // Eğer doğrudan File objesi geldiyse, en güvenli ve hızlı yöntem budur.
-          blob = fileInput;
+          // --- GÜNCELLEME BURADA ---
+          // File objesini doğrudan vermek yerine, içindeki ham veriyi okuyup gönderiyoruz.
+          // Bu, mobil tarayıcılardaki 'invalid-argument' hatasını çözer.
+          dataToUpload = await readFileAsUint8Array(fileInput);
+          metadata = { contentType: fileInput.type }; // Dosya türünü belirtelim (örn: image/jpeg)
       } else {
           // Base64 string geldiyse (fallback)
           const mimeType = fileInput.substring(fileInput.indexOf(':') + 1, fileInput.indexOf(';')) || 'image/webp';
-          blob = base64ToBlob(fileInput, mimeType);
+          dataToUpload = base64ToBlob(fileInput, mimeType);
+          metadata = { contentType: mimeType };
       }
       
-      const snapshot = await uploadBytes(storageRef, blob);
+      // uploadBytes, Uint8Array veya Blob kabul eder
+      const snapshot = await uploadBytes(storageRef, dataToUpload, metadata);
       return await getDownloadURL(snapshot.ref);
-  } catch (error) {
+
+  } catch (error: any) {
       console.error("Storage yükleme hatası:", error);
-      throw new Error("Resim sunucuya yüklenemedi.");
+      throw new Error(`Resim yüklenemedi: ${error.message || 'Bilinmeyen Hata'}`);
   }
 };
 
