@@ -8,6 +8,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { BlogPage } from './components/BlogPage';
 import { ChatPage } from './components/ChatPage';
 import { InstallModal } from './components/InstallModal';
+import { Logo } from './components/Logo'; // Logo eklendi
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
 import { signInAnonymously } from "firebase/auth";
@@ -224,8 +225,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleInstallClick = () => {
-    setShowInstallModal(true);
+  // Login Modal içinden Install butonuna basılırsa
+  const handleInstallClickFromLogin = () => {
+    setShowLoginModal(false);
+    setTimeout(() => {
+        setShowInstallModal(true);
+    }, 300); // Modal kapanma animasyonu için bekle
   };
 
   const triggerNativeInstall = async () => {
@@ -291,16 +296,15 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen bg-gray-50 ${viewState === ViewState.CHAT ? 'pb-0' : 'pb-24'}`}>
       {/* Navbar */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center gap-8 min-w-0">
+            {/* LOGO AREA */}
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              <h1 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                Annabella Blog
-              </h1>
+              <Logo className="h-8 w-auto text-gray-900" />
             </div>
 
-            {/* Nav Links */}
+            {/* Nav Links (Desktop) */}
             <nav className="hidden md:flex items-center gap-6">
                <button 
                   onClick={() => setViewState(ViewState.FEED)} 
@@ -334,25 +338,12 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-             {/* INSTALL APP BUTTON (Only if not installed) */}
-             {!isAppInstalled && (
-                 <button 
-                    onClick={handleInstallClick}
-                    className="flex items-center gap-1 bg-gradient-to-r from-wedding-500 to-wedding-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg transition-transform active:scale-95 animate-fadeIn"
-                 >
-                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M12 9v9m0 0l3-3m-3 3l-3-3m3-9V3" />
-                     </svg>
-                     <span className="hidden sm:inline">Uygulamayı Yükle</span>
-                     <span className="sm:hidden">Yükle</span>
-                 </button>
-             )}
-
-             {/* Mobile Nav Toggle */}
-             <div className="md:hidden flex bg-gray-100 rounded-full p-1 mr-2 gap-1">
-                <button onClick={() => setViewState(ViewState.FEED)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Akış</button>
-                <button onClick={() => setViewState(ViewState.BLOG)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Blog</button>
-                <button onClick={() => setViewState(ViewState.CHAT)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.CHAT ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Chat</button>
+             
+             {/* Mobile Nav Toggle (Tab View) */}
+             <div className="md:hidden flex bg-gray-100/80 rounded-full p-1 mr-2 gap-1 border border-gray-200">
+                <button onClick={() => setViewState(ViewState.FEED)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow-sm text-wedding-500 ring-1 ring-black/5' : 'text-gray-500'}`}>Akış</button>
+                <button onClick={() => setViewState(ViewState.BLOG)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow-sm text-wedding-500 ring-1 ring-black/5' : 'text-gray-500'}`}>Blog</button>
+                <button onClick={() => setViewState(ViewState.CHAT)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.CHAT ? 'bg-white shadow-sm text-wedding-500 ring-1 ring-black/5' : 'text-gray-500'}`}>Chat</button>
              </div>
 
             {isAdmin ? (
@@ -367,7 +358,7 @@ const App: React.FC = () => {
             ) : (
                 <button 
                    onClick={() => setShowLoginModal(true)}
-                   className="text-xs px-3 py-1.5 rounded-full border font-medium bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 transition-colors"
+                   className="text-xs px-4 py-2 rounded-full font-bold bg-black text-white hover:bg-gray-800 transition-colors shadow-md"
                 >
                     Giriş
                 </button>
@@ -413,7 +404,7 @@ const App: React.FC = () => {
 
       {/* Footer Version Indicator */}
       <footer className="text-center py-4 text-[10px] text-gray-300">
-         v2.4 (App Install Added)
+         v2.5 (Logo & Clean Header)
       </footer>
 
       {/* Floating Action Buttons (Only on Feed) */}
@@ -454,7 +445,9 @@ const App: React.FC = () => {
       {showLoginModal && (
         <LoginModal 
             onClose={() => setShowLoginModal(false)} 
-            onLogin={handleLoginSubmit} 
+            onLogin={handleLoginSubmit}
+            showInstallButton={!isAppInstalled}
+            onInstallClick={handleInstallClickFromLogin}
         />
       )}
 
