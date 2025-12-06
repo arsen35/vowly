@@ -7,8 +7,7 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BlogPage } from './components/BlogPage';
 import { ChatPage } from './components/ChatPage';
-import { InstallModal } from './components/InstallModal';
-import { Logo } from './components/Logo'; // Logo eklendi
+import { Logo } from './components/Logo';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
 import { signInAnonymously } from "firebase/auth";
@@ -25,33 +24,8 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
-  // PWA Install Logic State
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallModal, setShowInstallModal] = useState(false);
-  const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('desktop');
-  const [isAppInstalled, setIsAppInstalled] = useState(false);
-
   // App açıldığında Feed verilerini CANLI TAKİP ET
   useEffect(() => {
-    // Platform tespiti
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (/iphone|ipad|ipod/.test(userAgent)) {
-        setPlatform('ios');
-    } else if (/android/.test(userAgent)) {
-        setPlatform('android');
-    }
-
-    // Zaten yüklü mü kontrolü
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        setIsAppInstalled(true);
-    }
-
-    // Android Install Prompt Yakalama
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-    });
-
     // 1. Anonim Giriş
     const initAuth = async () => {
       if (auth) {
@@ -225,27 +199,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Login Modal içinden Install butonuna basılırsa
-  const handleInstallClickFromLogin = () => {
-    setShowLoginModal(false);
-    setTimeout(() => {
-        setShowInstallModal(true);
-    }, 300); // Modal kapanma animasyonu için bekle
-  };
-
-  const triggerNativeInstall = async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            setDeferredPrompt(null);
-            setShowInstallModal(false);
-        }
-    } else {
-        alert("Otomatik yükleme desteklenmiyor veya uygulama zaten yüklü. Lütfen tarayıcı menüsünden 'Uygulamayı Yükle' seçeneğini kullanın.");
-    }
-  };
-
   // --- RENDER HELPERS ---
 
   if (isLoading) {
@@ -294,18 +247,18 @@ const App: React.FC = () => {
 
   // Main Layout
   return (
-    <div className={`min-h-screen bg-gray-50 ${viewState === ViewState.CHAT ? 'pb-0' : 'pb-24'}`}>
-      {/* Navbar */}
+    <div className={`min-h-screen bg-gray-50 pb-20 md:pb-0`}>
+      {/* Navbar (Top) */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
         <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-          <div className="flex items-center gap-8 min-w-0">
-            {/* LOGO AREA */}
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-              <Logo className="h-8 w-auto text-gray-900" />
-            </div>
+          
+          {/* LEFT: Logo */}
+          <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
+             <Logo className="h-9 w-auto" />
+          </div>
 
-            {/* Nav Links (Desktop) */}
-            <nav className="hidden md:flex items-center gap-6">
+          {/* MIDDLE: Desktop Nav Links (Hidden on Mobile) */}
+          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
                <button 
                   onClick={() => setViewState(ViewState.FEED)} 
                   className={`text-sm font-bold tracking-wide transition-colors ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-500 hover:text-gray-900'}`}
@@ -334,23 +287,15 @@ const App: React.FC = () => {
                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
                  </svg>
                </a>
-            </nav>
-          </div>
+          </nav>
           
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-             
-             {/* Mobile Nav Toggle (Tab View) */}
-             <div className="md:hidden flex bg-gray-100/80 rounded-full p-1 mr-2 gap-1 border border-gray-200">
-                <button onClick={() => setViewState(ViewState.FEED)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow-sm text-wedding-500 ring-1 ring-black/5' : 'text-gray-500'}`}>Akış</button>
-                <button onClick={() => setViewState(ViewState.BLOG)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow-sm text-wedding-500 ring-1 ring-black/5' : 'text-gray-500'}`}>Blog</button>
-                <button onClick={() => setViewState(ViewState.CHAT)} className={`px-3 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.CHAT ? 'bg-white shadow-sm text-wedding-500 ring-1 ring-black/5' : 'text-gray-500'}`}>Chat</button>
-             </div>
-
+          {/* RIGHT: Login / Admin */}
+          <div className="flex items-center">
             {isAdmin ? (
                 <>
                     <button 
                        onClick={() => setViewState(ViewState.ADMIN_DASHBOARD)}
-                       className="text-xs font-bold text-wedding-900 bg-wedding-50 px-3 py-1.5 rounded-full hover:bg-wedding-100 transition-colors hidden sm:block"
+                       className="text-xs font-bold text-wedding-900 bg-wedding-50 px-3 py-1.5 rounded-full hover:bg-wedding-100 transition-colors"
                     >
                         Panel
                     </button>
@@ -402,22 +347,80 @@ const App: React.FC = () => {
         ) : null}
       </main>
 
-      {/* Footer Version Indicator */}
-      <footer className="text-center py-4 text-[10px] text-gray-300">
-         v2.5 (Logo & Clean Header)
+      {/* Footer Version Indicator (Desktop Only) */}
+      <footer className="text-center py-4 text-[10px] text-gray-300 hidden md:block">
+         v2.6 (Clean Mobile UI)
       </footer>
 
-      {/* Floating Action Buttons (Only on Feed) */}
-      {viewState === ViewState.FEED && (
-        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 flex flex-col gap-4 items-center">
+      {/* Mobile Bottom Navigation Bar (Instagram Style) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-50 px-2 pb-safe">
+          <button 
+            onClick={() => setViewState(ViewState.FEED)}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400'}`}
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={viewState === ViewState.FEED ? "currentColor" : "none"} stroke="currentColor" strokeWidth={viewState === ViewState.FEED ? 0 : 2} className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+             </svg>
+             <span className="text-[10px] font-medium">Akış</span>
+          </button>
+
+          <button 
+            onClick={() => setViewState(ViewState.BLOG)}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-400'}`}
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={viewState === ViewState.BLOG ? "currentColor" : "none"} stroke="currentColor" strokeWidth={viewState === ViewState.BLOG ? 0 : 2} className="w-6 h-6">
+               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+             </svg>
+             <span className="text-[10px] font-medium">Blog</span>
+          </button>
           
+          {/* Center Upload Button (Mobile) */}
+          <button 
+             onClick={handleUploadClick}
+             className="flex flex-col items-center justify-center w-full h-full -mt-6"
+          >
+             <div className="bg-wedding-500 text-white rounded-full p-3 shadow-lg shadow-wedding-500/40 transform active:scale-95 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+             </div>
+             <span className="text-[10px] font-medium text-gray-500 mt-1">Ekle</span>
+          </button>
+
+          <button 
+            onClick={() => setViewState(ViewState.CHAT)}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400'}`}
+          >
+             <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={viewState === ViewState.CHAT ? "currentColor" : "none"} stroke="currentColor" strokeWidth={viewState === ViewState.CHAT ? 0 : 2} className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.197.388-1.609.208-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                </svg>
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-wedding-500 rounded-full border-2 border-white"></span>
+             </div>
+             <span className="text-[10px] font-medium">Sohbet</span>
+          </button>
+
+          <a 
+            href="https://www.annabellabridal.com"
+            className="flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400"
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+             </svg>
+             <span className="text-[10px] font-medium">Mağaza</span>
+          </a>
+      </div>
+
+      {/* Floating Action Buttons (DESKTOP ONLY NOW) */}
+      {viewState === ViewState.FEED && (
+        <div className="hidden md:flex fixed bottom-10 right-10 z-40 flex-col gap-4 items-center">
           {/* Store Button */}
           <a 
             href="https://www.annabellabridal.com"
-            className="bg-white hover:bg-gray-50 text-gray-800 w-12 h-12 md:w-14 md:h-14 rounded-full shadow-xl shadow-black/10 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 border border-gray-100 group"
+            className="bg-white hover:bg-gray-50 text-gray-800 w-14 h-14 rounded-full shadow-xl shadow-black/10 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 border border-gray-100 group"
             title="Mağazaya Git"
           >
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6 text-gray-600 group-hover:text-wedding-900 transition-colors">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-600 group-hover:text-wedding-900 transition-colors">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
           </a>
@@ -425,9 +428,9 @@ const App: React.FC = () => {
           {/* Upload Button */}
           <button 
             onClick={handleUploadClick}
-            className="bg-wedding-500 hover:bg-wedding-900 text-white w-12 h-12 md:w-14 md:h-14 rounded-full shadow-xl shadow-wedding-500/30 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 group"
+            className="bg-wedding-500 hover:bg-wedding-900 text-white w-14 h-14 rounded-full shadow-xl shadow-wedding-500/30 flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 group"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 md:w-7 md:h-7 group-hover:rotate-90 transition-transform duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7 group-hover:rotate-90 transition-transform duration-300">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           </button>
@@ -446,18 +449,7 @@ const App: React.FC = () => {
         <LoginModal 
             onClose={() => setShowLoginModal(false)} 
             onLogin={handleLoginSubmit}
-            showInstallButton={!isAppInstalled}
-            onInstallClick={handleInstallClickFromLogin}
         />
-      )}
-
-      {showInstallModal && (
-          <InstallModal 
-            onClose={() => setShowInstallModal(false)}
-            platform={platform}
-            canTriggerNative={!!deferredPrompt}
-            onInstall={triggerNativeInstall}
-          />
       )}
 
       <ConfirmationModal 
