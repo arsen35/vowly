@@ -47,54 +47,78 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU (LOGLU) ---
+// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU (ArrayBuffer Modu - v1.3 Fix) ---
+// Bu fonksiyon "invalid-argument" hatasını çözmek için veriyi ham binary formata çevirir.
 const uploadImageToStorage = async (input: any, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
-  // Debug için log (Hatanın kaynağını görmek için)
-  console.log("Upload başlıyor. Veri tipi:", typeof input, 
-              "Is File?", input instanceof File, 
-              "Is Blob?", input instanceof Blob,
-              "Is String?", typeof input === 'string');
+  // Debug
+  console.log("Upload v1.3 başlatılıyor. Veri Tipi:", typeof input);
 
   try {
-      // 1. Durum: File veya Blob (En güvenli yöntem)
-      // File, Blob'dan türediği için 'instanceof Blob' her ikisini de kapsar.
-      if (input instanceof Blob) {
-          const snapshot = await uploadBytes(storageRef, input);
-          return await getDownloadURL(snapshot.ref);
-      }
-      
-      // 2. Durum: Blob URL Kurtarıcısı (invalid-argument çözümü)
-      if (typeof input === 'string' && input.startsWith('blob:')) {
-          console.log("Blob URL tespit edildi, veri dönüştürülüyor...", input);
-          const response = await fetch(input);
-          const blob = await response.blob();
-          const snapshot = await uploadBytes(storageRef, blob);
-          return await getDownloadURL(snapshot.ref);
+      let dataToUpload: Uint8Array | null = null;
+      let contentType = 'image/jpeg'; // Varsayılan
+
+      // 1. Zaten HTTP Linki ise (Upload etme, geri döndür)
+      if (typeof input === 'string' && input.startsWith('http') && !input.startsWith('blob:')) {
+          return input;
       }
 
-      // 3. Durum: Base64 String
+      // 2. Base64 String ise (Data URL)
       if (typeof input === 'string' && input.startsWith('data:')) {
           const snapshot = await uploadString(storageRef, input, 'data_url');
           return await getDownloadURL(snapshot.ref);
       }
 
-      // 4. Durum: Zaten bir web linki (http...)
-      if (typeof input === 'string' && input.startsWith('http')) {
-          return input;
+      // 3. Blob URL veya File/Blob Nesnesi ise -> Buffer'a çevir
+      // Burası "invalid-argument" hatasının kesin çözümüdür.
+      // Tarayıcının File nesnesini olduğu gibi yollamak yerine, içindeki veriyi okuyup
+      // "Sayı Dizisi" (Uint8Array) olarak yolluyoruz.
+      if ((typeof input === 'string' && input.startsWith('blob:')) || input instanceof File || input instanceof Blob) {
+           let blob: Blob;
+           
+           if (typeof input === 'string') {
+               // Blob URL ise fetch et
+               console.log("Blob URL fetch ediliyor...");
+               const response = await fetch(input);
+               blob = await response.blob();
+           } else {
+               // Zaten File/Blob ise direkt kullan
+               console.log("File/Blob nesnesi işleniyor...");
+               blob = input;
+           }
+
+           contentType = blob.type || 'image/jpeg';
+           // Blob'u ArrayBuffer'a, onu da Uint8Array'e çevir
+           const arrayBuffer = await blob.arrayBuffer();
+           dataToUpload = new Uint8Array(arrayBuffer);
       }
 
-      // Buraya düşerse format yanlıştır
-      console.error("Desteklenmeyen veri formatı:", input);
-      throw new Error("Geçersiz dosya formatı. (File veya Blob URL bulunamadı)");
+      
+      // Eğer veri hazırsa yükle
+      if (dataToUpload) {
+          console.log(`Veri yükleniyor... Boyut: ${dataToUpload.length} bytes, Tip: ${contentType}`);
+          // Metadata ile birlikte yükle
+          const snapshot = await uploadBytes(storageRef, dataToUpload, { contentType: contentType });
+          return await getDownloadURL(snapshot.ref);
+      }
+      
+      throw new Error("Dosya formatı işlenemedi (Veri boş).");
       
   } catch (error: any) {
-      console.error("Upload Hatası Detayı:", error);
-      throw new Error(`Yükleme başarısız: ${error.message}`);
+      console.error("Upload Hatası (v1.3):", error);
+      
+      let msg = error.message;
+      if (error.code === 'storage/invalid-argument') {
+          msg = "Dosya formatı Firebase tarafından kabul edilmedi (invalid-argument).";
+      } else if (error.code === 'storage/unauthorized') {
+          msg = "Yükleme izniniz yok (Yetki hatası).";
+      }
+
+      throw new Error(`Yükleme başarısız: ${msg}`);
   }
 };
 
