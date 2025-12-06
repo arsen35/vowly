@@ -47,71 +47,118 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
+// --- YARDIMCI: Dosyayı Güvenli Okuma (FileReader) ---
+// Bu fonksiyon dosyayı tarayıcının belleğinde saf byte dizisine çevirir.
+// React state'indeki "bozuk" file referanslarını temizlemenin en iyi yoludur.
+const readFileAsArrayBuffer = (file: File | Blob): Promise<Uint8Array> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            if (event.target?.result) {
+                // ArrayBuffer -> Uint8Array dönüşümü
+                const uint8Array = new Uint8Array(event.target.result as ArrayBuffer);
+                resolve(uint8Array);
+            } else {
+                reject(new Error("Dosya okunamadı (Boş sonuç)."));
+            }
+        };
+        
+        reader.onerror = (error) => {
+            reject(new Error("Dosya okuma hatası: " + error));
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+};
+
 /**
- * SUPER ROBUST UPLOAD FUNCTION (V2.0)
- * Bu fonksiyon, React state içinde bozulan File nesnelerine güvenmek yerine
- * blob: URL'lerini fetch ederek taze ve saf bir Blob oluşturur.
- * "invalid-argument" hatasının kesin çözümüdür.
+ * UPLOAD FUNCTION V3 (FileReader Mode)
+ * "invalid-argument" hatasının nihai çözümü.
+ * React state'inden gelen dosya referansına güvenmek yerine,
+ * veriyi byte byte okuyup Firebase'e öyle veriyoruz.
  */
 const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<string> => {
     const { storageInstance } = checkDbConnection();
     const storageRef = ref(storageInstance, path);
 
+    // Veri yoksa hata ver
+    if (!item) throw new Error("Yüklenecek veri bulunamadı.");
+
     try {
-        // 1. Durum: String (Base64 veya URL)
+        let dataToUpload: Uint8Array | null = null;
+        let contentType = 'image/jpeg';
+
+        // ---------------------------------------------------------
+        // SENARYO 1: String (Base64 veya URL)
+        // ---------------------------------------------------------
         if (typeof item === 'string') {
-            if (item.startsWith('http')) return item; // Zaten link
+            // Zaten bir web linki ise yükleme yapma, linki döndür.
+            if (item.startsWith('http')) return item;
             
+            // Base64 ise
             if (item.startsWith('data:')) {
-                // Base64 yüklemesi
-                console.log("Base64 yükleniyor...");
                 const snapshot = await uploadString(storageRef, item, 'data_url');
                 return await getDownloadURL(snapshot.ref);
             }
             
+            // Blob URL ise (örn: blob:http://localhost...)
             if (item.startsWith('blob:')) {
-                // Blob URL (Fetch et ve yükle - EN GÜVENLİ YOL)
-                console.log("Blob URL'den taze blob oluşturuluyor...");
+                console.log("Blob URL tespit edildi, fetch yapılıyor...");
                 const response = await fetch(item);
                 const blob = await response.blob();
-                const snapshot = await uploadBytes(storageRef, blob);
-                return await getDownloadURL(snapshot.ref);
+                dataToUpload = await readFileAsArrayBuffer(blob);
+                contentType = blob.type || 'image/jpeg';
             }
-        }
-
-        // 2. Durum: MediaItem objesi (Feed Postları için)
-        // Burada item.file'a güvenmek yerine item.url (blob:...) kullanıyoruz.
-        // Çünkü item.file bazen React Proxy'sine dönüşüp Firebase'i bozabiliyor.
-        const mediaItem = item as MediaItem;
+        } 
         
-        if (mediaItem.url && mediaItem.url.startsWith('blob:')) {
-            console.log("MediaItem Blob URL tespit edildi, fetch ediliyor...", mediaItem.url);
-            const response = await fetch(mediaItem.url);
-            const blob = await response.blob();
-            
-            // İçeriğin tipini (mime type) belirle
-            const metadata = {
-                contentType: blob.type || mediaItem.mimeType || 'image/jpeg'
-            };
-            
-            const snapshot = await uploadBytes(storageRef, blob, metadata);
-            return await getDownloadURL(snapshot.ref);
+        // ---------------------------------------------------------
+        // SENARYO 2: MediaItem Objesi (Normal yükleme)
+        // ---------------------------------------------------------
+        else {
+             const mediaItem = item as MediaItem;
+             
+             // 1. Öncelik: Gerçek Dosya (File Object)
+             if (mediaItem.file) {
+                 console.log("File nesnesi okunuyor (FileReader)...");
+                 dataToUpload = await readFileAsArrayBuffer(mediaItem.file);
+                 contentType = mediaItem.file.type || mediaItem.mimeType || 'image/jpeg';
+             } 
+             // 2. Öncelik: Blob URL
+             else if (mediaItem.url && mediaItem.url.startsWith('blob:')) {
+                 console.log("MediaItem içindeki Blob URL fetch ediliyor...");
+                 const response = await fetch(mediaItem.url);
+                 const blob = await response.blob();
+                 dataToUpload = await readFileAsArrayBuffer(blob);
+                 contentType = blob.type || 'image/jpeg';
+             }
         }
 
-        // 3. Durum: Son çare olarak File nesnesini dene (Eğer blob url yoksa)
-        if (mediaItem.file) {
-            console.log("Direkt File nesnesi yükleniyor...");
-            const snapshot = await uploadBytes(storageRef, mediaItem.file);
-            return await getDownloadURL(snapshot.ref);
+        // ---------------------------------------------------------
+        // YÜKLEME İŞLEMİ
+        // ---------------------------------------------------------
+        if (!dataToUpload) {
+             throw new Error("Dosya verisi oluşturulamadı.");
         }
 
-        throw new Error("Yüklenecek geçerli bir veri bulunamadı.");
+        console.log(`Firebase'e yükleniyor... Boyut: ${dataToUpload.length} bytes, Tip: ${contentType}`);
+        
+        // uploadBytes kullanırken contentType belirtmek önemlidir
+        const snapshot = await uploadBytes(storageRef, dataToUpload, { contentType: contentType });
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        return downloadURL;
 
     } catch (error: any) {
-        console.error("Upload Hatası:", error);
+        console.error("Upload Hatası (db.ts):", error);
+        
         if (error.code === 'storage/invalid-argument') {
-            throw new Error("Dosya formatı bozuk (invalid-argument). Lütfen sayfayı yenileyip tekrar deneyin.");
+            throw new Error("Firebase dosya formatını kabul etmedi. (V3 Fix)");
         }
+        if (error.code === 'storage/unauthorized') {
+            throw new Error("Yükleme izniniz yok. Lütfen sayfayı yenileyip tekrar deneyin.");
+        }
+        
         throw error;
     }
 };
@@ -142,10 +189,10 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // Yeni upload fonksiyonunu kullan
+        // Yeni V3 upload fonksiyonunu kullan
         const downloadURL = await uploadMediaItem(item, path);
         
-        // Kaydettikten sonra dosya referanslarını temizle
+        // Kaydettikten sonra dosya referanslarını temizle, sadece URL kalsın
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { file, ...rest } = item; 
         return { ...rest, url: downloadURL };
@@ -177,7 +224,7 @@ export const dbService = {
   saveBlogPost: async (post: BlogPost): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const path = `blog/${post.id}/cover_${Date.now()}`;
-    // Blog görseli bir string (base64 veya url) olarak gelir
+    // Blog görseli string veya file olabilir, uploadMediaItem halleder
     const imageUrl = await uploadMediaItem(post.coverImage, path);
     const blogToSave = { ...post, coverImage: imageUrl };
     await setDoc(doc(dbInstance, BLOG_COLLECTION, post.id), blogToSave);
