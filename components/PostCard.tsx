@@ -52,7 +52,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
   // Analyze Image Color when media changes
   useEffect(() => {
-    let isActive = true; // Component unmount olursa state güncellememek için
+    let isActive = true;
 
     const extractColor = async () => {
         const currentMedia = post.media[currentMediaIndex];
@@ -67,11 +67,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
             const img = new Image();
             img.crossOrigin = "Anonymous"; 
             
-            // ⭐ CACHE BUSTING: Tarayıcının önbellekteki (CORS'suz) resmi kullanmasını engelle.
-            // URL'in sonuna rastgele bir sayı ekleyerek sunucudan taze (CORS'lu) veri istiyoruz.
-            const timestamp = new Date().getTime();
-            const src = currentMedia.url.startsWith('http') 
-                ? `${currentMedia.url}${currentMedia.url.includes('?') ? '&' : '?'}cors_fix=${timestamp}`
+            // ⭐ DÜZELTME: Firebase URL'leri veya Token içeren URL'ler değiştirilince (cache-bust eklenince) 
+            // imza bozuluyor ve 403 hatası veriyor. Bu yüzden sadece "temiz" URL'lere ekleme yapıyoruz.
+            const isSignedUrl = currentMedia.url.includes('token=') || currentMedia.url.includes('firebasestorage');
+            
+            const src = (!isSignedUrl && currentMedia.url.startsWith('http'))
+                ? `${currentMedia.url}${currentMedia.url.includes('?') ? '&' : '?'}t=${new Date().getTime()}`
                 : currentMedia.url;
 
             img.src = src;
@@ -83,29 +84,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                     const ctx = canvas.getContext('2d');
                     if (!ctx) return;
 
-                    // Resmi 1x1 piksele indirerek tarayıcının ortalama rengi hesaplamasını sağla
+                    // Resmi 1x1 piksele indir
                     canvas.width = 1;
                     canvas.height = 1;
                     
                     ctx.drawImage(img, 0, 0, 1, 1);
-
-                    // Pixel verilerini al
                     const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
 
-                    // Renk çok açık veya çok koyu ise düzenle
-                    // Çok beyazsa koyu pembe yap (yazı okunabilsin)
-                    if (r > 230 && g > 230 && b > 230) {
+                    // ⭐ RENK MANTIĞI GÜNCELLEMESİ:
+                    // Buton yazısı BEYAZ olduğu için koyu renkler (siyah, lacivert vs.) harika durur.
+                    // Sadece çok çok açık (neredeyse beyaz) renkleri engelliyoruz.
+                    
+                    // Eğer renk çok beyazsa (RGB > 240) okunabilirlik için pembeye dön.
+                    if (r > 240 && g > 240 && b > 240) {
                         setDominantColor('#D34A7D'); 
-                    }
-                    // Çok siyahsa yine pembe yap (buton kaybolmasın)
-                    else if (r < 20 && g < 20 && b < 20) {
-                        setDominantColor('#D34A7D');
                     } else {
+                        // Koyu renkler dahil her şeyi kabul et
                         setDominantColor(`rgb(${r}, ${g}, ${b})`);
                     }
                 } catch (e) {
-                    // Canvas tainted hatası (CORS) gelirse burası çalışır
-                    console.warn("Renk analizi CORS engeline takıldı, varsayılan renk kullanılıyor.");
+                    // CORS hatası (Canvas tainted)
+                    // Sunucu header göndermezse buraya düşer, varsayılan renk kalır.
                     if (isActive) setDominantColor('#D34A7D');
                 }
             };
@@ -335,7 +334,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                           className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transform transition-transform duration-700 group-hover:scale-105 block"
                           loading="lazy"
                           draggable={false}
-                          /* crossOrigin özelliği burada yok, resim her zaman açılır */
+                          /* crossOrigin özelliği kaldırıldı, çünkü CORS hatasına sebep oluyor */
                         />
                     )}
                 </div>
