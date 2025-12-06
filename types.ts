@@ -16,9 +16,9 @@ export interface Comment {
 export interface MediaItem {
   url: string; // Önizleme linki
   type: 'image' | 'video';
-  file?: File; // Orijinal DOM Dosya nesnesi (UI için)
-  fileData?: Uint8Array; // SAF HAM VERİ (Upload için - Kaybolmaz)
-  mimeType?: string; // Dosya tipi (örn: image/jpeg)
+  file?: File; // UI için geçici
+  base64Data?: string; // UPLOAD İÇİN KESİN VERİ (String)
+  mimeType?: string; 
 }
 
 export interface Post {

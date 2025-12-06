@@ -26,13 +26,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // AI için (Sadece görsel analizde kullanılır)
-  const readFileAsBase64 = (file: File): Promise<string> => {
+  // Dosyayı Base64 String'e çeviren yardımcı fonksiyon
+  const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => {
-            if (event.target?.result) resolve(event.target.result as string);
-            else reject(new Error("Dosya okunamadı"));
+            if (typeof event.target?.result === 'string') {
+                resolve(event.target.result);
+            } else {
+                reject(new Error("Dosya string'e çevrilemedi"));
+            }
         };
         reader.onerror = (error) => reject(error);
         reader.readAsDataURL(file);
@@ -61,10 +64,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
       
-            // AI Caption Generate
+            // AI Caption Generate (İlk resim için)
             if (!caption) {
-                readFileAsBase64(files[0]).then(base64 => {
-                    generateAICaption(base64);
+                fileToBase64(files[0]).then(base64 => {
+                     // AI için header'ı temizle
+                    const cleanBase64 = base64.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
+                    generateAICaption(cleanBase64);
                 }).catch(console.warn);
             }
         }
@@ -78,9 +83,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     }
   };
 
-  const generateAICaption = async (base64Image: string) => {
+  const generateAICaption = async (cleanBase64: string) => {
     setIsGeneratingAI(true);
-    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
     try {
       const result = await generateWeddingCaption(cleanBase64);
       setCaption(result.caption);
@@ -92,9 +96,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     }
   };
 
-  // --- KRİTİK DÜZELTME: handleSubmit ---
-  // Dosyaları "File" objesi olarak değil, "Uint8Array" (Byte Dizisi) olarak hazırlar.
-  // Bu sayede modal kapandığında veri kaybolmaz.
+  // --- KESİN ÇÖZÜM: handleSubmit ---
+  // Dosyaları Base64 String'e çevirip gönderiyoruz.
+  // String primitive tiptir, referansı kaybolmaz.
   const handleSubmit = async () => {
     if (selectedMedia.length === 0 || !caption || !userName.trim()) return;
 
@@ -103,16 +107,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     try {
         const processedMedia = await Promise.all(selectedMedia.map(async (item) => {
             if (item.file) {
-                // 1. Dosyayı ArrayBuffer olarak oku (Ham veri)
-                const buffer = await item.file.arrayBuffer();
-                // 2. Bunu Uint8Array'e çevir (Firebase'in en sevdiği format)
-                const byteArray = new Uint8Array(buffer);
+                // Dosyayı String'e çevir
+                const base64String = await fileToBase64(item.file);
                 
                 return { 
                     ...item, 
-                    fileData: byteArray, // Ham veriyi ekle
-                    mimeType: item.file.type, // Tipi ekle
-                    file: undefined // Orijinal DOM referansını sil (artık ihtiyacımız yok)
+                    base64Data: base64String, // ARTIK VERİ BURADA (STRING OLARAK)
+                    file: undefined // Orijinal dosyayı silebiliriz, işimiz bitti
                 };
             }
             return item;

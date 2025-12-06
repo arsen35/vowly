@@ -15,15 +15,13 @@ import {
 } from "firebase/firestore";
 import { 
   ref, 
-  uploadBytes, 
-  getDownloadURL, 
-  uploadString
+  uploadString,
+  getDownloadURL
 } from "firebase/storage";
 
 const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
 const CHAT_COLLECTION = 'chat_messages';
-const MAX_CHAT_MESSAGES = 50;
 
 // --- MOCK DATA ---
 const MOCK_POSTS: Post[] = [
@@ -48,33 +46,28 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- YENİLENMİŞ UPLOAD FONKSİYONU ---
-// Artık Uint8Array (Ham veri) kabul ediyor.
-const uploadImageToStorage = async (input: Uint8Array | string, path: string, mimeType?: string): Promise<string> => {
+// --- YENİLENMİŞ UPLOAD FONKSİYONU: SADECE STRING ---
+// Bu fonksiyon artık sadece String kabul eder.
+// Ya Base64 string'i ya da HTTP URL'i.
+const uploadImageToStorage = async (input: string, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
-  // Zaten URL ise
-  if (typeof input === 'string' && input.startsWith('http')) return input;
+  // Zaten URL ise (http...)
+  if (input.startsWith('http')) return input;
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Durum: Ham Veri (Uint8Array) - EN GÜVENLİ YÖNTEM
-      if (input instanceof Uint8Array) {
-          const snapshot = await uploadBytes(storageRef, input, { 
-              contentType: mimeType || 'image/jpeg' 
-          });
-          return await getDownloadURL(snapshot.ref);
-      }
-      
-      // 2. Durum: Base64 String (Yedek)
-      if (typeof input === 'string' && input.startsWith('data:')) {
+      // Input "data:" ile başlıyorsa bu bir Base64 string'dir.
+      // Firebase 'uploadString' metodunu kullanırız.
+      // Bu metod invalid-argument hatası VERMEZ, çünkü input basbayağı string'dir.
+      if (input.startsWith('data:')) {
           const snapshot = await uploadString(storageRef, input, 'data_url');
           return await getDownloadURL(snapshot.ref);
       }
-
-      throw new Error("Desteklenmeyen veri formatı (Sadece Uint8Array veya Base64).");
+      
+      throw new Error("Veri formatı tanınamadı. (Sadece Base64 veya URL)");
   } catch (error: any) {
       console.error("Upload Hatası:", error);
       throw new Error(`Yükleme başarısız: ${error.message}`);
@@ -104,18 +97,15 @@ export const dbService = {
 
       // Medyaları yükle
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
-        // Dosya yolu
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // Kaynak: Varsa ham veri (fileData), yoksa url (örn: base64 veya http link)
-        const source = item.fileData ? item.fileData : item.url;
+        // Modal'dan gelen Base64 verisini al
+        const source = item.base64Data || item.url;
         
-        // Yükleme yap
-        const downloadURL = await uploadImageToStorage(source, path, item.mimeType);
+        const downloadURL = await uploadImageToStorage(source, path);
         
-        // Firestore'a kaydetmeden önce büyük veriyi (fileData) temizle!
-        // Sadece indirme linkini sakla.
-        const { file, fileData, ...rest } = item;
+        // Kaydettikten sonra ağır veriyi sil, sadece URL kalsın
+        const { file, base64Data, ...rest } = item;
         return { ...rest, url: downloadURL };
       }));
 
@@ -145,7 +135,7 @@ export const dbService = {
   saveBlogPost: async (post: BlogPost): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const path = `blog/${post.id}/cover_${Date.now()}`;
-    // Blog resimleri genelde base64 gelir (editörden), direk yükle
+    // Blog resimleri zaten base64 geliyor
     const imageUrl = await uploadImageToStorage(post.coverImage, path);
     const blogToSave = { ...post, coverImage: imageUrl };
     await setDoc(doc(dbInstance, BLOG_COLLECTION, post.id), blogToSave);
