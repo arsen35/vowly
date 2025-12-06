@@ -47,26 +47,30 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU ---
-// invalid-argument hatasının ilacı burasıdır.
-const uploadImageToStorage = async (input: File | string, path: string): Promise<string> => {
+// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU (LOGLU) ---
+const uploadImageToStorage = async (input: any, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
+  // Debug için log (Hatanın kaynağını görmek için)
+  console.log("Upload başlıyor. Veri tipi:", typeof input, 
+              "Is File?", input instanceof File, 
+              "Is Blob?", input instanceof Blob,
+              "Is String?", typeof input === 'string');
+
   try {
-      // 1. Durum: Gerçek bir Dosya (File)
-      if (input instanceof File) {
+      // 1. Durum: File veya Blob (En güvenli yöntem)
+      // File, Blob'dan türediği için 'instanceof Blob' her ikisini de kapsar.
+      if (input instanceof Blob) {
           const snapshot = await uploadBytes(storageRef, input);
           return await getDownloadURL(snapshot.ref);
       }
       
       // 2. Durum: Blob URL Kurtarıcısı (invalid-argument çözümü)
-      // Eğer elimizde dosya yoksa ama ekrandaki önizleme linki (blob:...) varsa,
-      // o linkten veriyi çekip tekrar dosyaya çevirip yüklüyoruz.
       if (typeof input === 'string' && input.startsWith('blob:')) {
-          console.log("Blob URL tespit edildi, veri dönüştürülüyor...");
+          console.log("Blob URL tespit edildi, veri dönüştürülüyor...", input);
           const response = await fetch(input);
           const blob = await response.blob();
           const snapshot = await uploadBytes(storageRef, blob);
@@ -84,7 +88,10 @@ const uploadImageToStorage = async (input: File | string, path: string): Promise
           return input;
       }
 
+      // Buraya düşerse format yanlıştır
+      console.error("Desteklenmeyen veri formatı:", input);
       throw new Error("Geçersiz dosya formatı. (File veya Blob URL bulunamadı)");
+      
   } catch (error: any) {
       console.error("Upload Hatası Detayı:", error);
       throw new Error(`Yükleme başarısız: ${error.message}`);

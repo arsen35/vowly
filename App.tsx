@@ -347,6 +347,11 @@ const App: React.FC = () => {
         ) : null}
       </main>
 
+      {/* Footer Version Indicator */}
+      <footer className="text-center py-4 text-[10px] text-gray-300">
+         v1.2 (Stable)
+      </footer>
+
       {/* Floating Action Buttons (Only on Feed) */}
       {viewState === ViewState.FEED && (
         <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 flex flex-col gap-4 items-center">
