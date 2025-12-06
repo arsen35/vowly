@@ -149,14 +149,14 @@ const App: React.FC = () => {
     const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
     let likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
 
-    let newCount = 0;
+    let incrementBy = 0;
     let isLiked = false;
 
     // 2. UI Güncellemesi (Hızlı Tepki)
     setPosts(prevPosts => prevPosts.map(post => {
         if (post.id === postId) {
             isLiked = !post.isLikedByCurrentUser;
-            newCount = isLiked ? post.likes + 1 : post.likes - 1;
+            incrementBy = isLiked ? 1 : -1;
             
             // LocalStorage array güncelle
             if (isLiked) {
@@ -165,7 +165,7 @@ const App: React.FC = () => {
                 likedPosts = likedPosts.filter((id: string) => id !== postId);
             }
             
-            return { ...post, isLikedByCurrentUser: isLiked, likes: newCount };
+            return { ...post, isLikedByCurrentUser: isLiked, likes: post.likes + incrementBy };
         }
         return post;
     }));
@@ -173,9 +173,9 @@ const App: React.FC = () => {
     // LocalStorage'a kaydet (Tarayıcı hafızası)
     localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
 
-    // 3. Veritabanı Güncellemesi (Sadece sayı)
+    // 3. Veritabanı Güncellemesi (Delta gönderiyoruz: +1 veya -1)
     try {
-        await dbService.updateLikeCount(postId, newCount);
+        await dbService.updateLikeCount(postId, incrementBy);
     } catch (error) {
         console.error("Like update failed:", error);
     }
@@ -359,8 +359,8 @@ const App: React.FC = () => {
               {posts.length === 0 && (
                   <div className="text-center py-20 animate-fadeIn">
                     <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-xl inline-block mb-4 max-w-md">
-                        <p className="font-bold text-sm">Kurulum Gerekli</p>
-                        <p className="text-xs mt-1">Firebase kurulumu henüz tamamlanmadı. Veriler kaydedilmeyecek.</p>
+                        <p className="font-bold text-sm">İlk Paylaşımı Yap</p>
+                        <p className="text-xs mt-1">Sistem tamamen hazır. Bir fotoğraf yükleyerek başlayabilirsin.</p>
                     </div>
                     <p className="text-wedding-900 font-serif text-xl font-medium">Henüz anı paylaşılmamış</p>
                     <p className="text-gray-500 text-sm mt-2">İlk anı sen paylaş!</p>
