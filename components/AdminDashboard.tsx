@@ -39,8 +39,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-           <h2 className="text-2xl font-serif font-bold text-gray-900">Yönetici Paneli</h2>
-           <p className="text-sm text-gray-500">İçerikleri buradan yönetebilirsiniz.</p>
+           <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-white">Yönetici Paneli</h2>
+           <p className="text-sm text-gray-500 dark:text-gray-400">İçerikleri buradan yönetebilirsiniz.</p>
         </div>
         <div className="flex gap-2">
             <Button onClick={onResetData} variant="outline" className="text-xs !py-1">Verileri Sıfırla</Button>
@@ -49,45 +49,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
       </div>
 
       {/* Storage Indicator (IndexedDB Version) */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm mb-6">
         <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Disk Kullanımı</span>
-            <span className="text-xs font-bold text-green-600">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Disk Kullanımı</span>
+            <span className="text-xs font-bold text-green-600 dark:text-green-400">
                 {formatBytes(storageInfo.usage)} / {formatBytes(storageInfo.quota)} (Boş Alanın ~%80'i)
             </span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
             <div 
                 className="h-2.5 rounded-full bg-green-500 transition-all duration-500"
                 style={{ width: `${Math.max(1, storageInfo.percentage)}%` }} // En az %1 görünsün ki çalıştığı anlaşılsın
             ></div>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Veriler tarayıcınızın <b>IndexedDB</b> alanında saklanmaktadır. Bu alan cihazınızın boş disk alanına göre belirlenir (Genellikle GB'larca yeriniz var).
         </p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-           <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Toplam Gönderi</div>
-           <div className="text-2xl font-bold text-wedding-900">{posts.length}</div>
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+           <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Toplam Gönderi</div>
+           <div className="text-2xl font-bold text-wedding-900 dark:text-white">{posts.length}</div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-           <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Toplam Beğeni</div>
-           <div className="text-2xl font-bold text-wedding-900">{totalLikes}</div>
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+           <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Toplam Beğeni</div>
+           <div className="text-2xl font-bold text-wedding-900 dark:text-white">{totalLikes}</div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-           <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Toplam Yorum</div>
-           <div className="text-2xl font-bold text-wedding-900">{totalComments}</div>
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+           <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Toplam Yorum</div>
+           <div className="text-2xl font-bold text-wedding-900 dark:text-white">{totalComments}</div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500">
+          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
               <tr>
                 <th className="px-6 py-4">Medya</th>
                 <th className="px-6 py-4">Kullanıcı</th>
@@ -96,18 +96,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
                 <th className="px-6 py-4 text-right">İşlem</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {posts.map(post => (
-                <tr key={post.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <td className="px-6 py-4">
                     <img 
                       src={post.media[0].url} 
                       alt="Thumbnail" 
-                      className="w-12 h-16 object-cover rounded-lg border border-gray-200"
+                      className="w-12 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                     />
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-bold text-gray-900">{post.user.name}</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{post.user.name}</div>
                     <div className="text-xs text-gray-400">{new Date(post.timestamp).toLocaleDateString('tr-TR')}</div>
                   </td>
                   <td className="px-6 py-4 max-w-xs">
@@ -122,7 +122,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ posts, onDeleteP
                   <td className="px-6 py-4 text-right">
                     <button 
                       onClick={() => onDeletePost(post.id)}
-                      className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-medium text-xs border border-red-200 px-4 py-2 rounded-full transition-all shadow-sm hover:shadow-md active:scale-95"
+                      className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white font-medium text-xs border border-red-200 dark:border-red-900 px-4 py-2 rounded-full transition-all shadow-sm hover:shadow-md active:scale-95"
                     >
                       Sil
                     </button>

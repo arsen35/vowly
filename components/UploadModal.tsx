@@ -130,15 +130,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   return (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-end md:items-center justify-center md:p-4 backdrop-blur-sm">
-      <div className={`bg-white rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
+      <div className={`bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
           ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[90vh]' : 'max-w-lg md:h-auto'}
           h-[95vh] md:h-auto transition-all duration-300
       `}>
         
         {/* Header */}
-        <div className="p-4 border-b flex justify-between items-center bg-gray-50 shrink-0 h-14">
-          <h2 className="text-lg font-serif font-bold text-gray-800">Anını Paylaş</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-200 p-1.5 rounded-full">
+        <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800 shrink-0 h-14">
+          <h2 className="text-lg font-serif font-bold text-gray-800 dark:text-white">Anını Paylaş</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-200 dark:bg-gray-700 dark:text-gray-300 p-1.5 rounded-full">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -149,18 +149,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
           
           {selectedMedia.length === 0 ? (
-            <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50">
+            <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
                 <div 
-                  className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 transition-all group relative bg-white"
+                  className="w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 dark:hover:bg-gray-700 transition-all group relative bg-white dark:bg-gray-800/50"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <div className="bg-wedding-50 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                  <div className="bg-wedding-50 dark:bg-wedding-900/20 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-wedding-500">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                       </svg>
                   </div>
-                  <p className="text-gray-700 font-bold text-lg">Fotoğraf Seç</p>
-                  <p className="text-gray-400 text-sm mt-2 text-center px-4">En güzel anılarını paylaş.</p>
+                  <p className="text-gray-700 dark:text-gray-300 font-bold text-lg">Fotoğraf Seç</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center px-4">En güzel anılarını paylaş.</p>
                 </div>
             </div>
           ) : (
@@ -200,23 +200,23 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
               </div>
 
               {/* Form */}
-              <div className="w-full md:w-2/5 bg-white flex flex-col h-full overflow-hidden">
+              <div className="w-full md:w-2/5 bg-white dark:bg-gray-900 flex flex-col h-full overflow-hidden">
                  <div className="flex-1 overflow-y-auto p-5 pb-4">
                      <div className="space-y-5">
                          <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Görünecek İsim <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Görünecek İsim <span className="text-red-500">*</span></label>
                             <input 
                               type="text" 
                               value={userName}
                               onChange={(e) => setUserName(e.target.value)}
-                              className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800 focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500 transition-all"
+                              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm text-gray-800 dark:text-white focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500 transition-all"
                               placeholder="Adınız Soyadınız"
                             />
                          </div>
 
                          <div>
                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">Açıklama</label>
+                                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">Açıklama</label>
                                 {isGeneratingAI && (
                                     <span className="flex items-center gap-1 text-xs text-wedding-500 font-medium animate-pulse">
                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10a1 1 0 11-2 0 1 1 0 012 0zm-5 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
@@ -225,9 +225,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                 )}
                             </div>
                             
-                            <div className="bg-wedding-50 rounded-xl p-3 border border-wedding-100">
+                            <div className="bg-wedding-50 dark:bg-wedding-900/10 rounded-xl p-3 border border-wedding-100 dark:border-wedding-900/20">
                                 <textarea
-                                  className="w-full bg-transparent border-none p-0 text-sm text-gray-800 focus:ring-0 placeholder-gray-400 resize-none min-h-[100px]"
+                                  className="w-full bg-transparent border-none p-0 text-sm text-gray-800 dark:text-gray-200 focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500 resize-none min-h-[100px]"
                                   rows={4}
                                   placeholder="En güzel anını anlat..."
                                   value={caption}
@@ -235,19 +235,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                 />
                                 <div className="mt-2 flex flex-wrap gap-2">
                                    {hashtags.map((tag, idx) => (
-                                     <span key={idx} className="text-[10px] bg-white text-wedding-600 px-2 py-1 rounded-md font-medium border border-wedding-100">{tag}</span>
+                                     <span key={idx} className="text-[10px] bg-white dark:bg-gray-800 text-wedding-600 dark:text-wedding-400 px-2 py-1 rounded-md font-medium border border-wedding-100 dark:border-gray-700">{tag}</span>
                                    ))}
                                 </div>
                             </div>
                          </div>
                          
                          {/* Shoppable Products Section */}
-                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                              <div className="flex items-center gap-2 mb-3">
                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-wedding-500">
                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                  </svg>
-                                 <label className="text-sm font-bold text-gray-700">Ürün Bağlantısı (Opsiyonel)</label>
+                                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Ürün Bağlantısı (Opsiyonel)</label>
                              </div>
                              
                              <div className="space-y-3">
@@ -255,10 +255,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                    type="url" 
                                    value={productUrl}
                                    onChange={(e) => setProductUrl(e.target.value)}
-                                   className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm text-gray-800 focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500"
+                                   className="w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-2.5 text-sm text-gray-800 dark:text-white focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500"
                                    placeholder="https://annabellabridal.com/urun..."
                                  />
-                                 <p className="text-[10px] text-gray-400">Takipçiler bu linke tıklayarak ürünü satın alabilir.</p>
+                                 <p className="text-[10px] text-gray-400 dark:text-gray-500">Takipçiler bu linke tıklayarak ürünü satın alabilir.</p>
                              </div>
                          </div>
                          <div className="h-4 md:h-0"></div>
@@ -266,7 +266,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                  </div>
 
                  {/* Footer */}
-                 <div className="p-4 border-t bg-white shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                 <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
                     <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1" isLoading={isProcessing}>
                         {isProcessing ? 'Paylaşılıyor...' : 'Paylaş'}

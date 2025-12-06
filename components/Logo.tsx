@@ -14,14 +14,14 @@ export const Logo: React.FC<LogoProps> = ({ className = "w-32 h-auto" }) => {
         className={className}
         aria-label="Annabella Bridal"
     >
-      {/* Annabella - Siyah/Koyu Gri */}
-      <text x="0" y="30" fontFamily="'Playfair Display', serif" fontSize="28" fontWeight="bold" fill="#111827">
+      {/* Annabella - Light Mode: Siyah, Dark Mode: Beyaz */}
+      <text x="0" y="30" fontFamily="'Playfair Display', serif" fontSize="28" fontWeight="bold" className="fill-gray-900 dark:fill-white transition-colors duration-300">
         Annabella
       </text>
       
       <circle cx="145" cy="12" r="3" fill="#D34A7D" />
       
-      {/* Blog - Pembe */}
+      {/* Blog - Pembe (Her iki modda aynı) */}
       <text x="135" y="30" fontFamily="'Lato', sans-serif" fontSize="28" fontWeight="300" fill="#D34A7D">
         Blog
       </text>

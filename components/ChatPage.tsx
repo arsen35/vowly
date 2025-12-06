@@ -171,21 +171,21 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
   // 1. GİRİŞ EKRANI
   if (!isNameSet) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-wedding-50" style={{ backgroundImage: `url("${weddingPattern}")` }}>
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-wedding-100">
-                <div className="w-16 h-16 bg-wedding-100 rounded-full flex items-center justify-center mx-auto mb-4 text-wedding-500 animate-pulse">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-wedding-50 dark:bg-black" style={{ backgroundImage: `url("${weddingPattern}")` }}>
+            <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-wedding-100 dark:border-gray-800">
+                <div className="w-16 h-16 bg-wedding-100 dark:bg-wedding-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-wedding-500 animate-pulse">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.197.388-1.609.208-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
                     </svg>
                 </div>
-                <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">Gelinler Topluluğu</h2>
-                <p className="text-gray-500 mb-6 text-sm">Diğer gelin adaylarıyla tanışmak, fikir alışverişi yapmak ve sorularını sormak için sohbete katıl.</p>
+                <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-2">Gelinler Topluluğu</h2>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Diğer gelin adaylarıyla tanışmak, fikir alışverişi yapmak ve sorularını sormak için sohbete katıl.</p>
                 
                 <form onSubmit={handleJoinChat}>
                     <input 
                         type="text" 
                         placeholder="Adın nedir?" 
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-wedding-500 outline-none"
+                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-wedding-500 outline-none dark:text-white"
                         value={userName}
                         onChange={(e) => setUserName(e.target.value)}
                         autoFocus
@@ -199,9 +199,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
 
   // 2. SOHBET EKRANI
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] bg-wedding-50 relative">
+    <div className="flex flex-col h-[calc(100dvh-64px)] bg-wedding-50 dark:bg-black relative transition-colors duration-300">
         {/* Background Pattern */}
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-80" 
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-80 dark:opacity-20 dark:invert" 
              style={{ 
                  backgroundImage: `url("${weddingPattern}")`,
                  backgroundSize: '150px 150px' 
@@ -214,7 +214,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 
                 {messages.length === 0 && (
                     <div className="text-center py-10 opacity-60 self-center mb-auto mt-20">
-                        <div className="bg-white/80 border border-wedding-200 text-wedding-900 px-4 py-2 rounded-lg inline-block shadow-sm text-sm">
+                        <div className="bg-white/80 dark:bg-gray-800/80 border border-wedding-200 dark:border-wedding-900 text-wedding-900 dark:text-wedding-200 px-4 py-2 rounded-lg inline-block shadow-sm text-sm">
                             🔒 Mesajlar uçtan uca şifrelenmese de kalpten kalbe şifrelidir. ❤️
                         </div>
                     </div>
@@ -230,7 +230,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                             <div className={`flex max-w-[80%] md:max-w-[60%] gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                 {/* Avatar */}
                                 <div className={`w-8 h-8 shrink-0 ${isPrevSame ? 'opacity-0 h-0' : ''}`}>
-                                    <img src={msg.avatar} className="w-8 h-8 rounded-full border border-black/5 shadow-sm bg-white" alt="avatar" />
+                                    <img src={msg.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/10 shadow-sm bg-white" alt="avatar" />
                                 </div>
 
                                 {/* Bubble */}
@@ -240,8 +240,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                         ${isMe 
                                             ? 'bg-wedding-500 text-white rounded-l-lg rounded-br-lg' 
                                             : msg.isAdmin 
-                                                ? 'bg-white border-2 border-wedding-500 text-gray-900 rounded-r-lg rounded-bl-lg'
-                                                : 'bg-white text-gray-900 rounded-r-lg rounded-bl-lg'
+                                                ? 'bg-white dark:bg-gray-800 border-2 border-wedding-500 text-gray-900 dark:text-white rounded-r-lg rounded-bl-lg'
+                                                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-r-lg rounded-bl-lg'
                                         }
                                         ${isPrevSame ? (isMe ? 'rounded-tr-lg mt-0.5' : 'rounded-tl-lg mt-0.5') : 'rounded-t-lg mt-2'}
                                     `}
@@ -273,7 +273,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                     
                                     {/* IMAGE RENDER */}
                                     {msg.image && (
-                                        <div className="mb-1 rounded-lg overflow-hidden border border-black/5">
+                                        <div className="mb-1 rounded-lg overflow-hidden border border-black/5 dark:border-white/10">
                                             <img src={msg.image} alt="Chat media" className="max-w-full h-auto max-h-60 object-cover" />
                                         </div>
                                     )}
@@ -283,7 +283,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                         <p className="whitespace-pre-wrap leading-snug mx-1.5 mb-0.5">{msg.text}</p>
                                     )}
 
-                                    <span className={`text-[10px] block text-right mt-0.5 mx-1.5 ${isMe ? 'text-white/80' : 'text-gray-400'}`}>
+                                    <span className={`text-[10px] block text-right mt-0.5 mx-1.5 ${isMe ? 'text-white/80' : 'text-gray-400 dark:text-gray-500'}`}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         {isMe && <span className="ml-1 text-white/90">✓✓</span>}
                                     </span>
@@ -297,11 +297,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white px-2 py-2 border-t border-gray-200 z-20 flex flex-col gap-2">
+        <div className="bg-white dark:bg-black px-2 py-2 border-t border-gray-200 dark:border-gray-800 z-20 flex flex-col gap-2 transition-colors duration-300">
             
             {/* Image Preview (If selected) */}
             {selectedImage && (
-                <div className="mx-4 mb-1 relative bg-white p-2 rounded-xl shadow-md border border-wedding-100 self-start animate-in slide-in-from-bottom-5">
+                <div className="mx-4 mb-1 relative bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md border border-wedding-100 dark:border-gray-700 self-start animate-in slide-in-from-bottom-5">
                     <img src={selectedImage} alt="Preview" className="h-24 w-auto rounded-lg object-cover" />
                     <button 
                         onClick={() => setSelectedImage(null)}
@@ -326,7 +326,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                 {/* Plus/Attach Button */}
                 <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-gray-500 p-3 mb-1 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors shadow-sm active:scale-95 border border-gray-100"
+                    className="text-gray-500 dark:text-gray-400 p-3 mb-1 bg-gray-50 dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm active:scale-95 border border-gray-100 dark:border-gray-700"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -335,7 +335,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
 
                 <form onSubmit={handleSendMessage} className="flex-1 flex gap-2 items-end">
                     <textarea 
-                        className="flex-1 bg-gray-50 border-0 rounded-2xl px-4 py-3 text-sm focus:ring-0 focus:outline-none placeholder-gray-500 shadow-sm resize-none min-h-[44px] max-h-[120px]"
+                        className="flex-1 bg-gray-50 dark:bg-gray-800 border-0 rounded-2xl px-4 py-3 text-sm focus:ring-0 focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 dark:text-white shadow-sm resize-none min-h-[44px] max-h-[120px]"
                         placeholder="Bir mesaj yazın..."
                         rows={1}
                         value={newMessage}
@@ -349,7 +349,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                             p-3 mb-1 rounded-full transition-all duration-200 flex items-center justify-center shadow-md flex-shrink-0
                             ${(newMessage.trim() || selectedImage) && !isSending
                                 ? 'bg-wedding-500 hover:bg-wedding-600 text-white transform active:scale-95' 
-                                : 'bg-transparent text-gray-400 shadow-none cursor-default'
+                                : 'bg-transparent text-gray-400 dark:text-gray-600 shadow-none cursor-default'
                             }
                         `}
                     >

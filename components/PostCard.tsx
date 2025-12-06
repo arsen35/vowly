@@ -161,17 +161,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   };
 
   return (
-    <div className="bg-white sm:rounded-xl shadow-sm border-y sm:border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full transform hover:scale-[0.98]">
+    <div className="bg-white dark:bg-gray-900 sm:rounded-xl shadow-sm border-y sm:border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full transform hover:scale-[0.98]">
       {/* Header */}
-      <div className="p-3 flex items-center gap-3 border-b border-gray-50 relative">
+      <div className="p-3 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800 relative">
         <img 
           src={post.user.avatar} 
           alt={post.user.name} 
-          className="w-8 h-8 rounded-full object-cover border border-gray-200"
+          className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
         />
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-gray-900 text-sm truncate">{post.user.name}</h3>
-          <p className="text-xs text-gray-500 truncate">{new Date(post.timestamp).toLocaleDateString('tr-TR')}</p>
+          <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate">{post.user.name}</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{new Date(post.timestamp).toLocaleDateString('tr-TR')}</p>
         </div>
         
         {/* Three Dots Menu for Admin */}
@@ -180,7 +180,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 <button 
                     type="button"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
@@ -188,10 +188,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 </button>
 
                 {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-xl border border-gray-100 z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <button 
                             onClick={handleDelete}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -206,7 +206,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
       {/* Carousel Media Container */}
       <div 
-        className="relative w-full aspect-[4/5] bg-gray-100 group touch-pan-y overflow-hidden"
+        className="relative w-full aspect-[4/5] bg-gray-100 dark:bg-gray-800 group touch-pan-y overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -241,7 +241,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
           <>
             <button 
                 onClick={prevSlide}
-                className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-1.5 rounded-full shadow-lg transition-all duration-200 hidden md:block z-10 ${
+                className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-black/60 hover:bg-white dark:hover:bg-black text-gray-800 dark:text-white p-1.5 rounded-full shadow-lg transition-all duration-200 hidden md:block z-10 ${
                     currentMediaIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100'
                 }`}
             >
@@ -252,7 +252,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
             <button 
                 onClick={nextSlide}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-1.5 rounded-full shadow-lg transition-all duration-200 hidden md:block z-10 ${
+                className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-black/60 hover:bg-white dark:hover:bg-black text-gray-800 dark:text-white p-1.5 rounded-full shadow-lg transition-all duration-200 hidden md:block z-10 ${
                     currentMediaIndex === post.media.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100'
                 }`}
             >
@@ -311,7 +311,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
             <div className="relative">
                 <button 
                   onClick={handleLike}
-                  className={`relative z-10 transition-transform duration-200 active:scale-75 hover:scale-110 ${isLiked ? 'text-wedding-500' : 'text-gray-900'}`}
+                  className={`relative z-10 transition-transform duration-200 active:scale-75 hover:scale-110 ${isLiked ? 'text-wedding-500' : 'text-gray-900 dark:text-white'}`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill={isLiked ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -337,7 +337,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
             {/* COMMENT BUTTON */}
             <button 
               onClick={() => setIsCommentOpen(!isCommentOpen)}
-              className="relative transition-all duration-200 active:scale-90 hover:scale-110 text-gray-900"
+              className="relative transition-all duration-200 active:scale-90 hover:scale-110 text-gray-900 dark:text-white"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 -rotate-90">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
@@ -345,44 +345,44 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
             </button>
 
             {/* SHARE BUTTON */}
-            <button onClick={handleShare} className="text-gray-900 transition-all hover:scale-110 active:scale-90">
+            <button onClick={handleShare} className="text-gray-900 dark:text-white transition-all hover:scale-110 active:scale-90">
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 -mt-1 -rotate-12">
                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                </svg>
             </button>
           </div>
-          <div className="font-bold text-sm text-gray-900">{likesCount} beğenme</div>
+          <div className="font-bold text-sm text-gray-900 dark:text-white">{likesCount} beğenme</div>
         </div>
         
-        <div className="text-gray-900 text-sm mb-2 leading-relaxed line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">
+        <div className="text-gray-900 dark:text-gray-100 text-sm mb-2 leading-relaxed line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">
           <span className="font-bold mr-1">{post.user.name}</span>
           {post.caption}
         </div>
         
         <div className="flex flex-wrap gap-1 mb-2 mt-auto">
           {post.hashtags.slice(0, 3).map((tag, i) => (
-            <span key={i} className="text-wedding-500 hover:underline cursor-pointer text-[10px] font-medium bg-wedding-50 px-1.5 py-0.5 rounded">#{tag.replace('#', '')}</span>
+            <span key={i} className="text-wedding-500 hover:underline cursor-pointer text-[10px] font-medium bg-wedding-50 dark:bg-wedding-900/20 px-1.5 py-0.5 rounded">#{tag.replace('#', '')}</span>
           ))}
         </div>
 
         <button 
           onClick={() => setIsCommentOpen(!isCommentOpen)}
-          className="text-gray-400 text-xs text-left hover:text-gray-600 transition-colors"
+          className="text-gray-400 dark:text-gray-500 text-xs text-left hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         >
           {post.comments.length > 0 ? `Tüm ${post.comments.length} yorumu gör` : 'Yorum ekle...'}
         </button>
 
         {/* Comments Section */}
         {isCommentOpen && (
-          <div className="bg-gray-50 rounded-lg p-2 mt-2 border border-gray-100 animate-fadeIn">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 mt-2 border border-gray-100 dark:border-gray-700 animate-fadeIn">
             <div className="space-y-2 mb-2 max-h-32 overflow-y-auto custom-scrollbar">
                {post.comments.map((comment) => (
-                 <div key={comment.id} className="text-xs border-b border-gray-100 last:border-0 pb-1">
-                    <span className="font-bold text-wedding-900 mr-1">{comment.userName}</span>
-                    <span className="text-gray-700 break-words">{comment.text}</span>
+                 <div key={comment.id} className="text-xs border-b border-gray-100 dark:border-gray-700 last:border-0 pb-1">
+                    <span className="font-bold text-wedding-900 dark:text-wedding-400 mr-1">{comment.userName}</span>
+                    <span className="text-gray-700 dark:text-gray-300 break-words">{comment.text}</span>
                  </div>
                ))}
-               {post.comments.length === 0 && <p className="text-gray-400 text-[10px] text-center italic">İlk yorumu sen yaz!</p>}
+               {post.comments.length === 0 && <p className="text-gray-400 dark:text-gray-500 text-[10px] text-center italic">İlk yorumu sen yaz!</p>}
             </div>
             
             <div className="flex gap-1.5 items-center">
@@ -392,12 +392,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
                 placeholder="Yorum..."
-                className="flex-1 bg-white border border-gray-200 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-200"
+                className="flex-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-wedding-500 focus:ring-1 focus:ring-wedding-200 dark:text-white"
               />
               <button 
                 onClick={handleSubmitComment}
                 disabled={!commentText.trim()}
-                className="text-wedding-500 font-bold text-xs disabled:opacity-50 hover:text-wedding-900"
+                className="text-wedding-500 font-bold text-xs disabled:opacity-50 hover:text-wedding-900 dark:hover:text-wedding-400"
               >
                 Paylaş
               </button>
