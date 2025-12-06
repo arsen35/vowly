@@ -18,8 +18,7 @@ interface Heart {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onDelete, isAdmin }) => {
-  // Props değiştiğinde (örneğin sayfa yenilenip DB'den veri gelince) state'i güncellemek için
-  // başlangıç değerlerini prop'tan alıyoruz ama useEffect ile takip de ediyoruz.
+  // Props değiştiğinde state'i güncelle
   const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser);
   const [likesCount, setLikesCount] = useState(post.likes);
   
@@ -27,9 +26,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   
-  // Dynamic Product Color
-  const [dominantColor, setDominantColor] = useState<string>('#D34A7D'); // Default Wedding Pink
-
   // Menu State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -44,84 +40,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // ⭐ KRİTİK DÜZELTME: Veritabanından yeni veri geldiğinde kartı güncelle
   useEffect(() => {
     setLikesCount(post.likes);
     setIsLiked(post.isLikedByCurrentUser);
   }, [post.likes, post.isLikedByCurrentUser]);
-
-  // Analyze Image Color when media changes
-  useEffect(() => {
-    let isActive = true;
-
-    const extractColor = async () => {
-        const currentMedia = post.media[currentMediaIndex];
-        
-        // Videolar veya geçersiz URL'ler için varsayılan rengi kullan
-        if (!currentMedia || currentMedia.type === 'video' || !currentMedia.url || !post.productUrl) {
-            if (isActive) setDominantColor('#D34A7D');
-            return;
-        }
-
-        try {
-            const img = new Image();
-            img.crossOrigin = "Anonymous"; 
-            
-            // ⭐ DÜZELTME: Firebase URL'leri veya Token içeren URL'ler değiştirilince (cache-bust eklenince) 
-            // imza bozuluyor ve 403 hatası veriyor. Bu yüzden sadece "temiz" URL'lere ekleme yapıyoruz.
-            const isSignedUrl = currentMedia.url.includes('token=') || currentMedia.url.includes('firebasestorage');
-            
-            const src = (!isSignedUrl && currentMedia.url.startsWith('http'))
-                ? `${currentMedia.url}${currentMedia.url.includes('?') ? '&' : '?'}t=${new Date().getTime()}`
-                : currentMedia.url;
-
-            img.src = src;
-
-            img.onload = () => {
-                if (!isActive) return;
-                try {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return;
-
-                    // Resmi 1x1 piksele indir
-                    canvas.width = 1;
-                    canvas.height = 1;
-                    
-                    ctx.drawImage(img, 0, 0, 1, 1);
-                    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-
-                    // ⭐ RENK MANTIĞI GÜNCELLEMESİ:
-                    // Buton yazısı BEYAZ olduğu için koyu renkler (siyah, lacivert vs.) harika durur.
-                    // Sadece çok çok açık (neredeyse beyaz) renkleri engelliyoruz.
-                    
-                    // Eğer renk çok beyazsa (RGB > 240) okunabilirlik için pembeye dön.
-                    if (r > 240 && g > 240 && b > 240) {
-                        setDominantColor('#D34A7D'); 
-                    } else {
-                        // Koyu renkler dahil her şeyi kabul et
-                        setDominantColor(`rgb(${r}, ${g}, ${b})`);
-                    }
-                } catch (e) {
-                    // CORS hatası (Canvas tainted)
-                    // Sunucu header göndermezse buraya düşer, varsayılan renk kalır.
-                    if (isActive) setDominantColor('#D34A7D');
-                }
-            };
-
-            img.onerror = () => {
-                if (isActive) setDominantColor('#D34A7D');
-            };
-        } catch (e) {
-            if (isActive) setDominantColor('#D34A7D');
-        }
-    };
-
-    extractColor();
-
-    return () => { isActive = false; };
-  }, [currentMediaIndex, post.media, post.productUrl]);
-
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -188,7 +110,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   };
 
   const handleShare = () => {
-    // WhatsApp paylaşım mantığı (ilk görseli kullan)
+    // WhatsApp paylaşım mantığı
     const currentMedia = post.media[0];
     const mediaLink = currentMedia.url.startsWith('http') ? `\n\nMedya Linki: ${currentMedia.url}` : '';
     
@@ -209,8 +131,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
   const handleSubmitComment = () => {
     if (!commentText.trim()) return;
-    
-    // Herkes yorum yapabilir
     onAddComment(post.id, commentText);
     setCommentText('');
   };
@@ -334,7 +254,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                           className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transform transition-transform duration-700 group-hover:scale-105 block"
                           loading="lazy"
                           draggable={false}
-                          /* crossOrigin özelliği kaldırıldı, çünkü CORS hatasına sebep oluyor */
                         />
                     )}
                 </div>
@@ -386,14 +305,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         )}
       </div>
       
-      {/* SHOPPABLE LINK BUTTON (DYNAMIC BACKGROUND) */}
+      {/* SHOPPABLE LINK BUTTON (STATIC COLOR - SAFE MODE) */}
       {post.productUrl && (
           <a 
             href={post.productUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            style={{ backgroundColor: dominantColor }}
-            className="w-full text-white font-bold text-sm py-3 flex items-center justify-between px-4 transition-all duration-500 group relative hover:brightness-110"
+            className="w-full bg-wedding-500 hover:bg-wedding-600 dark:bg-wedding-600 dark:hover:bg-wedding-700 text-white font-bold text-sm py-3 flex items-center justify-between px-4 transition-all duration-500 group relative hover:brightness-110"
           >
              <div className="flex items-center gap-2">
                  <span className="bg-white/20 p-1 rounded backdrop-blur-sm">
