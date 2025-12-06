@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { 
   ref, 
-  uploadString,
+  uploadBytes, // uploadString yerine uploadBytes kullanacağız
   getDownloadURL
 } from "firebase/storage";
 
@@ -46,9 +46,28 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- YENİLENMİŞ UPLOAD FONKSİYONU: SADECE STRING ---
-// Bu fonksiyon artık sadece String kabul eder.
-// Ya Base64 string'i ya da HTTP URL'i.
+// --- YARDIMCI: Base64 String -> Blob Dönüştürücü ---
+// Bu fonksiyon, string veriyi tekrar binary dosya formatına çevirir.
+const base64ToBlob = (base64: string): Blob => {
+  try {
+      const parts = base64.split(';base64,');
+      const contentType = parts[0].split(':')[1];
+      const raw = window.atob(parts[1]);
+      const rawLength = raw.length;
+      const uInt8Array = new Uint8Array(rawLength);
+
+      for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i);
+      }
+
+      return new Blob([uInt8Array], { type: contentType });
+  } catch (e) {
+      console.error("Blob dönüşüm hatası:", e);
+      throw new Error("Dosya formatı dönüştürülemedi.");
+  }
+};
+
+// --- GÜNCELLENMİŞ UPLOAD FONKSİYONU ---
 const uploadImageToStorage = async (input: string, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
@@ -59,18 +78,19 @@ const uploadImageToStorage = async (input: string, path: string): Promise<string
   const storageRef = ref(storageInstance, path);
   
   try {
-      // Input "data:" ile başlıyorsa bu bir Base64 string'dir.
-      // Firebase 'uploadString' metodunu kullanırız.
-      // Bu metod invalid-argument hatası VERMEZ, çünkü input basbayağı string'dir.
+      // Input "data:" ile başlıyorsa Base64 string'dir.
+      // String olarak değil, BLOB (Dosya) olarak yüklüyoruz.
       if (input.startsWith('data:')) {
-          const snapshot = await uploadString(storageRef, input, 'data_url');
+          const blob = base64ToBlob(input);
+          const snapshot = await uploadBytes(storageRef, blob);
           return await getDownloadURL(snapshot.ref);
       }
       
       throw new Error("Veri formatı tanınamadı. (Sadece Base64 veya URL)");
   } catch (error: any) {
       console.error("Upload Hatası:", error);
-      throw new Error(`Yükleme başarısız: ${error.message}`);
+      // Firebase hatası ise kodu, değilse mesajı göster
+      throw new Error(`Yükleme başarısız: ${error.code || error.message}`);
   }
 };
 
@@ -135,7 +155,6 @@ export const dbService = {
   saveBlogPost: async (post: BlogPost): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const path = `blog/${post.id}/cover_${Date.now()}`;
-    // Blog resimleri zaten base64 geliyor
     const imageUrl = await uploadImageToStorage(post.coverImage, path);
     const blogToSave = { ...post, coverImage: imageUrl };
     await setDoc(doc(dbInstance, BLOG_COLLECTION, post.id), blogToSave);
