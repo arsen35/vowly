@@ -47,34 +47,43 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- KLASİK UPLOAD FONKSİYONU ---
-// Dosyayı olduğu gibi kabul eder ve yükler.
-const uploadImageToStorage = async (input: File | string, path: string): Promise<string> => {
+// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU ---
+// Artık Binary (Uint8Array) veriyi de kabul ediyor.
+// Bu, "invalid-argument" hatasını kesin olarak çözer.
+const uploadImageToStorage = async (input: File | string | Uint8Array, path: string, contentType?: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Durum: Gerçek Dosya (File) - Feed paylaşımı için
+      // 1. Durum: Binary Veri (Uint8Array) - EN GÜVENLİ YOL
+      if (input instanceof Uint8Array) {
+          const snapshot = await uploadBytes(storageRef, input, {
+              contentType: contentType || 'image/jpeg'
+          });
+          return await getDownloadURL(snapshot.ref);
+      }
+
+      // 2. Durum: Gerçek Dosya (File)
       if (input instanceof File) {
           const snapshot = await uploadBytes(storageRef, input);
           return await getDownloadURL(snapshot.ref);
       }
       
-      // 2. Durum: String (URL veya Base64)
+      // 3. Durum: String (URL veya Base64)
       if (typeof input === 'string') {
           // Zaten bir web linki ise yükleme yapma
           if (input.startsWith('http')) return input;
           
-          // Sohbet resimleri için Base64 desteği (ChatPage kullanıyor)
+          // Sohbet veya Blog için Base64 desteği
           if (input.startsWith('data:')) {
               const snapshot = await uploadString(storageRef, input, 'data_url');
               return await getDownloadURL(snapshot.ref);
           }
       }
 
-      throw new Error("Geçersiz dosya formatı. (Sadece File veya Base64)");
+      throw new Error("Geçersiz dosya formatı.");
   } catch (error: any) {
       console.error("Upload Hatası:", error);
       throw new Error(`Yükleme başarısız: ${error.message}`);
@@ -106,21 +115,13 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // Varsa dosyayı, yoksa mevcut URL'i kullan
-        const source = item.file ? item.file : item.url;
+        // Öncelik: fileData (Uint8Array) -> file (File) -> url
+        const source = item.fileData ? item.fileData : (item.file ? item.file : item.url);
         
-        // Blob URL'leri (blob:http...) direkt yüklenemez, bu yüzden dosya (item.file) şarttır.
-        // Eğer dosya yoksa ve url blob ise, bu bir hatadır ama genellikle eski postlarda http linki olur.
-        if (!item.file && item.url.startsWith('blob:')) {
-             console.error("Hata: Dosya nesnesi kayıp, sadece blob URL var.");
-             // Kurtarma şansı yok, ancak kullanıcıya hata dönmemesi için URL'i olduğu gibi bırakıyoruz.
-             return item; 
-        }
-
-        const downloadURL = await uploadImageToStorage(source, path);
+        const downloadURL = await uploadImageToStorage(source, path, item.mimeType);
         
-        // Kaydettikten sonra File nesnesini temizle (Firestore'a kaydedilemez)
-        const { file, ...rest } = item;
+        // Kaydettikten sonra ağır verileri temizle
+        const { file, fileData, ...rest } = item;
         return { ...rest, url: downloadURL };
       }));
 
