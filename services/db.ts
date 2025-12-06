@@ -131,6 +131,27 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
 
 export const dbService = {
   // --- FEED (POSTS) ---
+  
+  // ⭐ YENİ: Gerçek zamanlı veri akışı
+  subscribeToPosts: (callback: (posts: Post[]) => void) => {
+    if (!db) return () => {};
+    const postsRef = collection(db, POSTS_COLLECTION);
+    const q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
+    
+    return onSnapshot(q, (snapshot) => {
+        const posts: Post[] = [];
+        snapshot.forEach((doc) => {
+            const data = doc.data() as Post;
+            posts.push({
+                ...data,
+                id: doc.id, // ID'yi doc.id'den almak daha güvenlidir
+                comments: data.comments || []
+            });
+        });
+        callback(posts);
+    });
+  },
+
   getAllPosts: async (): Promise<Post[]> => {
     try {
       if (!db) return []; 
@@ -140,9 +161,9 @@ export const dbService = {
       const posts: Post[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data() as Post;
-        // Yorumların her zaman array olduğundan emin ol
         posts.push({
           ...data,
+          id: doc.id,
           comments: data.comments || []
         });
       });
@@ -153,29 +174,23 @@ export const dbService = {
     }
   },
 
-  // Like sayısını güvenli şekilde artır/azalt (Atomic Increment)
   updateLikeCount: async (postId: string, incrementBy: number): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const postRef = doc(dbInstance, POSTS_COLLECTION, postId);
     
-    // increment(1) veya increment(-1) kullanarak veritabanındaki sayıyı güvenle günceller
     await updateDoc(postRef, {
         likes: increment(incrementBy)
     });
   },
 
-  // ⭐ YENİ: Yorum eklemek için arrayUnion (Daha güvenli ve hızlı)
   addComment: async (postId: string, comment: any): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const postRef = doc(dbInstance, POSTS_COLLECTION, postId);
     
     try {
-      // arrayUnion ile atomik ekleme: Aynı anda 10 kişi yorum yapsa bile hepsi eklenir
       await updateDoc(postRef, {
         comments: arrayUnion(comment)
       });
-      
-      console.log("✅ Yorum başarıyla kaydedildi!");
     } catch (error) {
       console.error("❌ Yorum kaydetme hatası:", error);
       throw error;
@@ -195,11 +210,9 @@ export const dbService = {
         updatedMedia.push({ ...rest, url: downloadURL });
       }
 
-      // Gereksiz alanları temizle
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { isLikedByCurrentUser, ...postToSaveBase } = post;
       
-      // Yeni post oluşturulurken like 0 olsun, ama güncelleme ise like sayısını sıfırlama
       const cleanPost = { 
           ...postToSaveBase, 
           media: updatedMedia,
@@ -213,9 +226,7 @@ export const dbService = {
         }
       });
 
-      // setDoc yerine varsa üzerine yazmayacak şekilde (örneğin sadece yeni postlar için)
       await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), cleanPost);
-      console.log("✅ Post başarıyla kaydedildi!");
     } catch (error) {
       console.error("Post kayıt hatası:", error);
       throw error;

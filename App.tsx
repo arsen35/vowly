@@ -23,44 +23,38 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
-  // App açıldığında Feed verilerini çek ve Anonim Giriş yap
+  // App açıldığında Feed verilerini CANLI TAKİP ET
   useEffect(() => {
-    const initApp = async () => {
-      // 1. Anonim Giriş Yap (Veritabanı yazma izni için)
+    // 1. Anonim Giriş
+    const initAuth = async () => {
       if (auth) {
         try {
           await signInAnonymously(auth);
-          console.log("✅ Misafir girişi başarılı");
         } catch (error) {
-          console.error("❌ Misafir girişi hatası:", error);
+          console.error("Misafir girişi hatası:", error);
         }
       }
+    };
+    initAuth();
 
-      // 2. Postları Çek ve LocalStorage ile Birleştir
-      try {
-        const storedPosts = await dbService.getAllPosts();
-        
-        // LocalStorage'dan beğenilen postları al
+    // 2. Real-time Subscription (Canlı Veri)
+    const unsubscribe = dbService.subscribeToPosts((dbPosts) => {
         const LIKED_STORAGE_KEY = 'vowly_liked_posts';
         const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
         const likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
 
-        // DB'den gelen veriyi yerel beğeni durumuyla birleştir
-        const mergedPosts = storedPosts.map(p => ({
+        // DB verisi ile LocalStorage verisini birleştir
+        const mergedPosts = dbPosts.map(p => ({
             ...p,
-            isLikedByCurrentUser: likedPosts.includes(p.id),
-            comments: p.comments || []
+            isLikedByCurrentUser: likedPosts.includes(p.id)
         }));
         
         setPosts(mergedPosts);
-      } catch (error) {
-        console.error("❌ Veritabanı hatası:", error);
-      } finally {
         setIsLoading(false);
-      }
-    };
+    });
 
-    initApp();
+    // Component unmount olduğunda dinlemeyi bırak
+    return () => unsubscribe();
   }, []);
 
   const handleUploadClick = () => {
@@ -84,7 +78,7 @@ const App: React.FC = () => {
   const handleResetData = async () => {
     if (window.confirm("Tüm veriler (fotoğraflar dahil) kalıcı olarak silinecek. Emin misiniz?")) {
         await dbService.clearAll();
-        setPosts([]);
+        // Posts state'ini manuel sıfırlamaya gerek yok, listener otomatik yapacak
         alert("Veritabanı temizlendi!");
     }
   };
@@ -109,22 +103,14 @@ const App: React.FC = () => {
       productUrl: data.productUrl
     };
 
-    // UI Güncelle (Hızlı tepki için)
-    setPosts(prev => [newPost, ...prev]);
     setViewState(ViewState.FEED);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // DB Kaydet
     try {
         await dbService.savePost(newPost);
     } catch (error: any) {
         console.error("❌ Kayıt hatası:", error);
-        // Hata mesajını daha anlaşılır yap
-        let errorMsg = "Fotoğraf yüklenirken bir sorun oluştu.";
-        if (error.code === 'storage/unauthorized') errorMsg = "Yükleme izniniz yok.";
-        if (error.code === 'storage/retry-limit-exceeded') errorMsg = "Bağlantı zaman aşımına uğradı.";
-        
-        alert(`Bağlantı hatası: ${errorMsg} Lütfen internet bağlantınızı kontrol edip tekrar deneyin. (Hata Kodu: ${error.code || 'Bilinmiyor'})`);
+        alert(`Yükleme hatası: ${error.message}`);
     }
   };
 
@@ -134,7 +120,7 @@ const App: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (postToDelete) {
-        setPosts(prevPosts => prevPosts.filter(post => post.id !== postToDelete));
+        // Optimistic UI kaldırıldı çünkü listener zaten silecek
         try {
           await dbService.deletePost(postToDelete);
         } catch (e) {
@@ -144,46 +130,44 @@ const App: React.FC = () => {
     }
   };
 
+  // Beğeni Mantığı (LocalStorage Odaklı - En Güvenli Yöntem)
   const handleLike = async (postId: string) => {
-    // 1. Önce ilgili postu bul ve mevcut durumunu al
-    const targetPost = posts.find(p => p.id === postId);
-    if (!targetPost) return;
-
-    // 2. Yeni durumu hesapla
-    const isCurrentlyLiked = targetPost.isLikedByCurrentUser;
-    const newIsLiked = !isCurrentlyLiked;
-    const incrementBy = newIsLiked ? 1 : -1;
-
-    // 3. LocalStorage Güncelle
     const LIKED_STORAGE_KEY = 'vowly_liked_posts';
     const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
     let likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
 
-    if (newIsLiked) {
-        if (!likedPosts.includes(postId)) likedPosts.push(postId);
-    } else {
+    // Durumu LocalStorage'a bakarak belirle (En doğru kaynak burası)
+    const isAlreadyLiked = likedPosts.includes(postId);
+    const incrementBy = isAlreadyLiked ? -1 : 1;
+
+    // 1. LocalStorage Güncelle
+    if (isAlreadyLiked) {
         likedPosts = likedPosts.filter((id: string) => id !== postId);
+    } else {
+        likedPosts.push(postId);
     }
     localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
 
-    // 4. UI'ı Güncelle
+    // 2. UI'ı Hemen Güncelle (Optimistic UI)
+    // Listener gelene kadar kullanıcıyı bekletmemek için
     setPosts(prevPosts => prevPosts.map(post => {
         if (post.id === postId) {
             return { 
                 ...post, 
-                isLikedByCurrentUser: newIsLiked, 
+                isLikedByCurrentUser: !isAlreadyLiked, 
                 likes: post.likes + incrementBy 
             };
         }
         return post;
     }));
 
-    // 5. Veritabanını Güncelle
+    // 3. Veritabanını Güncelle
+    // Hata olsa bile LocalStorage güncellendiği için kullanıcı "beğenmiş" görür,
+    // refresh edince sayı düzelir.
     try {
         await dbService.updateLikeCount(postId, incrementBy);
-        console.log(`✅ Like DB Güncellendi: ${incrementBy}`);
     } catch (error) {
-        console.error("❌ Like update failed:", error);
+        console.error("Like update failed:", error);
     }
   };
 
@@ -196,6 +180,7 @@ const App: React.FC = () => {
       timestamp: Date.now()
     };
 
+    // Optimistic Update
     setPosts(prevPosts => prevPosts.map(post => {
       if (post.id === postId) {
         return {
@@ -377,7 +362,7 @@ const App: React.FC = () => {
 
       {/* Footer Version Indicator */}
       <footer className="text-center py-4 text-[10px] text-gray-300">
-         v1.4 (Like Sync Fix)
+         v2.0 (Real-time Live Feed)
       </footer>
 
       {/* Floating Action Buttons (Only on Feed) */}
