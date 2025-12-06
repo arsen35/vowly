@@ -56,6 +56,13 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
     try {
         console.log("Yükleme başlatılıyor:", path);
 
+        console.log("🔍 Gelen item:", item);
+        console.log("🔍 Item tipi:", typeof item);
+        if (typeof item !== 'string') {
+            console.log("🔍 MediaItem.file:", (item as MediaItem).file);
+            console.log("🔍 MediaItem.url:", (item as MediaItem).url);
+        }
+
         // 1. Durum: Direkt String (HTTP/HTTPS URL)
         if (typeof item === 'string') {
             if (item.startsWith('http://') || item.startsWith('https://')) {
