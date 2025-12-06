@@ -56,13 +56,6 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
     try {
         console.log("Yükleme başlatılıyor:", path);
 
-        console.log("🔍 Gelen item:", item);
-        console.log("🔍 Item tipi:", typeof item);
-        if (typeof item !== 'string') {
-            console.log("🔍 MediaItem.file:", (item as MediaItem).file);
-            console.log("🔍 MediaItem.url:", (item as MediaItem).url);
-        }
-
         // 1. Durum: Direkt String (HTTP/HTTPS URL)
         if (typeof item === 'string') {
             if (item.startsWith('http://') || item.startsWith('https://')) {
@@ -221,7 +214,15 @@ export const dbService = {
         updatedMedia.push({ ...rest, url: downloadURL });
       }
 
-      const postToSave = { ...post, media: updatedMedia };
+      // Undefined alanları temizle
+      const cleanPost = { ...post, media: updatedMedia };
+      Object.keys(cleanPost).forEach(key => {
+        if (cleanPost[key as keyof typeof cleanPost] === undefined) {
+          delete cleanPost[key as keyof typeof cleanPost];
+        }
+      });
+
+      const postToSave = cleanPost;
       await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), postToSave);
       console.log("✅ Post başarıyla kaydedildi!");
     } catch (error) {
