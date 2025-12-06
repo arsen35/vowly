@@ -1,3 +1,4 @@
+
 import { Post, BlogPost, ChatMessage, MediaItem } from '../types';
 import { db, storage } from './firebase';
 import { 
@@ -6,6 +7,7 @@ import {
   doc, 
   setDoc, 
   deleteDoc, 
+  updateDoc,
   query, 
   orderBy,
   limit,
@@ -330,6 +332,15 @@ export const dbService = {
     }
   },
 
+  // Sadece Like sayısını güncelle (Hafif işlem)
+  updateLikeCount: async (postId: string, newCount: number): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    const postRef = doc(dbInstance, POSTS_COLLECTION, postId);
+    await updateDoc(postRef, {
+        likes: newCount
+    });
+  },
+
   savePost: async (post: Post): Promise<void> => {
     try {
       const { dbInstance } = checkDbConnection();
@@ -350,16 +361,18 @@ export const dbService = {
         updatedMedia.push({ ...rest, url: downloadURL });
       }
 
-      // Undefined alanları temizle
-      const cleanPost = { ...post, media: updatedMedia };
+      // Undefined alanları temizle ve isLikedByCurrentUser'ı DB'den çıkar (Kişisel veridir)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { isLikedByCurrentUser, ...postToSaveBase } = post;
+      
+      const cleanPost = { ...postToSaveBase, media: updatedMedia };
       Object.keys(cleanPost).forEach(key => {
         if (cleanPost[key as keyof typeof cleanPost] === undefined) {
           delete cleanPost[key as keyof typeof cleanPost];
         }
       });
 
-      const postToSave = cleanPost;
-      await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), postToSave);
+      await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), cleanPost);
       console.log("✅ Post başarıyla kaydedildi!");
     } catch (error) {
       console.error("❌ Post kayıt hatası:", error);

@@ -36,10 +36,22 @@ const App: React.FC = () => {
         }
       }
 
-      // 2. Postları Çek
+      // 2. Postları Çek ve LocalStorage ile Birleştir
       try {
         const storedPosts = await dbService.getAllPosts();
-        setPosts(storedPosts);
+        
+        // LocalStorage'dan beğenilen postları al
+        const LIKED_STORAGE_KEY = 'vowly_liked_posts';
+        const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
+        const likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
+
+        // DB'den gelen veriyi yerel beğeni durumuyla birleştir
+        const mergedPosts = storedPosts.map(p => ({
+            ...p,
+            isLikedByCurrentUser: likedPosts.includes(p.id)
+        }));
+        
+        setPosts(mergedPosts);
       } catch (error) {
         console.error("Veritabanı hatası:", error);
       } finally {
@@ -132,25 +144,40 @@ const App: React.FC = () => {
   };
 
   const handleLike = async (postId: string) => {
-    let updatedPost: Post | undefined;
-    
+    // 1. LocalStorage Yönetimi
+    const LIKED_STORAGE_KEY = 'vowly_liked_posts';
+    const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
+    let likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
+
+    let newCount = 0;
+    let isLiked = false;
+
+    // 2. UI Güncellemesi (Hızlı Tepki)
     setPosts(prevPosts => prevPosts.map(post => {
         if (post.id === postId) {
-            const isLiked = !post.isLikedByCurrentUser;
-            updatedPost = {
-                ...post,
-                isLikedByCurrentUser: isLiked,
-                likes: isLiked ? post.likes + 1 : post.likes - 1
-            };
-            return updatedPost;
+            isLiked = !post.isLikedByCurrentUser;
+            newCount = isLiked ? post.likes + 1 : post.likes - 1;
+            
+            // LocalStorage array güncelle
+            if (isLiked) {
+                if (!likedPosts.includes(postId)) likedPosts.push(postId);
+            } else {
+                likedPosts = likedPosts.filter((id: string) => id !== postId);
+            }
+            
+            return { ...post, isLikedByCurrentUser: isLiked, likes: newCount };
         }
         return post;
     }));
+    
+    // LocalStorage'a kaydet (Tarayıcı hafızası)
+    localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
 
-    if (updatedPost) {
-        try {
-          await dbService.savePost(updatedPost);
-        } catch(e) { console.warn("Like kaydedilemedi"); }
+    // 3. Veritabanı Güncellemesi (Sadece sayı)
+    try {
+        await dbService.updateLikeCount(postId, newCount);
+    } catch (error) {
+        console.error("Like update failed:", error);
     }
   };
 
