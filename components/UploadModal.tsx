@@ -18,16 +18,40 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [productUrl, setProductUrl] = useState('');
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false); // Butona basılınca kilitlemek için
+  const [isProcessing, setIsProcessing] = useState(false); 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // AI için Base64 çevirici (Sadece Caption yazdırmak için, yükleme için DEĞİL)
-  const fileToBase64 = (file: File): Promise<string> => {
+  // Görseli Tarayıcıda Sıkıştır ve Base64'e Çevir (Nükleer Çözüm)
+  const processFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (event) => resolve(event.target?.result as string);
-        reader.onerror = (error) => reject(error);
         reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                // Maksimum genişlik 1200px olsun (Yeterli kalite, düşük boyut)
+                const MAX_WIDTH = 1200; 
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                
+                // JPEG formatında %80 kalite ile sıkıştır
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
     });
   };
 
@@ -39,13 +63,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       try {
         for (const file of files) {
            if (file.type.startsWith('image/')) {
-               // En basit yöntem: URL oluştur ve dosyayı sakla.
-               const objectUrl = URL.createObjectURL(file);
+               // Dosyayı hemen string'e çeviriyoruz. Artık File objesiyle işimiz yok.
+               const base64Data = await processFile(file);
+               
                newMediaItems.push({ 
-                   url: objectUrl, 
+                   url: base64Data, // Hem önizleme hem upload için bu string kullanılacak
                    type: 'image', 
-                   file: file, 
-                   mimeType: file.type
+                   mimeType: 'image/jpeg'
                });
            }
         }
@@ -54,16 +78,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
       
-            // AI Caption Generate (Sadece ilk görsel için)
+            // AI Caption Generate (İlk görselin base64 verisi zaten elimizde)
             if (!caption) {
-                fileToBase64(files[0]).then(base64 => {
-                    const cleanBase64 = base64.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
-                    generateAICaption(cleanBase64);
-                }).catch(console.warn);
+                const firstImageBase64 = newMediaItems[0].url.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
+                generateAICaption(firstImageBase64);
             }
         }
       } catch (err) {
-          console.error("Dosya seçimi hatası:", err);
+          console.error("Dosya işleme hatası:", err);
+          alert("Görsel işlenirken bir hata oluştu. Lütfen başka bir görsel deneyin.");
       }
     }
   };
@@ -84,9 +107,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const handleSubmit = async () => {
     if (selectedMedia.length === 0 || !caption || !userName.trim()) return;
     
-    setIsProcessing(true); // Çift tıklamayı önle
+    setIsProcessing(true);
 
-    // Verileri olduğu gibi App.tsx -> db.ts'ye yolla
     onUpload({
         media: selectedMedia,
         caption,
@@ -95,12 +117,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         productUrl: productUrl.trim() || undefined
     });
     
-    // Modal kapanır
     onClose();
     setIsProcessing(false);
   };
 
-  // Basit Galeri Gezme Fonksiyonları
   const nextPreview = () => {
       if (currentPreviewIndex < selectedMedia.length - 1) setCurrentPreviewIndex(currentPreviewIndex + 1);
   };

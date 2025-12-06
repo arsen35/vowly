@@ -47,104 +47,48 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- YARDIMCI: Dosyayı Güvenli Okuma (FileReader) ---
-// Bu fonksiyon dosyayı tarayıcının belleğinde saf byte dizisine çevirir.
-// React state'indeki "bozuk" file referanslarını temizlemenin en iyi yoludur.
-const readFileAsArrayBuffer = (file: File | Blob): Promise<Uint8Array> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        
-        reader.onload = (event) => {
-            if (event.target?.result) {
-                // ArrayBuffer -> Uint8Array dönüşümü
-                const uint8Array = new Uint8Array(event.target.result as ArrayBuffer);
-                resolve(uint8Array);
-            } else {
-                reject(new Error("Dosya okunamadı (Boş sonuç)."));
-            }
-        };
-        
-        reader.onerror = (error) => {
-            reject(new Error("Dosya okuma hatası: " + error));
-        };
-
-        reader.readAsArrayBuffer(file);
-    });
-};
-
 /**
- * UPLOAD FUNCTION V3 (FileReader Mode)
- * "invalid-argument" hatasının nihai çözümü.
- * React state'inden gelen dosya referansına güvenmek yerine,
- * veriyi byte byte okuyup Firebase'e öyle veriyoruz.
+ * UPLOAD FUNCTION V4 (BASE64 ONLY)
+ * "Invalid-argument" hatasını çözmek için en garantili yöntem:
+ * 1. UploadModal dosyayı zaten Base64 string'e çevirmiş oluyor.
+ * 2. Burada sadece `uploadString` kullanıyoruz.
+ * 3. File veya Blob objeleriyle uğraşmıyoruz.
  */
 const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<string> => {
     const { storageInstance } = checkDbConnection();
     const storageRef = ref(storageInstance, path);
 
-    // Veri yoksa hata ver
-    if (!item) throw new Error("Yüklenecek veri bulunamadı.");
-
     try {
-        let dataToUpload: Uint8Array | null = null;
-        let contentType = 'image/jpeg';
+        let base64Data = "";
 
-        // ---------------------------------------------------------
-        // SENARYO 1: String (Base64 veya URL)
-        // ---------------------------------------------------------
+        // 1. Durum: Direkt String (Örn: Chat ekranından veya Base64 string)
         if (typeof item === 'string') {
-            // Zaten bir web linki ise yükleme yapma, linki döndür.
-            if (item.startsWith('http')) return item;
-            
-            // Base64 ise
-            if (item.startsWith('data:')) {
-                const snapshot = await uploadString(storageRef, item, 'data_url');
-                return await getDownloadURL(snapshot.ref);
-            }
-            
-            // Blob URL ise (örn: blob:http://localhost...)
-            if (item.startsWith('blob:')) {
-                console.log("Blob URL tespit edildi, fetch yapılıyor...");
-                const response = await fetch(item);
-                const blob = await response.blob();
-                dataToUpload = await readFileAsArrayBuffer(blob);
-                contentType = blob.type || 'image/jpeg';
-            }
+            if (item.startsWith('http')) return item; // Zaten link
+            base64Data = item;
         } 
-        
-        // ---------------------------------------------------------
-        // SENARYO 2: MediaItem Objesi (Normal yükleme)
-        // ---------------------------------------------------------
+        // 2. Durum: MediaItem objesi (Feed ekranından)
         else {
              const mediaItem = item as MediaItem;
-             
-             // 1. Öncelik: Gerçek Dosya (File Object)
-             if (mediaItem.file) {
-                 console.log("File nesnesi okunuyor (FileReader)...");
-                 dataToUpload = await readFileAsArrayBuffer(mediaItem.file);
-                 contentType = mediaItem.file.type || mediaItem.mimeType || 'image/jpeg';
-             } 
-             // 2. Öncelik: Blob URL
-             else if (mediaItem.url && mediaItem.url.startsWith('blob:')) {
-                 console.log("MediaItem içindeki Blob URL fetch ediliyor...");
-                 const response = await fetch(mediaItem.url);
-                 const blob = await response.blob();
-                 dataToUpload = await readFileAsArrayBuffer(blob);
-                 contentType = blob.type || 'image/jpeg';
+             // V4 mantığı: UploadModal artık "url" alanına Base64 verisini koyuyor.
+             // File objesine bakmamıza gerek yok, çünkü o "Proxy" olup bozulmuş olabilir.
+             // Base64 string ise her zaman sağlamdır.
+             if (mediaItem.url && mediaItem.url.startsWith('data:')) {
+                 base64Data = mediaItem.url;
+             } else {
+                 console.warn("MediaItem içinde geçerli Base64 verisi bulunamadı, mevcut URL kullanılıyor:", mediaItem.url);
+                 // Eğer blob URL ise ve hala geçerliyse şansımızı deneyebiliriz ama v4'te buna ihtiyacımız olmamalı
+                 return mediaItem.url;
              }
         }
 
-        // ---------------------------------------------------------
-        // YÜKLEME İŞLEMİ
-        // ---------------------------------------------------------
-        if (!dataToUpload) {
-             throw new Error("Dosya verisi oluşturulamadı.");
+        if (!base64Data.startsWith('data:')) {
+            throw new Error("Yüklenecek veri geçerli bir resim formatında (Base64) değil.");
         }
 
-        console.log(`Firebase'e yükleniyor... Boyut: ${dataToUpload.length} bytes, Tip: ${contentType}`);
+        console.log(`Firebase'e yükleniyor (Base64)...`);
         
-        // uploadBytes kullanırken contentType belirtmek önemlidir
-        const snapshot = await uploadBytes(storageRef, dataToUpload, { contentType: contentType });
+        // uploadString en güvenilir yöntemdir
+        const snapshot = await uploadString(storageRef, base64Data, 'data_url');
         const downloadURL = await getDownloadURL(snapshot.ref);
         
         return downloadURL;
@@ -153,7 +97,7 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
         console.error("Upload Hatası (db.ts):", error);
         
         if (error.code === 'storage/invalid-argument') {
-            throw new Error("Firebase dosya formatını kabul etmedi. (V3 Fix)");
+            throw new Error("Dosya formatı hatası. Lütfen sayfayı yenileyip tekrar deneyin.");
         }
         if (error.code === 'storage/unauthorized') {
             throw new Error("Yükleme izniniz yok. Lütfen sayfayı yenileyip tekrar deneyin.");
@@ -189,10 +133,10 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // Yeni V3 upload fonksiyonunu kullan
+        // V4 Upload (Base64)
         const downloadURL = await uploadMediaItem(item, path);
         
-        // Kaydettikten sonra dosya referanslarını temizle, sadece URL kalsın
+        // Dosya referanslarını temizle
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { file, ...rest } = item; 
         return { ...rest, url: downloadURL };
