@@ -47,47 +47,38 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- KESİN ÇÖZÜM İÇİN YENİ UPLOAD FONKSİYONU ---
-// Bu fonksiyon "ne bulursa" yükler. Dosya, Blob, Base64 veya Blob URL.
-const uploadImageToStorage = async (input: any, path: string, contentType?: string): Promise<string> => {
+// --- EN SADE UPLOAD FONKSİYONU ---
+// Sadece 2 durum var: Ya Dosya, ya Base64.
+const uploadImageToStorage = async (input: File | string, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Durum: Gerçek bir Dosya (File) veya Blob nesnesi mi?
-      // Bu en temiz yoldur.
-      if (input instanceof File || input instanceof Blob) {
-          const snapshot = await uploadBytes(storageRef, input, { contentType });
+      // 1. Durum: Gerçek bir Dosya (File)
+      // Tarayıcının kendi File nesnesi. En güvenilir yöntem.
+      if (input instanceof File) {
+          const snapshot = await uploadBytes(storageRef, input);
           return await getDownloadURL(snapshot.ref);
       }
       
-      // 2. Durum: Base64 String mi? (data:image/...)
+      // 2. Durum: Base64 String (Sohbet resimleri için)
       if (typeof input === 'string' && input.startsWith('data:')) {
           const snapshot = await uploadString(storageRef, input, 'data_url');
           return await getDownloadURL(snapshot.ref);
       }
 
-      // 3. Durum: Blob URL mi? (blob:http://...) -> KURTARICI PLAN
-      // Eğer 'File' nesnesi referansını kaybettiyse ama elimizde önizleme URL'i varsa,
-      // o URL'den veriyi 'fetch' edip Blob'a çevirip öyle yüklüyoruz.
-      if (typeof input === 'string' && input.startsWith('blob:')) {
-          const response = await fetch(input);
-          const blob = await response.blob();
-          const snapshot = await uploadBytes(storageRef, blob, { contentType });
-          return await getDownloadURL(snapshot.ref);
-      }
-
-      // 4. Durum: Zaten bir web linki (http...)
+      // 3. Durum: Zaten bir web linki (http...)
       if (typeof input === 'string' && input.startsWith('http')) {
           return input;
       }
 
-      throw new Error("Geçersiz dosya formatı. (File, Blob, Base64 veya Blob URL gerekli)");
+      console.error("Geçersiz input:", input);
+      throw new Error("Dosya formatı desteklenmiyor. Lütfen tekrar fotoğraf seçin.");
   } catch (error: any) {
       console.error("Upload Hatası Detayı:", error);
-      throw new Error(`Yükleme başarısız: ${error.message || error.code}`);
+      throw new Error(`Yükleme başarısız: ${error.message}`);
   }
 };
 
@@ -116,18 +107,21 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // ÖNCELİK SIRASI (Çok Önemli):
-        // 1. Orijinal Dosya (varsa)
-        // 2. Blob URL (varsa - fetch edilecek)
-        // 3. Base64 (varsa)
-        // 4. Mevcut URL (http...)
-        const source = item.file || item.url;
+        // Önemli: Eğer item.file (gerçek dosya) varsa onu kullan.
+        // Yoksa item.url'i kullan (URL ise zaten upload fonksiyonu onu atlar).
+        const source = item.file ? item.file : item.url;
         
-        const downloadURL = await uploadImageToStorage(source, path, item.mimeType);
+        // Eğer kaynak blob url ise ve dosya nesnesi yoksa hata veririz, 
+        // çünkü blob url'ler sayfalar arası taşınmaz.
+        if (!item.file && typeof source === 'string' && source.startsWith('blob:')) {
+            throw new Error("Dosya verisi kayboldu. Lütfen fotoğrafı tekrar seçin.");
+        }
+
+        const downloadURL = await uploadImageToStorage(source, path);
         
         // Kaydettikten sonra ağır verileri temizle, sadece URL kalsın
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { file, fileData, ...rest } = item; 
+        const { file, ...rest } = item; 
         return { ...rest, url: downloadURL };
       }));
 

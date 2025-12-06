@@ -16,9 +16,8 @@ export interface Comment {
 export interface MediaItem {
   url: string; // Önizleme linki
   type: 'image' | 'video';
-  file?: File; // Orijinal Dosya (Referans)
-  fileData?: Uint8Array; // GARANTİ VERİ (Binary - Upload için)
-  mimeType?: string; // Dosya türü (örn: image/jpeg)
+  file?: File; // SAF DOSYA (En güvenlisi)
+  mimeType?: string;
 }
 
 export interface Post {
