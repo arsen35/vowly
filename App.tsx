@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { PostCard } from './components/PostCard';
 import { UploadModal } from './components/UploadModal';
@@ -38,7 +39,6 @@ const App: React.FC = () => {
       // 2. Postları Çek ve LocalStorage ile Birleştir
       try {
         const storedPosts = await dbService.getAllPosts();
-        console.log("📦 Firebase'den çekilen post sayısı:", storedPosts.length);
         
         // LocalStorage'dan beğenilen postları al
         const LIKED_STORAGE_KEY = 'vowly_liked_posts';
@@ -49,11 +49,10 @@ const App: React.FC = () => {
         const mergedPosts = storedPosts.map(p => ({
             ...p,
             isLikedByCurrentUser: likedPosts.includes(p.id),
-            comments: p.comments || [] // ⭐ Yorumların her zaman array olduğundan emin ol
+            comments: p.comments || []
         }));
         
         setPosts(mergedPosts);
-        console.log("✅ Postlar başarıyla yüklendi!");
       } catch (error) {
         console.error("❌ Veritabanı hatası:", error);
       } finally {
@@ -118,7 +117,6 @@ const App: React.FC = () => {
     // DB Kaydet
     try {
         await dbService.savePost(newPost);
-        console.log("✅ Post Firebase'e kaydedildi!");
     } catch (error: any) {
         console.error("❌ Kayıt hatası:", error);
         // Hata mesajını daha anlaşılır yap
@@ -139,7 +137,6 @@ const App: React.FC = () => {
         setPosts(prevPosts => prevPosts.filter(post => post.id !== postToDelete));
         try {
           await dbService.deletePost(postToDelete);
-          console.log("✅ Post silindi!");
         } catch (e) {
           console.error("❌ Silme hatası", e);
         }
@@ -148,39 +145,43 @@ const App: React.FC = () => {
   };
 
   const handleLike = async (postId: string) => {
-    // 1. LocalStorage Yönetimi
+    // 1. Önce ilgili postu bul ve mevcut durumunu al
+    const targetPost = posts.find(p => p.id === postId);
+    if (!targetPost) return;
+
+    // 2. Yeni durumu hesapla
+    const isCurrentlyLiked = targetPost.isLikedByCurrentUser;
+    const newIsLiked = !isCurrentlyLiked;
+    const incrementBy = newIsLiked ? 1 : -1;
+
+    // 3. LocalStorage Güncelle
     const LIKED_STORAGE_KEY = 'vowly_liked_posts';
     const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
     let likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
 
-    let incrementBy = 0;
-    let isLiked = false;
+    if (newIsLiked) {
+        if (!likedPosts.includes(postId)) likedPosts.push(postId);
+    } else {
+        likedPosts = likedPosts.filter((id: string) => id !== postId);
+    }
+    localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
 
-    // 2. UI Güncellemesi (Hızlı Tepki)
+    // 4. UI'ı Güncelle
     setPosts(prevPosts => prevPosts.map(post => {
         if (post.id === postId) {
-            isLiked = !post.isLikedByCurrentUser;
-            incrementBy = isLiked ? 1 : -1;
-            
-            // LocalStorage array güncelle
-            if (isLiked) {
-                if (!likedPosts.includes(postId)) likedPosts.push(postId);
-            } else {
-                likedPosts = likedPosts.filter((id: string) => id !== postId);
-            }
-            
-            return { ...post, isLikedByCurrentUser: isLiked, likes: post.likes + incrementBy };
+            return { 
+                ...post, 
+                isLikedByCurrentUser: newIsLiked, 
+                likes: post.likes + incrementBy 
+            };
         }
         return post;
     }));
-    
-    // LocalStorage'a kaydet (Tarayıcı hafızası)
-    localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
 
-    // 3. Veritabanı Güncellemesi (Delta gönderiyoruz: +1 veya -1)
+    // 5. Veritabanını Güncelle
     try {
         await dbService.updateLikeCount(postId, incrementBy);
-        console.log(`✅ Like güncellendi: ${incrementBy > 0 ? '+1' : '-1'}`);
+        console.log(`✅ Like DB Güncellendi: ${incrementBy}`);
     } catch (error) {
         console.error("❌ Like update failed:", error);
     }
@@ -195,7 +196,6 @@ const App: React.FC = () => {
       timestamp: Date.now()
     };
 
-    // 1. UI'ı hemen güncelle (Optimistic Update)
     setPosts(prevPosts => prevPosts.map(post => {
       if (post.id === postId) {
         return {
@@ -206,25 +206,10 @@ const App: React.FC = () => {
       return post;
     }));
 
-    // 2. Firebase'e kaydet (yeni addComment metoduyla)
     try {
         await dbService.addComment(postId, newComment);
-        console.log("✅ Yorum Firebase'e kaydedildi!");
     } catch(error) { 
         console.error("❌ Yorum kaydedilemedi:", error);
-        
-        // Hata durumunda yorumu geri al
-        setPosts(prevPosts => prevPosts.map(post => {
-          if (post.id === postId) {
-            return {
-              ...post,
-              comments: post.comments.filter(c => c.id !== newComment.id)
-            };
-          }
-          return post;
-        }));
-        
-        alert("Yorum gönderilemedi. Lütfen internet bağlantınızı kontrol edin.");
     }
   };
 
@@ -392,7 +377,7 @@ const App: React.FC = () => {
 
       {/* Footer Version Indicator */}
       <footer className="text-center py-4 text-[10px] text-gray-300">
-         v1.3 (Fixed Comments)
+         v1.4 (Like Sync Fix)
       </footer>
 
       {/* Floating Action Buttons (Only on Feed) */}

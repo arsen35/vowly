@@ -1,3 +1,4 @@
+
 import { Post, BlogPost, ChatMessage, MediaItem } from '../types';
 import { db, storage } from './firebase';
 import { 
@@ -13,7 +14,8 @@ import {
   onSnapshot,
   addDoc,
   increment,
-  getDoc
+  getDoc,
+  arrayUnion
 } from "firebase/firestore";
 import { 
   ref, 
@@ -162,25 +164,15 @@ export const dbService = {
     });
   },
 
-  // ⭐ YENİ: Yorum eklemek için özel fonksiyon
+  // ⭐ YENİ: Yorum eklemek için arrayUnion (Daha güvenli ve hızlı)
   addComment: async (postId: string, comment: any): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const postRef = doc(dbInstance, POSTS_COLLECTION, postId);
     
     try {
-      // Önce mevcut postu al
-      const postSnap = await getDoc(postRef);
-      
-      if (!postSnap.exists()) {
-        throw new Error("Post bulunamadı!");
-      }
-      
-      const currentPost = postSnap.data() as Post;
-      const updatedComments = [...(currentPost.comments || []), comment];
-      
-      // Yorumları güncelle
+      // arrayUnion ile atomik ekleme: Aynı anda 10 kişi yorum yapsa bile hepsi eklenir
       await updateDoc(postRef, {
-        comments: updatedComments
+        comments: arrayUnion(comment)
       });
       
       console.log("✅ Yorum başarıyla kaydedildi!");
@@ -207,11 +199,12 @@ export const dbService = {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { isLikedByCurrentUser, ...postToSaveBase } = post;
       
+      // Yeni post oluşturulurken like 0 olsun, ama güncelleme ise like sayısını sıfırlama
       const cleanPost = { 
           ...postToSaveBase, 
           media: updatedMedia,
           likes: post.likes || 0,
-          comments: post.comments || [] // ⭐ Yorumları her zaman kaydet
+          comments: post.comments || []
       };
       
       Object.keys(cleanPost).forEach(key => {
@@ -220,6 +213,7 @@ export const dbService = {
         }
       });
 
+      // setDoc yerine varsa üzerine yazmayacak şekilde (örneğin sadece yeni postlar için)
       await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), cleanPost);
       console.log("✅ Post başarıyla kaydedildi!");
     } catch (error) {

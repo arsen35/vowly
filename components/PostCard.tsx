@@ -18,8 +18,11 @@ interface Heart {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onDelete, isAdmin }) => {
+  // Props değiştiğinde (örneğin sayfa yenilenip DB'den veri gelince) state'i güncellemek için
+  // başlangıç değerlerini prop'tan alıyoruz ama useEffect ile takip de ediyoruz.
   const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser);
   const [likesCount, setLikesCount] = useState(post.likes);
+  
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -35,6 +38,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
+
+  // ⭐ KRİTİK DÜZELTME: Veritabanından yeni veri geldiğinde kartı güncelle
+  useEffect(() => {
+    setLikesCount(post.likes);
+    setIsLiked(post.isLikedByCurrentUser);
+  }, [post.likes, post.isLikedByCurrentUser]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -71,6 +80,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   };
 
   const handleLike = () => {
+    // Optimistic Update (Hemen tepki ver)
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
     setLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
@@ -79,6 +89,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
       triggerHearts();
     }
     
+    // Parent'a bildir
     onLike(post.id);
   };
 
@@ -270,7 +281,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         )}
       </div>
       
-      {/* SHOPPABLE LINK BUTTON (Updated Style) */}
+      {/* SHOPPABLE LINK BUTTON */}
       {post.productUrl && (
           <a 
             href={post.productUrl} 
@@ -292,7 +303,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
           </a>
       )}
 
-      {/* Actions & Details (Instagram Style Icons) */}
+      {/* Actions & Details */}
       <div className="p-3 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
@@ -333,7 +344,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
               </svg>
             </button>
 
-            {/* SHARE / WHATSAPP BUTTON (Paper Plane) */}
+            {/* SHARE BUTTON */}
             <button onClick={handleShare} className="text-gray-900 transition-all hover:scale-110 active:scale-90">
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 -mt-1 -rotate-12">
                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
