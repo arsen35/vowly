@@ -47,46 +47,47 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU ---
-// Artık Binary (Uint8Array) veriyi de kabul ediyor.
-// Bu, "invalid-argument" hatasını kesin olarak çözer.
-const uploadImageToStorage = async (input: File | string | Uint8Array, path: string, contentType?: string): Promise<string> => {
+// --- KESİN ÇÖZÜM İÇİN YENİ UPLOAD FONKSİYONU ---
+// Bu fonksiyon "ne bulursa" yükler. Dosya, Blob, Base64 veya Blob URL.
+const uploadImageToStorage = async (input: any, path: string, contentType?: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Durum: Binary Veri (Uint8Array) - EN GÜVENLİ YOL
-      if (input instanceof Uint8Array) {
-          const snapshot = await uploadBytes(storageRef, input, {
-              contentType: contentType || 'image/jpeg'
-          });
-          return await getDownloadURL(snapshot.ref);
-      }
-
-      // 2. Durum: Gerçek Dosya (File)
-      if (input instanceof File) {
-          const snapshot = await uploadBytes(storageRef, input);
+      // 1. Durum: Gerçek bir Dosya (File) veya Blob nesnesi mi?
+      // Bu en temiz yoldur.
+      if (input instanceof File || input instanceof Blob) {
+          const snapshot = await uploadBytes(storageRef, input, { contentType });
           return await getDownloadURL(snapshot.ref);
       }
       
-      // 3. Durum: String (URL veya Base64)
-      if (typeof input === 'string') {
-          // Zaten bir web linki ise yükleme yapma
-          if (input.startsWith('http')) return input;
-          
-          // Sohbet veya Blog için Base64 desteği
-          if (input.startsWith('data:')) {
-              const snapshot = await uploadString(storageRef, input, 'data_url');
-              return await getDownloadURL(snapshot.ref);
-          }
+      // 2. Durum: Base64 String mi? (data:image/...)
+      if (typeof input === 'string' && input.startsWith('data:')) {
+          const snapshot = await uploadString(storageRef, input, 'data_url');
+          return await getDownloadURL(snapshot.ref);
       }
 
-      throw new Error("Geçersiz dosya formatı.");
+      // 3. Durum: Blob URL mi? (blob:http://...) -> KURTARICI PLAN
+      // Eğer 'File' nesnesi referansını kaybettiyse ama elimizde önizleme URL'i varsa,
+      // o URL'den veriyi 'fetch' edip Blob'a çevirip öyle yüklüyoruz.
+      if (typeof input === 'string' && input.startsWith('blob:')) {
+          const response = await fetch(input);
+          const blob = await response.blob();
+          const snapshot = await uploadBytes(storageRef, blob, { contentType });
+          return await getDownloadURL(snapshot.ref);
+      }
+
+      // 4. Durum: Zaten bir web linki (http...)
+      if (typeof input === 'string' && input.startsWith('http')) {
+          return input;
+      }
+
+      throw new Error("Geçersiz dosya formatı. (File, Blob, Base64 veya Blob URL gerekli)");
   } catch (error: any) {
-      console.error("Upload Hatası:", error);
-      throw new Error(`Yükleme başarısız: ${error.message}`);
+      console.error("Upload Hatası Detayı:", error);
+      throw new Error(`Yükleme başarısız: ${error.message || error.code}`);
   }
 };
 
@@ -115,13 +116,18 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // Öncelik: fileData (Uint8Array) -> file (File) -> url
-        const source = item.fileData ? item.fileData : (item.file ? item.file : item.url);
+        // ÖNCELİK SIRASI (Çok Önemli):
+        // 1. Orijinal Dosya (varsa)
+        // 2. Blob URL (varsa - fetch edilecek)
+        // 3. Base64 (varsa)
+        // 4. Mevcut URL (http...)
+        const source = item.file || item.url;
         
         const downloadURL = await uploadImageToStorage(source, path, item.mimeType);
         
-        // Kaydettikten sonra ağır verileri temizle
-        const { file, fileData, ...rest } = item;
+        // Kaydettikten sonra ağır verileri temizle, sadece URL kalsın
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { file, fileData, ...rest } = item; 
         return { ...rest, url: downloadURL };
       }));
 

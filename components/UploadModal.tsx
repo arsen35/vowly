@@ -26,7 +26,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // AI için Base64 çevirici
+  // AI için Base64 çevirici (Sadece metin üretimi için, upload için değil)
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -49,7 +49,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                newMediaItems.push({ 
                    url: objectUrl, 
                    type: 'image', 
-                   file: file 
+                   file: file, // Dosyayı olduğu gibi sakla
+                   mimeType: file.type
                });
            }
         }
@@ -70,7 +71,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
           console.error("Dosya seçimi hatası:", err);
       } finally {
           setIsProcessing(false);
-          // Input'u temizlemiyoruz, bazen referans kaybına yol açabiliyor
       }
     }
   };
@@ -91,39 +91,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const handleSubmit = async () => {
     if (selectedMedia.length === 0 || !caption || !userName.trim()) return;
 
-    setIsProcessing(true); // Butonu kilitle
-
-    try {
-        // Dosyaları "GARANTİ" formata (Uint8Array) çeviriyoruz.
-        // Bu işlem dosya referansı kopsa bile veriyi bellekte tutar.
-        const mediaToUpload = await Promise.all(selectedMedia.map(async (item) => {
-            if (item.file) {
-                const buffer = await item.file.arrayBuffer();
-                return {
-                    ...item,
-                    fileData: new Uint8Array(buffer), // Ham veri
-                    mimeType: item.file.type,
-                    file: undefined // Orijinal referansı artık kullanmayacağız
-                };
-            }
-            return item;
-        }));
-
-        onUpload({
-            media: mediaToUpload,
-            caption,
-            hashtags,
-            userName: userName.trim(),
-            productUrl: productUrl.trim() || undefined
-        });
-        
-        onClose();
-    } catch (error) {
-        console.error("Dosya hazırlama hatası:", error);
-        alert("Fotoğraflar hazırlanırken bir hata oluştu. Lütfen tekrar deneyin.");
-    } finally {
-        setIsProcessing(false);
-    }
+    // Hiçbir dönüştürme yapmadan, dosyaları olduğu gibi gönderiyoruz.
+    // Veritabanı servisi (db.ts) gerekli kontrolleri yapacak.
+    onUpload({
+        media: selectedMedia,
+        caption,
+        hashtags,
+        userName: userName.trim(),
+        productUrl: productUrl.trim() || undefined
+    });
+    
+    onClose();
   };
 
   // Navigasyon
@@ -177,7 +155,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          <p className="text-gray-600 font-medium">Görsel Hazırlanıyor...</p>
+                          <p className="text-gray-600 font-medium">Görsel İşleniyor...</p>
                       </div>
                   ) : (
                       <>
@@ -302,8 +280,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                  {/* Footer */}
                  <div className="p-4 border-t bg-white shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
-                    <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1" isLoading={isProcessing}>
-                        {isProcessing ? 'Hazırlanıyor...' : 'Paylaş'}
+                    <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1">
+                        Paylaş
                     </Button>
                  </div>
               </div>
