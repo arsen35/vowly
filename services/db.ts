@@ -15,8 +15,9 @@ import {
 } from "firebase/firestore";
 import { 
   ref, 
-  uploadBytes, // uploadString yerine uploadBytes kullanacağız
-  getDownloadURL
+  uploadBytes, 
+  getDownloadURL, 
+  uploadString
 } from "firebase/storage";
 
 const POSTS_COLLECTION = 'posts';
@@ -46,51 +47,37 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- YARDIMCI: Base64 String -> Blob Dönüştürücü ---
-// Bu fonksiyon, string veriyi tekrar binary dosya formatına çevirir.
-const base64ToBlob = (base64: string): Blob => {
-  try {
-      const parts = base64.split(';base64,');
-      const contentType = parts[0].split(':')[1];
-      const raw = window.atob(parts[1]);
-      const rawLength = raw.length;
-      const uInt8Array = new Uint8Array(rawLength);
-
-      for (let i = 0; i < rawLength; ++i) {
-        uInt8Array[i] = raw.charCodeAt(i);
-      }
-
-      return new Blob([uInt8Array], { type: contentType });
-  } catch (e) {
-      console.error("Blob dönüşüm hatası:", e);
-      throw new Error("Dosya formatı dönüştürülemedi.");
-  }
-};
-
-// --- GÜNCELLENMİŞ UPLOAD FONKSİYONU ---
-const uploadImageToStorage = async (input: string, path: string): Promise<string> => {
+// --- KLASİK UPLOAD FONKSİYONU ---
+// Dosyayı olduğu gibi kabul eder ve yükler.
+const uploadImageToStorage = async (input: File | string, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
-
-  // Zaten URL ise (http...)
-  if (input.startsWith('http')) return input;
 
   const { storageInstance } = checkDbConnection();
   const storageRef = ref(storageInstance, path);
   
   try {
-      // Input "data:" ile başlıyorsa Base64 string'dir.
-      // String olarak değil, BLOB (Dosya) olarak yüklüyoruz.
-      if (input.startsWith('data:')) {
-          const blob = base64ToBlob(input);
-          const snapshot = await uploadBytes(storageRef, blob);
+      // 1. Durum: Gerçek Dosya (File) - Feed paylaşımı için
+      if (input instanceof File) {
+          const snapshot = await uploadBytes(storageRef, input);
           return await getDownloadURL(snapshot.ref);
       }
       
-      throw new Error("Veri formatı tanınamadı. (Sadece Base64 veya URL)");
+      // 2. Durum: String (URL veya Base64)
+      if (typeof input === 'string') {
+          // Zaten bir web linki ise yükleme yapma
+          if (input.startsWith('http')) return input;
+          
+          // Sohbet resimleri için Base64 desteği (ChatPage kullanıyor)
+          if (input.startsWith('data:')) {
+              const snapshot = await uploadString(storageRef, input, 'data_url');
+              return await getDownloadURL(snapshot.ref);
+          }
+      }
+
+      throw new Error("Geçersiz dosya formatı. (Sadece File veya Base64)");
   } catch (error: any) {
       console.error("Upload Hatası:", error);
-      // Firebase hatası ise kodu, değilse mesajı göster
-      throw new Error(`Yükleme başarısız: ${error.code || error.message}`);
+      throw new Error(`Yükleme başarısız: ${error.message}`);
   }
 };
 
@@ -119,13 +106,21 @@ export const dbService = {
       const updatedMedia = await Promise.all(post.media.map(async (item, index) => {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        // Modal'dan gelen Base64 verisini al
-        const source = item.base64Data || item.url;
+        // Varsa dosyayı, yoksa mevcut URL'i kullan
+        const source = item.file ? item.file : item.url;
         
+        // Blob URL'leri (blob:http...) direkt yüklenemez, bu yüzden dosya (item.file) şarttır.
+        // Eğer dosya yoksa ve url blob ise, bu bir hatadır ama genellikle eski postlarda http linki olur.
+        if (!item.file && item.url.startsWith('blob:')) {
+             console.error("Hata: Dosya nesnesi kayıp, sadece blob URL var.");
+             // Kurtarma şansı yok, ancak kullanıcıya hata dönmemesi için URL'i olduğu gibi bırakıyoruz.
+             return item; 
+        }
+
         const downloadURL = await uploadImageToStorage(source, path);
         
-        // Kaydettikten sonra ağır veriyi sil, sadece URL kalsın
-        const { file, base64Data, ...rest } = item;
+        // Kaydettikten sonra File nesnesini temizle (Firestore'a kaydedilemez)
+        const { file, ...rest } = item;
         return { ...rest, url: downloadURL };
       }));
 
