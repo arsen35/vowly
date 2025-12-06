@@ -14,9 +14,9 @@ export interface Comment {
 }
 
 export interface MediaItem {
-  url: string; // Önizleme linki
+  url: string; // Ekranda görünen link (blob:...)
   type: 'image' | 'video';
-  file?: File; // SAF DOSYA (En güvenlisi)
+  file?: File; // Seçilen orijinal dosya
   mimeType?: string;
 }
 

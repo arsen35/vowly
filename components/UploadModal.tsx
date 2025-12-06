@@ -18,15 +18,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [productUrl, setProductUrl] = useState('');
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Butona basılınca kilitlemek için
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Touch state
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const minSwipeDistance = 50;
-
-  // AI için Base64 çevirici (Sadece metin üretimi için, upload'u etkilemez)
+  // AI için Base64 çevirici (Sadece Caption yazdırmak için, yükleme için DEĞİL)
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -38,18 +33,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      // isProcessing true yapmıyoruz ki UI kilitlenmesin
       const files: File[] = Array.from(e.target.files);
       const newMediaItems: MediaItem[] = [];
 
       try {
         for (const file of files) {
            if (file.type.startsWith('image/')) {
+               // En basit yöntem: URL oluştur ve dosyayı sakla.
                const objectUrl = URL.createObjectURL(file);
                newMediaItems.push({ 
                    url: objectUrl, 
                    type: 'image', 
-                   file: file, // DOSYAYI OLDUĞU GİBİ SAKLA
+                   file: file, 
                    mimeType: file.type
                });
            }
@@ -59,7 +54,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
       
-            // AI Caption Generate
+            // AI Caption Generate (Sadece ilk görsel için)
             if (!caption) {
                 fileToBase64(files[0]).then(base64 => {
                     const cleanBase64 = base64.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
@@ -89,9 +84,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const handleSubmit = async () => {
     if (selectedMedia.length === 0 || !caption || !userName.trim()) return;
     
-    setIsProcessing(true);
+    setIsProcessing(true); // Çift tıklamayı önle
 
-    // Dosyaları hiçbir işleme sokmadan gönderiyoruz.
+    // Verileri olduğu gibi App.tsx -> db.ts'ye yolla
     onUpload({
         media: selectedMedia,
         caption,
@@ -100,28 +95,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         productUrl: productUrl.trim() || undefined
     });
     
-    // Modal hemen kapanmasın, App.tsx işlemi devralsın
+    // Modal kapanır
     onClose();
     setIsProcessing(false);
   };
 
-  // Navigasyon
+  // Basit Galeri Gezme Fonksiyonları
   const nextPreview = () => {
       if (currentPreviewIndex < selectedMedia.length - 1) setCurrentPreviewIndex(currentPreviewIndex + 1);
   };
   const prevPreview = () => {
       if (currentPreviewIndex > 0) setCurrentPreviewIndex(currentPreviewIndex - 1);
-  };
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-  const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) nextPreview();
-    if (distance < -minSwipeDistance) prevPreview();
   };
 
   return (
@@ -163,12 +147,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             <>
               {/* Preview */}
               <div className="w-full md:w-3/5 h-[40vh] md:h-full bg-black flex items-center justify-center relative group shrink-0">
-                 <div 
-                    className="w-full h-full flex items-center justify-center touch-pan-y"
-                    onTouchStart={onTouchStart}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}
-                 >
+                 <div className="w-full h-full flex items-center justify-center">
                     <img 
                         src={selectedMedia[currentPreviewIndex].url} 
                         alt="Preview" 

@@ -47,8 +47,8 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// --- EN SADE UPLOAD FONKSİYONU ---
-// Sadece 2 durum var: Ya Dosya, ya Base64.
+// --- GÜÇLENDİRİLMİŞ UPLOAD FONKSİYONU ---
+// invalid-argument hatasının ilacı burasıdır.
 const uploadImageToStorage = async (input: File | string, path: string): Promise<string> => {
   if (!input) throw new Error("Yüklenecek veri boş.");
 
@@ -57,25 +57,34 @@ const uploadImageToStorage = async (input: File | string, path: string): Promise
   
   try {
       // 1. Durum: Gerçek bir Dosya (File)
-      // Tarayıcının kendi File nesnesi. En güvenilir yöntem.
       if (input instanceof File) {
           const snapshot = await uploadBytes(storageRef, input);
           return await getDownloadURL(snapshot.ref);
       }
       
-      // 2. Durum: Base64 String (Sohbet resimleri için)
+      // 2. Durum: Blob URL Kurtarıcısı (invalid-argument çözümü)
+      // Eğer elimizde dosya yoksa ama ekrandaki önizleme linki (blob:...) varsa,
+      // o linkten veriyi çekip tekrar dosyaya çevirip yüklüyoruz.
+      if (typeof input === 'string' && input.startsWith('blob:')) {
+          console.log("Blob URL tespit edildi, veri dönüştürülüyor...");
+          const response = await fetch(input);
+          const blob = await response.blob();
+          const snapshot = await uploadBytes(storageRef, blob);
+          return await getDownloadURL(snapshot.ref);
+      }
+
+      // 3. Durum: Base64 String
       if (typeof input === 'string' && input.startsWith('data:')) {
           const snapshot = await uploadString(storageRef, input, 'data_url');
           return await getDownloadURL(snapshot.ref);
       }
 
-      // 3. Durum: Zaten bir web linki (http...)
+      // 4. Durum: Zaten bir web linki (http...)
       if (typeof input === 'string' && input.startsWith('http')) {
           return input;
       }
 
-      console.error("Geçersiz input:", input);
-      throw new Error("Dosya formatı desteklenmiyor. Lütfen tekrar fotoğraf seçin.");
+      throw new Error("Geçersiz dosya formatı. (File veya Blob URL bulunamadı)");
   } catch (error: any) {
       console.error("Upload Hatası Detayı:", error);
       throw new Error(`Yükleme başarısız: ${error.message}`);
@@ -108,15 +117,9 @@ export const dbService = {
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
         // Önemli: Eğer item.file (gerçek dosya) varsa onu kullan.
-        // Yoksa item.url'i kullan (URL ise zaten upload fonksiyonu onu atlar).
+        // Yoksa item.url'i kullan (URL ise zaten upload fonksiyonu onu blob'dan kurtaracak).
         const source = item.file ? item.file : item.url;
         
-        // Eğer kaynak blob url ise ve dosya nesnesi yoksa hata veririz, 
-        // çünkü blob url'ler sayfalar arası taşınmaz.
-        if (!item.file && typeof source === 'string' && source.startsWith('blob:')) {
-            throw new Error("Dosya verisi kayboldu. Lütfen fotoğrafı tekrar seçin.");
-        }
-
         const downloadURL = await uploadImageToStorage(source, path);
         
         // Kaydettikten sonra ağır verileri temizle, sadece URL kalsın
