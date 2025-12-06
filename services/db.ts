@@ -15,8 +15,7 @@ import {
 import { 
   ref, 
   uploadBytes, 
-  getDownloadURL, 
-  uploadString
+  getDownloadURL
 } from "firebase/storage";
 
 const POSTS_COLLECTION = 'posts';
@@ -47,115 +46,107 @@ const checkDbConnection = () => {
 };
 
 /**
- * DÜZELTME DETAYLARI:
- * 1. Base64 string'in doğru formatını kontrol ediyoruz
- * 2. Data URL prefix'ini doğru şekilde ayıklıyoruz
- * 3. Blob URL'leri için fetch ile veri çekme eklendi
- * 4. Daha iyi hata yönetimi
+ * DÜZELTME V5: Blob kullanarak yükleme (En güvenilir yöntem)
+ * Base64 ve URL sorunlarını çözmek için direkt Blob kullanıyoruz
  */
 const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<string> => {
     const { storageInstance } = checkDbConnection();
     const storageRef = ref(storageInstance, path);
 
     try {
-        let base64Data = "";
+        console.log("Yükleme başlatılıyor:", path);
 
-        // 1. Durum: Direkt String
+        // 1. Durum: Direkt String (HTTP/HTTPS URL)
         if (typeof item === 'string') {
-            // Zaten bir URL ise (http/https)
             if (item.startsWith('http://') || item.startsWith('https://')) {
+                console.log("Zaten yüklenmiş URL, atlaniyor");
                 return item;
             }
             
-            // Blob URL ise, fetch ile veriyi çekelim
+            // Blob URL ise fetch ile çek
             if (item.startsWith('blob:')) {
                 console.log("Blob URL tespit edildi, dönüştürülüyor...");
                 const response = await fetch(item);
                 const blob = await response.blob();
                 
-                // Blob'u File gibi yükle
                 const snapshot = await uploadBytes(storageRef, blob);
                 const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("✅ Yükleme başarılı:", downloadURL);
                 return downloadURL;
             }
             
-            // Base64 string ise
+            // Base64 ise Blob'a çevir
             if (item.startsWith('data:')) {
-                base64Data = item;
-            } else {
-                throw new Error("Geçersiz string formatı");
-            }
-        } 
-        // 2. Durum: MediaItem objesi
-        else {
-            const mediaItem = item as MediaItem;
-            
-            // Önce file objesini kontrol et
-            if (mediaItem.file) {
-                console.log("File objesi bulundu, doğrudan yükleniyor...");
-                const snapshot = await uploadBytes(storageRef, mediaItem.file);
+                console.log("Base64 tespit edildi, Blob'a dönüştürülüyor...");
+                const blob = await dataURLtoBlob(item);
+                
+                const snapshot = await uploadBytes(storageRef, blob);
                 const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("✅ Yükleme başarılı:", downloadURL);
                 return downloadURL;
             }
             
-            // URL varsa kontrol et
-            if (mediaItem.url) {
-                // HTTP/HTTPS URL
-                if (mediaItem.url.startsWith('http://') || mediaItem.url.startsWith('https://')) {
-                    return mediaItem.url;
-                }
-                
-                // Blob URL
-                if (mediaItem.url.startsWith('blob:')) {
-                    console.log("MediaItem'da Blob URL tespit edildi, dönüştürülüyor...");
-                    const response = await fetch(mediaItem.url);
-                    const blob = await response.blob();
-                    const snapshot = await uploadBytes(storageRef, blob);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-                    return downloadURL;
-                }
-                
-                // Base64 data URL
-                if (mediaItem.url.startsWith('data:')) {
-                    base64Data = mediaItem.url;
-                } else {
-                    throw new Error("MediaItem URL'i desteklenmeyen bir formatta");
-                }
-            } else {
-                throw new Error("MediaItem içinde ne file ne de url bulunamadı");
+            throw new Error("Desteklenmeyen string formatı");
+        } 
+        
+        // 2. Durum: MediaItem objesi
+        const mediaItem = item as MediaItem;
+        
+        // Önce file objesini kontrol et
+        if (mediaItem.file) {
+            console.log("File objesi bulundu, doğrudan yükleniyor...");
+            const snapshot = await uploadBytes(storageRef, mediaItem.file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            console.log("✅ Yükleme başarılı:", downloadURL);
+            return downloadURL;
+        }
+        
+        // URL varsa kontrol et
+        if (mediaItem.url) {
+            // HTTP/HTTPS URL
+            if (mediaItem.url.startsWith('http://') || mediaItem.url.startsWith('https://')) {
+                console.log("Zaten yüklenmiş URL, atlanıyor");
+                return mediaItem.url;
             }
+            
+            // Blob URL
+            if (mediaItem.url.startsWith('blob:')) {
+                console.log("MediaItem'da Blob URL tespit edildi...");
+                const response = await fetch(mediaItem.url);
+                const blob = await response.blob();
+                
+                const snapshot = await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("✅ Yükleme başarılı:", downloadURL);
+                return downloadURL;
+            }
+            
+            // Base64 data URL
+            if (mediaItem.url.startsWith('data:')) {
+                console.log("MediaItem'da Base64 tespit edildi...");
+                const blob = await dataURLtoBlob(mediaItem.url);
+                
+                const snapshot = await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("✅ Yükleme başarılı:", downloadURL);
+                return downloadURL;
+            }
+            
+            throw new Error("MediaItem URL'i desteklenmeyen bir formatta");
         }
-
-        // Base64 yükleme
-        if (!base64Data) {
-            throw new Error("Yüklenecek veri bulunamadı");
-        }
-
-        // Base64 formatını kontrol et ve temizle
-        if (!base64Data.startsWith('data:')) {
-            throw new Error("Geçerli bir Base64 data URL değil");
-        }
-
-        console.log("Firebase'e Base64 olarak yükleniyor...");
         
-        // uploadString kullanarak yükle
-        const snapshot = await uploadString(storageRef, base64Data, 'data_url');
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        
-        console.log("Yükleme başarılı:", downloadURL);
-        return downloadURL;
+        throw new Error("MediaItem içinde ne file ne de url bulunamadı");
 
     } catch (error: any) {
-        console.error("Upload Hatası (db.ts):", error);
+        console.error("❌ Upload Hatası:", error);
         console.error("Hata detayları:", {
             code: error.code,
             message: error.message,
             path: path
         });
         
-        // Spesifik hata mesajları
         if (error.code === 'storage/invalid-argument') {
-            throw new Error("Dosya formatı hatası. Lütfen geçerli bir resim seçin ve tekrar deneyin.");
+            throw new Error("Dosya formatı hatası. Lütfen geçerli bir resim seçin.");
         }
         if (error.code === 'storage/unauthorized') {
             throw new Error("Yükleme izniniz yok. Firebase Storage kurallarını kontrol edin.");
@@ -168,6 +159,20 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
         }
         
         throw new Error(`Dosya yükleme hatası: ${error.message}`);
+    }
+};
+
+/**
+ * Base64 Data URL'i Blob'a dönüştürür
+ */
+const dataURLtoBlob = async (dataURL: string): Promise<Blob> => {
+    try {
+        const response = await fetch(dataURL);
+        const blob = await response.blob();
+        return blob;
+    } catch (error) {
+        console.error("Base64 -> Blob dönüşüm hatası:", error);
+        throw new Error("Resim formatı dönüştürülemedi");
     }
 };
 
@@ -193,15 +198,15 @@ export const dbService = {
     try {
       const { dbInstance } = checkDbConnection();
 
-      console.log("Post kaydediliyor, medya sayısı:", post.media.length);
+      console.log("📤 Post kaydediliyor, medya sayısı:", post.media.length);
 
-      // Medyaları sırayla yükle (paralel yerine)
+      // Medyaları sırayla yükle
       const updatedMedia = [];
       for (let index = 0; index < post.media.length; index++) {
         const item = post.media[index];
         const path = `posts/${post.id}/media_${index}_${Date.now()}`;
         
-        console.log(`Medya ${index + 1}/${post.media.length} yükleniyor...`);
+        console.log(`📸 Medya ${index + 1}/${post.media.length} yükleniyor...`);
         const downloadURL = await uploadMediaItem(item, path);
         
         // Dosya referanslarını temizle
@@ -211,9 +216,9 @@ export const dbService = {
 
       const postToSave = { ...post, media: updatedMedia };
       await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), postToSave);
-      console.log("Post başarıyla kaydedildi!");
+      console.log("✅ Post başarıyla kaydedildi!");
     } catch (error) {
-      console.error("Post kayıt hatası:", error);
+      console.error("❌ Post kayıt hatası:", error);
       throw error;
     }
   },
