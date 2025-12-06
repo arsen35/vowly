@@ -129,10 +129,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[60] flex items-end md:items-center justify-center md:p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-end md:items-center justify-center pt-12 md:pt-0 md:p-4 backdrop-blur-sm">
       <div className={`bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
           ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[90vh]' : 'max-w-lg md:h-auto'}
-          h-[95vh] md:h-auto transition-all duration-300
+          h-full md:h-auto transition-all duration-300
       `}>
         
         {/* Header */}
