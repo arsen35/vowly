@@ -7,6 +7,7 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BlogPage } from './components/BlogPage';
 import { ChatPage } from './components/ChatPage';
+import { InstallModal } from './components/InstallModal';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
 import { signInAnonymously } from "firebase/auth";
@@ -23,8 +24,33 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
+  // PWA Install Logic State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('desktop');
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+
   // App açıldığında Feed verilerini CANLI TAKİP ET
   useEffect(() => {
+    // Platform tespiti
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(userAgent)) {
+        setPlatform('ios');
+    } else if (/android/.test(userAgent)) {
+        setPlatform('android');
+    }
+
+    // Zaten yüklü mü kontrolü
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        setIsAppInstalled(true);
+    }
+
+    // Android Install Prompt Yakalama
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+    });
+
     // 1. Anonim Giriş
     const initAuth = async () => {
       if (auth) {
@@ -198,6 +224,23 @@ const App: React.FC = () => {
     }
   };
 
+  const handleInstallClick = () => {
+    setShowInstallModal(true);
+  };
+
+  const triggerNativeInstall = async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+            setShowInstallModal(false);
+        }
+    } else {
+        alert("Otomatik yükleme desteklenmiyor veya uygulama zaten yüklü. Lütfen tarayıcı menüsünden 'Uygulamayı Yükle' seçeneğini kullanın.");
+    }
+  };
+
   // --- RENDER HELPERS ---
 
   if (isLoading) {
@@ -291,26 +334,34 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+             {/* INSTALL APP BUTTON (Only if not installed) */}
+             {!isAppInstalled && (
+                 <button 
+                    onClick={handleInstallClick}
+                    className="flex items-center gap-1 bg-gradient-to-r from-wedding-500 to-wedding-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg transition-transform active:scale-95 animate-fadeIn"
+                 >
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M12 9v9m0 0l3-3m-3 3l-3-3m3-9V3" />
+                     </svg>
+                     <span className="hidden sm:inline">Uygulamayı Yükle</span>
+                     <span className="sm:hidden">Yükle</span>
+                 </button>
+             )}
+
              {/* Mobile Nav Toggle */}
              <div className="md:hidden flex bg-gray-100 rounded-full p-1 mr-2 gap-1">
                 <button onClick={() => setViewState(ViewState.FEED)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.FEED ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Akış</button>
                 <button onClick={() => setViewState(ViewState.BLOG)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.BLOG ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Blog</button>
-                <button onClick={() => setViewState(ViewState.CHAT)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.CHAT ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Sohbet</button>
+                <button onClick={() => setViewState(ViewState.CHAT)} className={`px-2 py-1 text-xs rounded-full font-bold transition-all ${viewState === ViewState.CHAT ? 'bg-white shadow text-wedding-500' : 'text-gray-500'}`}>Chat</button>
              </div>
 
             {isAdmin ? (
                 <>
                     <button 
                        onClick={() => setViewState(ViewState.ADMIN_DASHBOARD)}
-                       className="text-xs font-bold text-wedding-900 bg-wedding-50 px-3 py-1.5 rounded-full hover:bg-wedding-100 transition-colors"
+                       className="text-xs font-bold text-wedding-900 bg-wedding-50 px-3 py-1.5 rounded-full hover:bg-wedding-100 transition-colors hidden sm:block"
                     >
                         Panel
-                    </button>
-                    <button 
-                       onClick={handleLogout}
-                       className="text-xs px-3 py-1.5 rounded-full border font-medium bg-red-50 text-red-600 border-red-200 hover:bg-red-100 transition-colors hidden sm:block"
-                    >
-                        Çıkış
                     </button>
                 </>
             ) : (
@@ -362,7 +413,7 @@ const App: React.FC = () => {
 
       {/* Footer Version Indicator */}
       <footer className="text-center py-4 text-[10px] text-gray-300">
-         v2.0 (Real-time Live Feed)
+         v2.4 (App Install Added)
       </footer>
 
       {/* Floating Action Buttons (Only on Feed) */}
@@ -405,6 +456,15 @@ const App: React.FC = () => {
             onClose={() => setShowLoginModal(false)} 
             onLogin={handleLoginSubmit} 
         />
+      )}
+
+      {showInstallModal && (
+          <InstallModal 
+            onClose={() => setShowInstallModal(false)}
+            platform={platform}
+            canTriggerNative={!!deferredPrompt}
+            onInstall={triggerNativeInstall}
+          />
       )}
 
       <ConfirmationModal 
