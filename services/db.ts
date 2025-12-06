@@ -209,13 +209,32 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
         if (mediaItem.file) {
             console.log("File objesi bulundu, optimize ediliyor...");
             
-            // Resmi optimize et
-            const optimizedBlob = await optimizeImage(mediaItem.file);
-            
-            const snapshot = await uploadBytes(storageRef, optimizedBlob);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            console.log("✅ Yükleme başarılı:", downloadURL);
-            return downloadURL;
+            try {
+                // Resmi optimize et
+                const optimizedBlob = await optimizeImage(mediaItem.file);
+                
+                // Blob boyut kontrolü (boş/bozuk dosya tespiti)
+                if (optimizedBlob.size < 1000) { // 1KB'den küçükse bozuk
+                    throw new Error('Optimize edilmiş dosya çok küçük, orijinal dosya bozuk olabilir.');
+                }
+                
+                const snapshot = await uploadBytes(storageRef, optimizedBlob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("✅ Yükleme başarılı:", downloadURL);
+                return downloadURL;
+            } catch (optimizeError: any) {
+                console.error("⚠️ Optimizasyon hatası, orijinal dosya denenecek:", optimizeError.message);
+                
+                // Optimizasyon başarısız olursa, orijinal dosyayı yükle
+                try {
+                    const snapshot = await uploadBytes(storageRef, mediaItem.file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+                    console.log("✅ Orijinal dosya yüklendi:", downloadURL);
+                    return downloadURL;
+                } catch (uploadError) {
+                    throw new Error(`Dosya bozuk veya desteklenmeyen formatta. Lütfen farklı bir resim seçin.`);
+                }
+            }
         }
         
         // URL varsa kontrol et
