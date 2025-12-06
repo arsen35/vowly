@@ -179,7 +179,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 sm:rounded-xl shadow-sm border-y sm:border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full transform hover:scale-[0.98]">
+    <div className="bg-white dark:bg-theme-dark sm:rounded-xl shadow-sm border-y sm:border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full transform hover:scale-[0.98]">
       {/* Header */}
       <div className="p-3 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800 relative">
         <img 

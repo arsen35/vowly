@@ -226,7 +226,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
             {gridPosts.map((post) => (
                 <article 
                     key={post.id} 
-                    className="group flex flex-col h-full bg-white dark:bg-gray-900 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800 cursor-pointer"
+                    className="group flex flex-col h-full bg-white dark:bg-theme-dark rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800 cursor-pointer"
                     onClick={() => setSelectedPost(post)}
                 >
                 <div className="aspect-[4/3] overflow-hidden relative">
@@ -321,9 +321,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
 
       {/* READING MODE MODAL */}
       {selectedPost && (
-        <div className="fixed inset-0 z-[60] bg-white dark:bg-black overflow-y-auto animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed inset-0 z-[60] bg-white dark:bg-theme-dark overflow-y-auto animate-in slide-in-from-bottom-5 duration-300">
              {/* Sticky Navigation */}
-             <div className="sticky top-0 left-0 right-0 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 md:px-8 h-16 flex items-center justify-between z-10">
+             <div className="sticky top-0 left-0 right-0 bg-white/80 dark:bg-theme-dark/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 md:px-8 h-16 flex items-center justify-between z-10">
                  <button 
                     onClick={() => setSelectedPost(null)}
                     className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wedding-500 transition-colors font-medium text-sm"
@@ -339,11 +339,11 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
              <div className="max-w-4xl mx-auto pb-20">
                 <div className="w-full aspect-video md:aspect-[21/9] relative">
                     <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-black via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-theme-dark via-transparent to-transparent"></div>
                 </div>
 
                 <div className="px-4 sm:px-8 md:px-12 -mt-20 relative">
-                     <div className="bg-white dark:bg-gray-900 rounded-t-3xl p-6 md:p-10 shadow-sm border border-gray-50 dark:border-gray-800">
+                     <div className="bg-white dark:bg-theme-dark rounded-t-3xl p-6 md:p-10 shadow-sm border border-gray-50 dark:border-gray-800">
                         {selectedPost.badge && (
                             <span className="text-wedding-500 font-bold tracking-widest text-xs uppercase mb-4 block">
                                 {selectedPost.badge}
@@ -383,8 +383,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
       {/* Admin Blog Editor Modal */}
       {isEditorOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
+          <div className="bg-white dark:bg-theme-dark rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-theme-dark z-10">
               <h3 className="font-serif text-xl font-bold dark:text-white">{editingPostId ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h3>
               <button onClick={() => setIsEditorOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

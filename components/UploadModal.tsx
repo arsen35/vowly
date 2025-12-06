@@ -130,13 +130,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   return (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-end md:items-center justify-center pt-12 md:pt-0 md:p-4 backdrop-blur-sm">
-      <div className={`bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
+      <div className={`bg-white dark:bg-theme-dark rounded-t-2xl md:rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col
           ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[90vh]' : 'max-w-lg md:h-auto'}
           h-full md:h-auto transition-all duration-300
       `}>
         
         {/* Header */}
-        <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800 shrink-0 h-14">
+        <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-theme-dark shrink-0 h-14">
           <h2 className="text-lg font-serif font-bold text-gray-800 dark:text-white">Anını Paylaş</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-200 dark:bg-gray-700 dark:text-gray-300 p-1.5 rounded-full">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -149,7 +149,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
           
           {selectedMedia.length === 0 ? (
-            <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+            <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50 dark:bg-theme-dark">
                 <div 
                   className="w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-wedding-500 hover:bg-wedding-50 dark:hover:bg-gray-700 transition-all group relative bg-white dark:bg-gray-800/50"
                   onClick={() => fileInputRef.current?.click()}
@@ -200,7 +200,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
               </div>
 
               {/* Form */}
-              <div className="w-full md:w-2/5 bg-white dark:bg-gray-900 flex flex-col h-full overflow-hidden">
+              <div className="w-full md:w-2/5 bg-white dark:bg-theme-dark flex flex-col h-full overflow-hidden">
                  <div className="flex-1 overflow-y-auto p-5 pb-4">
                      <div className="space-y-5">
                          <div>
@@ -266,7 +266,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                  </div>
 
                  {/* Footer */}
-                 <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                 <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-theme-dark shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
                     <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1" isLoading={isProcessing}>
                         {isProcessing ? 'Paylaşılıyor...' : 'Paylaş'}

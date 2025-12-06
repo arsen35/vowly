@@ -171,7 +171,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
   // 1. GİRİŞ EKRANI
   if (!isNameSet) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-wedding-50 dark:bg-black" style={{ backgroundImage: `url("${weddingPattern}")` }}>
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-wedding-50 dark:bg-theme-dark" style={{ backgroundImage: `url("${weddingPattern}")` }}>
             <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-wedding-100 dark:border-gray-800">
                 <div className="w-16 h-16 bg-wedding-100 dark:bg-wedding-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-wedding-500 animate-pulse">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
@@ -199,7 +199,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
 
   // 2. SOHBET EKRANI
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] bg-wedding-50 dark:bg-black relative transition-colors duration-300">
+    <div className="flex flex-col h-[calc(100dvh-64px)] bg-wedding-50 dark:bg-theme-dark relative transition-colors duration-300">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-80 dark:opacity-20 dark:invert" 
              style={{ 
@@ -297,7 +297,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white dark:bg-black px-2 py-2 border-t border-gray-200 dark:border-gray-800 z-20 flex flex-col gap-2 transition-colors duration-300">
+        <div className="bg-white dark:bg-theme-dark px-2 py-2 border-t border-gray-200 dark:border-gray-800 z-20 flex flex-col gap-2 transition-colors duration-300">
             
             {/* Image Preview (If selected) */}
             {selectedImage && (

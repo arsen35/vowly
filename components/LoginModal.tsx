@@ -19,7 +19,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-2xl p-6 transform transition-all scale-100">
+      <div className="bg-white dark:bg-theme-dark rounded-2xl w-full max-w-sm shadow-2xl p-6 transform transition-all scale-100">
         <div className="text-center mb-6">
           <div className="w-12 h-12 bg-wedding-100 dark:bg-wedding-900/30 text-wedding-900 dark:text-wedding-400 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
