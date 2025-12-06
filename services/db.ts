@@ -46,6 +46,71 @@ const checkDbConnection = () => {
 };
 
 /**
+ * Resmi optimize eder (boyut küçültme ve format dönüştürme)
+ */
+const optimizeImage = async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Canvas oluştur
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // Maksimum boyut 1920px
+                const maxSize = 1920;
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = (height / width) * maxSize;
+                        width = maxSize;
+                    } else {
+                        width = (width / height) * maxSize;
+                        height = maxSize;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Resmi çiz
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas context alınamadı'));
+                    return;
+                }
+                
+                ctx.fillStyle = '#FFFFFF'; // Beyaz arka plan
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // JPEG olarak dışa aktar (0.85 kalite)
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            console.log(`✂️ Optimize edildi: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Blob oluşturulamadı'));
+                        }
+                    },
+                    'image/jpeg',
+                    0.85
+                );
+            };
+            
+            img.onerror = () => reject(new Error('Resim yüklenemedi'));
+            img.src = e.target?.result as string;
+        };
+        
+        reader.onerror = () => reject(new Error('Dosya okunamadı'));
+        reader.readAsDataURL(file);
+    });
+};
+
+/**
  * DÜZELTME V5: Blob kullanarak yükleme (En güvenilir yöntem)
  * Base64 ve URL sorunlarını çözmek için direkt Blob kullanıyoruz
  */
@@ -94,8 +159,12 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
         
         // Önce file objesini kontrol et
         if (mediaItem.file) {
-            console.log("File objesi bulundu, doğrudan yükleniyor...");
-            const snapshot = await uploadBytes(storageRef, mediaItem.file);
+            console.log("File objesi bulundu, optimize ediliyor...");
+            
+            // Resmi optimize et
+            const optimizedBlob = await optimizeImage(mediaItem.file);
+            
+            const snapshot = await uploadBytes(storageRef, optimizedBlob);
             const downloadURL = await getDownloadURL(snapshot.ref);
             console.log("✅ Yükleme başarılı:", downloadURL);
             return downloadURL;
