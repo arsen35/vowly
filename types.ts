@@ -14,39 +14,41 @@ export interface Comment {
 }
 
 export interface MediaItem {
-  url: string; // Önizleme için (blob: veya base64)
+  url: string; // Önizleme linki
   type: 'image' | 'video';
-  file?: File; // Yükleme için orijinal dosya
+  file?: File; // Orijinal DOM Dosya nesnesi (UI için)
+  fileData?: Uint8Array; // SAF HAM VERİ (Upload için - Kaybolmaz)
+  mimeType?: string; // Dosya tipi (örn: image/jpeg)
 }
 
 export interface Post {
   id: string;
   user: User;
-  media: MediaItem[]; // Carousel için dizi yapısı
+  media: MediaItem[]; 
   caption: string;
   hashtags: string[];
   likes: number;
   comments: Comment[];
   timestamp: number;
   isLikedByCurrentUser?: boolean;
-  productUrl?: string; // SATIN ALMA LİNKİ
+  productUrl?: string; 
 }
 
 export interface BlogPost {
   id: string;
   title: string;
-  content: string; // Paragraflar için düz metin
+  content: string; 
   coverImage: string;
   author: string;
   date: number;
-  isFeatured?: boolean; // Vitrin/Manşet özelliği
-  badge?: string; // "Ayın Gelinliği", "İmza Ürün" gibi etiketler
+  isFeatured?: boolean; 
+  badge?: string; 
 }
 
 export interface ChatMessage {
   id: string;
   text: string;
-  image?: string; // Opsiyonel resim alanı
+  image?: string; 
   userId: string;
   userName: string;
   avatar: string;

@@ -15,8 +15,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [userName, setUserName] = useState('');
-  
-  // Shoppable Fields
   const [productUrl, setProductUrl] = useState('');
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -28,16 +26,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // Dosyayı Base64 string'e çeviren yardımcı fonksiyon
+  // AI için (Sadece görsel analizde kullanılır)
   const readFileAsBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => {
-            if (event.target?.result) {
-                resolve(event.target.result as string);
-            } else {
-                reject(new Error("Dosya okunamadı"));
-            }
+            if (event.target?.result) resolve(event.target.result as string);
+            else reject(new Error("Dosya okunamadı"));
         };
         reader.onerror = (error) => reject(error);
         reader.readAsDataURL(file);
@@ -51,11 +46,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       const newMediaItems: MediaItem[] = [];
 
       try {
-        // 1. Dosyaları Hızlı Önizleme İçin Hazırla
         for (const file of files) {
            if (file.type.startsWith('image/')) {
                const objectUrl = URL.createObjectURL(file);
-               newMediaItems.push({ url: objectUrl, type: 'image', file: file });
+               newMediaItems.push({ 
+                   url: objectUrl, 
+                   type: 'image', 
+                   file: file 
+               });
            }
         }
   
@@ -63,17 +61,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
       
-            // 2. Sadece ilk görseli AI analizi için Base64'e çevir (Arka planda)
+            // AI Caption Generate
             if (!caption) {
                 readFileAsBase64(files[0]).then(base64 => {
                     generateAICaption(base64);
-                }).catch(err => console.warn("AI için resim okunamadı", err));
+                }).catch(console.warn);
             }
         }
-        
       } catch (err) {
           console.error("Dosya işleme hatası:", err);
-          alert("Dosyalar işlenirken bir hata oluştu.");
+          alert("Dosya seçimi sırasında bir hata oluştu.");
       } finally {
           setIsProcessing(false);
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -83,9 +80,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
 
   const generateAICaption = async (base64Image: string) => {
     setIsGeneratingAI(true);
-    // Base64 başlığını temizle
     const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
-    
     try {
       const result = await generateWeddingCaption(cleanBase64);
       setCaption(result.caption);
@@ -97,21 +92,28 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     }
   };
 
-  // KRİTİK DEĞİŞİKLİK: handleSubmit artık async ve dosyaları dönüştürüyor
+  // --- KRİTİK DÜZELTME: handleSubmit ---
+  // Dosyaları "File" objesi olarak değil, "Uint8Array" (Byte Dizisi) olarak hazırlar.
+  // Bu sayede modal kapandığında veri kaybolmaz.
   const handleSubmit = async () => {
     if (selectedMedia.length === 0 || !caption || !userName.trim()) return;
 
-    setIsProcessing(true); // Butonu "İşleniyor" moduna al
+    setIsProcessing(true); 
 
     try {
-        // Dosyaları Base64'e çevir (Mobile tarayıcılar için Hayati Öneme Sahip Adım)
-        // Bu işlem modal kapanmadan önce veriyi "kopyalar", böylece orijinal dosya referansı kaybolsa bile sorun olmaz.
         const processedMedia = await Promise.all(selectedMedia.map(async (item) => {
             if (item.file) {
-                const base64 = await readFileAsBase64(item.file);
-                // 'file' özelliğini kaldırıp 'url'ye base64 veriyoruz.
-                // db.ts artık bunu doğrudan uploadString ile yükleyecek.
-                return { ...item, url: base64, file: undefined };
+                // 1. Dosyayı ArrayBuffer olarak oku (Ham veri)
+                const buffer = await item.file.arrayBuffer();
+                // 2. Bunu Uint8Array'e çevir (Firebase'in en sevdiği format)
+                const byteArray = new Uint8Array(buffer);
+                
+                return { 
+                    ...item, 
+                    fileData: byteArray, // Ham veriyi ekle
+                    mimeType: item.file.type, // Tipi ekle
+                    file: undefined // Orijinal DOM referansını sil (artık ihtiyacımız yok)
+                };
             }
             return item;
         }));
@@ -127,26 +129,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         onClose();
     } catch (error) {
         console.error("Dosya hazırlama hatası:", error);
-        alert("Dosyalar yüklemeye hazırlanırken bir hata oluştu. Lütfen tekrar deneyin.");
+        alert("Fotoğraflar yüklemeye hazırlanırken hata oluştu.");
     } finally {
         setIsProcessing(false);
     }
   };
 
-  // Navigasyon
+  // --- Navigasyon ve Touch Handlerlar ---
   const nextPreview = () => {
-      if (currentPreviewIndex < selectedMedia.length - 1) {
-          setCurrentPreviewIndex(currentPreviewIndex + 1);
-      }
+      if (currentPreviewIndex < selectedMedia.length - 1) setCurrentPreviewIndex(currentPreviewIndex + 1);
   };
-
   const prevPreview = () => {
-      if (currentPreviewIndex > 0) {
-          setCurrentPreviewIndex(currentPreviewIndex - 1);
-      }
+      if (currentPreviewIndex > 0) setCurrentPreviewIndex(currentPreviewIndex - 1);
   };
-
-  // Touch
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
@@ -274,11 +269,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             </div>
                             
                             <div className="bg-wedding-50 rounded-xl p-3 border border-wedding-100">
-                                 {!caption && !isGeneratingAI && (
-                                     <div className="mb-2 text-xs text-wedding-600 bg-white/60 p-2 rounded flex items-start gap-2">
-                                         <p>✨ Gemini AI fotoğrafını inceliyor...</p>
-                                     </div>
-                                 )}
                                 <textarea
                                   className="w-full bg-transparent border-none p-0 text-sm text-gray-800 focus:ring-0 placeholder-gray-400 resize-none min-h-[100px]"
                                   rows={4}
@@ -314,12 +304,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                                  <p className="text-[10px] text-gray-400">Takipçiler bu linke tıklayarak ürünü satın alabilir.</p>
                              </div>
                          </div>
-
                          <div className="h-4 md:h-0"></div>
                      </div>
                  </div>
 
-                 {/* Fixed Footer */}
+                 {/* Footer */}
                  <div className="p-4 border-t bg-white shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
                     <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1">
