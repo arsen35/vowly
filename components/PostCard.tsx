@@ -52,76 +52,75 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
   // Analyze Image Color when media changes
   useEffect(() => {
+    let isActive = true; // Component unmount olursa state güncellememek için
+
     const extractColor = async () => {
         const currentMedia = post.media[currentMediaIndex];
         
         // Videolar veya geçersiz URL'ler için varsayılan rengi kullan
-        if (currentMedia.type === 'video' || !currentMedia.url) {
-            setDominantColor('#D34A7D');
+        if (!currentMedia || currentMedia.type === 'video' || !currentMedia.url || !post.productUrl) {
+            if (isActive) setDominantColor('#D34A7D');
             return;
-        }
-
-        // Eğer ürün linki yoksa boşuna işlemci yorma
-        if (!post.productUrl) {
-             setDominantColor('#D34A7D');
-             return;
         }
 
         try {
             const img = new Image();
-            // CORS hatası alırsak varsayılan renge döner, sorun olmaz.
-            // Bu "görünmez" resim sadece analiz içindir.
             img.crossOrigin = "Anonymous"; 
-            img.src = currentMedia.url;
+            
+            // ⭐ CACHE BUSTING: Tarayıcının önbellekteki (CORS'suz) resmi kullanmasını engelle.
+            // URL'in sonuna rastgele bir sayı ekleyerek sunucudan taze (CORS'lu) veri istiyoruz.
+            const timestamp = new Date().getTime();
+            const src = currentMedia.url.startsWith('http') 
+                ? `${currentMedia.url}${currentMedia.url.includes('?') ? '&' : '?'}cors_fix=${timestamp}`
+                : currentMedia.url;
+
+            img.src = src;
 
             img.onload = () => {
+                if (!isActive) return;
                 try {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     if (!ctx) return;
 
-                    // Resmi çok küçült (hız için)
+                    // Resmi 1x1 piksele indirerek tarayıcının ortalama rengi hesaplamasını sağla
                     canvas.width = 1;
                     canvas.height = 1;
                     
-                    // Tek bir piksel boyutuna indirerek ortalama rengi tarayıcıya hesaplat
                     ctx.drawImage(img, 0, 0, 1, 1);
 
                     // Pixel verilerini al
                     const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
 
                     // Renk çok açık veya çok koyu ise düzenle
-                    let finalR = r;
-                    let finalG = g;
-                    let finalB = b;
-
-                    // Çok açık renkse (beyazımsı) biraz koyult
-                    if (r > 220 && g > 220 && b > 220) {
-                        finalR = 211; finalG = 74; finalB = 125; // Default Pink
+                    // Çok beyazsa koyu pembe yap (yazı okunabilsin)
+                    if (r > 230 && g > 230 && b > 230) {
+                        setDominantColor('#D34A7D'); 
                     }
-                    
-                    // Çok koyuysa (siyahımsı) default pembeye dön
-                    if (r < 30 && g < 30 && b < 30) {
+                    // Çok siyahsa yine pembe yap (buton kaybolmasın)
+                    else if (r < 20 && g < 20 && b < 20) {
                         setDominantColor('#D34A7D');
                     } else {
-                        setDominantColor(`rgb(${finalR}, ${finalG}, ${finalB})`);
+                        setDominantColor(`rgb(${r}, ${g}, ${b})`);
                     }
                 } catch (e) {
                     // Canvas tainted hatası (CORS) gelirse burası çalışır
-                    setDominantColor('#D34A7D');
+                    console.warn("Renk analizi CORS engeline takıldı, varsayılan renk kullanılıyor.");
+                    if (isActive) setDominantColor('#D34A7D');
                 }
             };
 
             img.onerror = () => {
-                // Resim yüklenemezse veya CORS engellerse
-                setDominantColor('#D34A7D');
+                if (isActive) setDominantColor('#D34A7D');
             };
         } catch (e) {
-            setDominantColor('#D34A7D');
+            if (isActive) setDominantColor('#D34A7D');
         }
     };
 
     extractColor();
+
+    return () => { isActive = false; };
   }, [currentMediaIndex, post.media, post.productUrl]);
 
 
@@ -336,6 +335,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                           className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transform transition-transform duration-700 group-hover:scale-105 block"
                           loading="lazy"
                           draggable={false}
+                          /* crossOrigin özelliği burada yok, resim her zaman açılır */
                         />
                     )}
                 </div>
