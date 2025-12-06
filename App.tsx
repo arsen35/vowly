@@ -381,7 +381,8 @@ const App: React.FC = () => {
       <main className="w-full">
         {viewState === ViewState.FEED ? (
             <div className="pt-0 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-y-4 sm:gap-6">
+              {/* GRID UPDATE: Changed 2xl:grid-cols-5 to xl:grid-cols-4 for wider cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-4 sm:gap-6">
                 {posts.map(post => (
                   <PostCard 
                     key={post.id} 
