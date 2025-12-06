@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PostCard } from './components/PostCard';
 import { UploadModal } from './components/UploadModal';
@@ -30,15 +29,16 @@ const App: React.FC = () => {
       if (auth) {
         try {
           await signInAnonymously(auth);
-          console.log("Misafir girişi başarılı");
+          console.log("✅ Misafir girişi başarılı");
         } catch (error) {
-          console.error("Misafir girişi hatası:", error);
+          console.error("❌ Misafir girişi hatası:", error);
         }
       }
 
       // 2. Postları Çek ve LocalStorage ile Birleştir
       try {
         const storedPosts = await dbService.getAllPosts();
+        console.log("📦 Firebase'den çekilen post sayısı:", storedPosts.length);
         
         // LocalStorage'dan beğenilen postları al
         const LIKED_STORAGE_KEY = 'vowly_liked_posts';
@@ -48,12 +48,14 @@ const App: React.FC = () => {
         // DB'den gelen veriyi yerel beğeni durumuyla birleştir
         const mergedPosts = storedPosts.map(p => ({
             ...p,
-            isLikedByCurrentUser: likedPosts.includes(p.id)
+            isLikedByCurrentUser: likedPosts.includes(p.id),
+            comments: p.comments || [] // ⭐ Yorumların her zaman array olduğundan emin ol
         }));
         
         setPosts(mergedPosts);
+        console.log("✅ Postlar başarıyla yüklendi!");
       } catch (error) {
-        console.error("Veritabanı hatası:", error);
+        console.error("❌ Veritabanı hatası:", error);
       } finally {
         setIsLoading(false);
       }
@@ -116,8 +118,9 @@ const App: React.FC = () => {
     // DB Kaydet
     try {
         await dbService.savePost(newPost);
+        console.log("✅ Post Firebase'e kaydedildi!");
     } catch (error: any) {
-        console.error("Kayıt hatası:", error);
+        console.error("❌ Kayıt hatası:", error);
         // Hata mesajını daha anlaşılır yap
         let errorMsg = "Fotoğraf yüklenirken bir sorun oluştu.";
         if (error.code === 'storage/unauthorized') errorMsg = "Yükleme izniniz yok.";
@@ -136,8 +139,9 @@ const App: React.FC = () => {
         setPosts(prevPosts => prevPosts.filter(post => post.id !== postToDelete));
         try {
           await dbService.deletePost(postToDelete);
+          console.log("✅ Post silindi!");
         } catch (e) {
-          console.error("Silme hatası", e);
+          console.error("❌ Silme hatası", e);
         }
         setPostToDelete(null);
     }
@@ -176,8 +180,9 @@ const App: React.FC = () => {
     // 3. Veritabanı Güncellemesi (Delta gönderiyoruz: +1 veya -1)
     try {
         await dbService.updateLikeCount(postId, incrementBy);
+        console.log(`✅ Like güncellendi: ${incrementBy > 0 ? '+1' : '-1'}`);
     } catch (error) {
-        console.error("Like update failed:", error);
+        console.error("❌ Like update failed:", error);
     }
   };
 
@@ -190,23 +195,36 @@ const App: React.FC = () => {
       timestamp: Date.now()
     };
 
-    let updatedPost: Post | undefined;
-
+    // 1. UI'ı hemen güncelle (Optimistic Update)
     setPosts(prevPosts => prevPosts.map(post => {
       if (post.id === postId) {
-        updatedPost = {
+        return {
           ...post,
           comments: [...post.comments, newComment]
         };
-        return updatedPost;
       }
       return post;
     }));
 
-    if (updatedPost) {
-        try {
-          await dbService.savePost(updatedPost);
-        } catch(e) { console.warn("Yorum kaydedilemedi"); }
+    // 2. Firebase'e kaydet (yeni addComment metoduyla)
+    try {
+        await dbService.addComment(postId, newComment);
+        console.log("✅ Yorum Firebase'e kaydedildi!");
+    } catch(error) { 
+        console.error("❌ Yorum kaydedilemedi:", error);
+        
+        // Hata durumunda yorumu geri al
+        setPosts(prevPosts => prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: post.comments.filter(c => c.id !== newComment.id)
+            };
+          }
+          return post;
+        }));
+        
+        alert("Yorum gönderilemedi. Lütfen internet bağlantınızı kontrol edin.");
     }
   };
 
@@ -229,7 +247,6 @@ const App: React.FC = () => {
           <div className="min-h-screen bg-gray-50">
              <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm h-16 flex items-center px-6 justify-between">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-                    {/* Admin Logosu Kalabilir veya kaldırılabilir, burada tuttum */}
                     <div className="w-8 h-8 bg-wedding-500 rounded-lg flex items-center justify-center text-white font-serif font-bold text-lg">A</div>
                     <h1 className="font-serif text-2xl font-bold text-gray-900 tracking-tight">Annabella</h1>
                 </div>
@@ -341,7 +358,6 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="w-full">
         {viewState === ViewState.FEED ? (
-            // DÜZELTME: pt-1 yerine pt-0 (Header ile post arası boşluk SIFIRLANDI)
             <div className="pt-0 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-y-4 sm:gap-6">
                 {posts.map(post => (
@@ -376,7 +392,7 @@ const App: React.FC = () => {
 
       {/* Footer Version Indicator */}
       <footer className="text-center py-4 text-[10px] text-gray-300">
-         v1.2 (Stable)
+         v1.3 (Fixed Comments)
       </footer>
 
       {/* Floating Action Buttons (Only on Feed) */}

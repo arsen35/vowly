@@ -1,4 +1,3 @@
-
 import { Post, BlogPost, ChatMessage, MediaItem } from '../types';
 import { db, storage } from './firebase';
 import { 
@@ -13,7 +12,8 @@ import {
   limit,
   onSnapshot,
   addDoc,
-  increment
+  increment,
+  getDoc
 } from "firebase/firestore";
 import { 
   ref, 
@@ -136,7 +136,14 @@ export const dbService = {
       const q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
       const querySnapshot = await getDocs(q);
       const posts: Post[] = [];
-      querySnapshot.forEach((doc) => posts.push(doc.data() as Post));
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as Post;
+        // Yorumların her zaman array olduğundan emin ol
+        posts.push({
+          ...data,
+          comments: data.comments || []
+        });
+      });
       return posts;
     } catch (error) {
       console.error("Veri çekme hatası:", error);
@@ -153,6 +160,34 @@ export const dbService = {
     await updateDoc(postRef, {
         likes: increment(incrementBy)
     });
+  },
+
+  // ⭐ YENİ: Yorum eklemek için özel fonksiyon
+  addComment: async (postId: string, comment: any): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    const postRef = doc(dbInstance, POSTS_COLLECTION, postId);
+    
+    try {
+      // Önce mevcut postu al
+      const postSnap = await getDoc(postRef);
+      
+      if (!postSnap.exists()) {
+        throw new Error("Post bulunamadı!");
+      }
+      
+      const currentPost = postSnap.data() as Post;
+      const updatedComments = [...(currentPost.comments || []), comment];
+      
+      // Yorumları güncelle
+      await updateDoc(postRef, {
+        comments: updatedComments
+      });
+      
+      console.log("✅ Yorum başarıyla kaydedildi!");
+    } catch (error) {
+      console.error("❌ Yorum kaydetme hatası:", error);
+      throw error;
+    }
   },
 
   savePost: async (post: Post): Promise<void> => {
@@ -175,7 +210,8 @@ export const dbService = {
       const cleanPost = { 
           ...postToSaveBase, 
           media: updatedMedia,
-          likes: 0 // Yeni post her zaman 0 like ile başlar
+          likes: post.likes || 0,
+          comments: post.comments || [] // ⭐ Yorumları her zaman kaydet
       };
       
       Object.keys(cleanPost).forEach(key => {
@@ -185,6 +221,7 @@ export const dbService = {
       });
 
       await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), cleanPost);
+      console.log("✅ Post başarıyla kaydedildi!");
     } catch (error) {
       console.error("Post kayıt hatası:", error);
       throw error;
