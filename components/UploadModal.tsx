@@ -28,7 +28,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  // AI için Base64 okuma yardımcısı (Sadece AI gerektiğinde kullanılır)
+  // Dosyayı Base64 string'e çeviren yardımcı fonksiyon
   const readFileAsBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -51,7 +51,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       const newMediaItems: MediaItem[] = [];
 
       try {
-        // 1. Dosyaları Hızlı Önizleme İçin Hazırla (Blob URL)
+        // 1. Dosyaları Hızlı Önizleme İçin Hazırla
         for (const file of files) {
            if (file.type.startsWith('image/')) {
                const objectUrl = URL.createObjectURL(file);
@@ -97,16 +97,39 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
     }
   };
 
-  const handleSubmit = () => {
-    if (selectedMedia.length > 0 && caption && userName.trim()) {
-      onUpload({
-        media: selectedMedia,
-        caption,
-        hashtags,
-        userName: userName.trim(),
-        productUrl: productUrl.trim() || undefined
-      });
-      onClose();
+  // KRİTİK DEĞİŞİKLİK: handleSubmit artık async ve dosyaları dönüştürüyor
+  const handleSubmit = async () => {
+    if (selectedMedia.length === 0 || !caption || !userName.trim()) return;
+
+    setIsProcessing(true); // Butonu "İşleniyor" moduna al
+
+    try {
+        // Dosyaları Base64'e çevir (Mobile tarayıcılar için Hayati Öneme Sahip Adım)
+        // Bu işlem modal kapanmadan önce veriyi "kopyalar", böylece orijinal dosya referansı kaybolsa bile sorun olmaz.
+        const processedMedia = await Promise.all(selectedMedia.map(async (item) => {
+            if (item.file) {
+                const base64 = await readFileAsBase64(item.file);
+                // 'file' özelliğini kaldırıp 'url'ye base64 veriyoruz.
+                // db.ts artık bunu doğrudan uploadString ile yükleyecek.
+                return { ...item, url: base64, file: undefined };
+            }
+            return item;
+        }));
+
+        onUpload({
+            media: processedMedia,
+            caption,
+            hashtags,
+            userName: userName.trim(),
+            productUrl: productUrl.trim() || undefined
+        });
+        
+        onClose();
+    } catch (error) {
+        console.error("Dosya hazırlama hatası:", error);
+        alert("Dosyalar yüklemeye hazırlanırken bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+        setIsProcessing(false);
     }
   };
 

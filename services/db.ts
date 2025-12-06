@@ -62,8 +62,8 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// GÜNCELLENMİŞ VE KESİNLEŞTİRİLMİŞ YÜKLEME FONKSİYONU
-// File nesnesi yerine ArrayBuffer kullanarak "invalid-argument" hatasını bypass eder.
+// GÜNCELLENMİŞ YÜKLEME FONKSİYONU
+// Öncelik: UploadModal'dan gelen Base64 stringler (data:image...)
 const uploadImageToStorage = async (input: File | Blob | string, path: string): Promise<string> => {
   if (!input) {
       throw new Error("Yüklenecek dosya bulunamadı (Input boş).");
@@ -78,22 +78,16 @@ const uploadImageToStorage = async (input: File | Blob | string, path: string): 
   const storageRef = ref(storageInstance, path);
   
   try {
-      // 1. Durum: Input bir Dosya (File) veya Blob ise
-      if (input instanceof File || input instanceof Blob) {
-          // FILE NESNESİNİ SAF BYTE DİZİSİNE ÇEVİRİYORUZ
-          // Bu adım, "File" nesnesinin tarayıcı tarafından yanlış referanslanmasını engeller.
-          const arrayBuffer = await input.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          
-          const snapshot = await uploadBytes(storageRef, uint8Array, { 
-              contentType: input.type || 'image/jpeg' 
-          });
-          return await getDownloadURL(snapshot.ref);
-      }
-      
-      // 2. Durum: Input bir Base64 string ise
+      // 1. Durum: Input bir Base64 string ise (EN GÜVENLİ VE ÖNCELİKLİ YÖNTEM)
+      // UploadModal artık dosyaları bu formata çevirip gönderiyor.
       if (typeof input === 'string' && input.startsWith('data:')) {
           const snapshot = await uploadString(storageRef, input, 'data_url');
+          return await getDownloadURL(snapshot.ref);
+      }
+
+      // 2. Durum: Input bir Dosya (File) veya Blob ise (Yedek Yöntem)
+      if (input instanceof File || input instanceof Blob) {
+          const snapshot = await uploadBytes(storageRef, input);
           return await getDownloadURL(snapshot.ref);
       }
 
@@ -101,23 +95,17 @@ const uploadImageToStorage = async (input: File | Blob | string, path: string): 
       if (typeof input === 'string' && input.startsWith('blob:')) {
           const response = await fetch(input);
           if (!response.ok) throw new Error("Blob verisi okunamadı.");
-          
           const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          
-          const snapshot = await uploadBytes(storageRef, uint8Array, { 
-              contentType: blob.type || 'image/jpeg' 
-          });
+          const snapshot = await uploadBytes(storageRef, blob);
           return await getDownloadURL(snapshot.ref);
       }
 
-      throw new Error("Bilinmeyen veya desteklenmeyen dosya formatı.");
+      throw new Error("Desteklenmeyen dosya formatı.");
 
   } catch (error: any) {
       console.error("Storage yükleme hatası:", error);
       if (error.code === 'storage/invalid-argument') {
-          throw new Error("Dosya formatı reddedildi. Sayfayı yenileyip tekrar deneyin.");
+          throw new Error("Dosya formatı hatası. Lütfen sayfayı yenileyip tekrar deneyin.");
       }
       throw new Error(`Resim yüklenemedi: ${error.message || 'Bilinmeyen Hata'}`);
   }
@@ -160,7 +148,8 @@ export const dbService = {
         // Benzersiz dosya adı oluştur
         const path = `posts/${post.id}/media_${index}_${Date.now()}.webp`;
         
-        // Öncelik gerçek 'file' nesnesinde, yoksa 'url'
+        // ÖNEMLİ: Eğer item.file YOKSA (UploadModal sildiyse), item.url (Base64) kullanılır.
+        // Eğer item.file VARSA (eski yöntem), o kullanılır.
         const source = item.file ? item.file : item.url;
         
         if (!source) {
