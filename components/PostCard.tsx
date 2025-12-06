@@ -27,6 +27,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   
+  // Dynamic Product Color
+  const [dominantColor, setDominantColor] = useState<string>('#D34A7D'); // Default Wedding Pink
+
   // Menu State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -46,6 +49,81 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
     setLikesCount(post.likes);
     setIsLiked(post.isLikedByCurrentUser);
   }, [post.likes, post.isLikedByCurrentUser]);
+
+  // Analyze Image Color when media changes
+  useEffect(() => {
+    const extractColor = async () => {
+        const currentMedia = post.media[currentMediaIndex];
+        
+        // Videolar veya geçersiz URL'ler için varsayılan rengi kullan
+        if (currentMedia.type === 'video' || !currentMedia.url) {
+            setDominantColor('#D34A7D');
+            return;
+        }
+
+        // Eğer ürün linki yoksa boşuna işlemci yorma
+        if (!post.productUrl) {
+             setDominantColor('#D34A7D');
+             return;
+        }
+
+        try {
+            const img = new Image();
+            // CORS hatası alırsak varsayılan renge döner, sorun olmaz.
+            // Bu "görünmez" resim sadece analiz içindir.
+            img.crossOrigin = "Anonymous"; 
+            img.src = currentMedia.url;
+
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    // Resmi çok küçült (hız için)
+                    canvas.width = 1;
+                    canvas.height = 1;
+                    
+                    // Tek bir piksel boyutuna indirerek ortalama rengi tarayıcıya hesaplat
+                    ctx.drawImage(img, 0, 0, 1, 1);
+
+                    // Pixel verilerini al
+                    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+
+                    // Renk çok açık veya çok koyu ise düzenle
+                    let finalR = r;
+                    let finalG = g;
+                    let finalB = b;
+
+                    // Çok açık renkse (beyazımsı) biraz koyult
+                    if (r > 220 && g > 220 && b > 220) {
+                        finalR = 211; finalG = 74; finalB = 125; // Default Pink
+                    }
+                    
+                    // Çok koyuysa (siyahımsı) default pembeye dön
+                    if (r < 30 && g < 30 && b < 30) {
+                        setDominantColor('#D34A7D');
+                    } else {
+                        setDominantColor(`rgb(${finalR}, ${finalG}, ${finalB})`);
+                    }
+                } catch (e) {
+                    // Canvas tainted hatası (CORS) gelirse burası çalışır
+                    setDominantColor('#D34A7D');
+                }
+            };
+
+            img.onerror = () => {
+                // Resim yüklenemezse veya CORS engellerse
+                setDominantColor('#D34A7D');
+            };
+        } catch (e) {
+            setDominantColor('#D34A7D');
+        }
+    };
+
+    extractColor();
+  }, [currentMediaIndex, post.media, post.productUrl]);
+
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -309,23 +387,24 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         )}
       </div>
       
-      {/* SHOPPABLE LINK BUTTON */}
+      {/* SHOPPABLE LINK BUTTON (DYNAMIC BACKGROUND) */}
       {post.productUrl && (
           <a 
             href={post.productUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-full bg-wedding-500 hover:bg-wedding-600 text-white font-bold text-sm py-3 flex items-center justify-between px-4 transition-colors group relative"
+            style={{ backgroundColor: dominantColor }}
+            className="w-full text-white font-bold text-sm py-3 flex items-center justify-between px-4 transition-all duration-500 group relative hover:brightness-110"
           >
              <div className="flex items-center gap-2">
-                 <span className="bg-white/20 p-1 rounded">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white">
+                 <span className="bg-white/20 p-1 rounded backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white drop-shadow-md">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                     </svg>
                  </span>
-                 <span>Ürünü Gör</span>
+                 <span className="drop-shadow-md">Ürünü Gör</span>
              </div>
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 group-hover:translate-x-1 transition-transform">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 group-hover:translate-x-1 transition-transform drop-shadow-md">
                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
              </svg>
           </a>
