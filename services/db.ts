@@ -46,7 +46,7 @@ const checkDbConnection = () => {
 };
 
 /**
- * Resmi optimize eder (boyut küçültme ve format dönüştürme)
+ * Resmi optimize eder (boyut küçültme, format dönüştürme ve mobil uyumluluk)
  */
 const optimizeImage = async (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -54,58 +54,106 @@ const optimizeImage = async (file: File): Promise<Blob> => {
         
         reader.onload = (e) => {
             const img = new Image();
+            
+            // CORS sorunlarını önle
+            img.crossOrigin = 'anonymous';
+            
             img.onload = () => {
-                // Canvas oluştur
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                
-                // Maksimum boyut 1920px
-                const maxSize = 1920;
-                if (width > maxSize || height > maxSize) {
-                    if (width > height) {
-                        height = (height / width) * maxSize;
-                        width = maxSize;
-                    } else {
-                        width = (width / height) * maxSize;
-                        height = maxSize;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Resmi çiz
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    reject(new Error('Canvas context alınamadı'));
-                    return;
-                }
-                
-                ctx.fillStyle = '#FFFFFF'; // Beyaz arka plan
-                ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // JPEG olarak dışa aktar (0.85 kalite)
-                canvas.toBlob(
-                    (blob) => {
-                        if (blob) {
-                            console.log(`✂️ Optimize edildi: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
-                            resolve(blob);
+                try {
+                    // Canvas oluştur
+                    const canvas = document.createElement('canvas');
+                    let width = img.naturalWidth || img.width;
+                    let height = img.naturalHeight || img.height;
+                    
+                    console.log(`📐 Orijinal boyut: ${width}x${height}`);
+                    
+                    // Maksimum boyut 1920px
+                    const maxSize = 1920;
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = Math.round((height / width) * maxSize);
+                            width = maxSize;
                         } else {
-                            reject(new Error('Blob oluşturulamadı'));
+                            width = Math.round((width / height) * maxSize);
+                            height = maxSize;
                         }
-                    },
-                    'image/jpeg',
-                    0.85
-                );
+                    }
+                    
+                    // Minimum boyut kontrolü (çok küçük resimleri büyüt)
+                    if (width < 100 || height < 100) {
+                        console.warn('⚠️ Resim çok küçük, orijinal boyut korunuyor');
+                        width = img.naturalWidth || img.width;
+                        height = img.naturalHeight || img.height;
+                    }
+                    
+                    console.log(`📐 Yeni boyut: ${width}x${height}`);
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Resmi çiz
+                    const ctx = canvas.getContext('2d', { 
+                        alpha: false, // Şeffaflık kapalı (performans artışı)
+                        willReadFrequently: false 
+                    });
+                    
+                    if (!ctx) {
+                        reject(new Error('Canvas context alınamadı'));
+                        return;
+                    }
+                    
+                    // Beyaz arka plan (siyah ekran sorununu çözer)
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                    
+                    // Image smoothing (daha iyi kalite)
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    
+                    // Resmi çiz
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // JPEG olarak dışa aktar
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) {
+                                const originalSizeKB = (file.size / 1024).toFixed(0);
+                                const newSizeKB = (blob.size / 1024).toFixed(0);
+                                console.log(`✂️ Optimize edildi: ${originalSizeKB}KB → ${newSizeKB}KB (${width}x${height})`);
+                                resolve(blob);
+                            } else {
+                                reject(new Error('Blob oluşturulamadı'));
+                            }
+                        },
+                        'image/jpeg',
+                        0.85 // Kalite: 85%
+                    );
+                } catch (error) {
+                    console.error('Canvas işleme hatası:', error);
+                    reject(error);
+                }
             };
             
-            img.onerror = () => reject(new Error('Resim yüklenemedi'));
-            img.src = e.target?.result as string;
+            img.onerror = (error) => {
+                console.error('Resim yükleme hatası:', error);
+                reject(new Error('Resim yüklenemedi. Dosya bozuk olabilir.'));
+            };
+            
+            // Resmi yükle
+            const result = e.target?.result;
+            if (typeof result === 'string') {
+                img.src = result;
+            } else {
+                reject(new Error('Dosya okunamadı'));
+            }
         };
         
-        reader.onerror = () => reject(new Error('Dosya okunamadı'));
+        reader.onerror = (error) => {
+            console.error('FileReader hatası:', error);
+            reject(new Error('Dosya okunamadı'));
+        };
+        
+        // Dosyayı oku
         reader.readAsDataURL(file);
     });
 };
