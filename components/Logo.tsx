@@ -3,28 +3,24 @@ import React from 'react';
 
 interface LogoProps {
   className?: string;
+  isInverse?: boolean; // Karanlık modda beyazlatmak için opsiyonel
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = "w-32 h-auto" }) => {
+export const Logo: React.FC<LogoProps> = ({ className = "h-12 w-auto", isInverse = false }) => {
   return (
-    <svg 
-        viewBox="0 0 200 40" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg" 
-        className={className}
-        aria-label="Annabella Bridal"
-    >
-      {/* Annabella - Light Mode: Siyah, Dark Mode: Beyaz */}
-      <text x="0" y="30" fontFamily="'Playfair Display', serif" fontSize="28" fontWeight="bold" className="fill-gray-900 dark:fill-white transition-colors duration-300">
-        Annabella
-      </text>
-      
-      <circle cx="145" cy="12" r="3" fill="#D34A7D" />
-      
-      {/* Blog - Pembe (Her iki modda aynı) */}
-      <text x="135" y="30" fontFamily="'Lato', sans-serif" fontSize="28" fontWeight="300" fill="#D34A7D">
-        Blog
-      </text>
-    </svg>
+    <div className={`flex items-baseline gap-1 ${className}`}>
+        {/* Kullanıcının sağladığı logoyu kullanıyoruz */}
+        <img 
+            src="https://storage.googleapis.com/a1aa/image/Vq3L4N4_L-0L2Wn-0vN_G_T_H_B_Y_E.png" 
+            alt="Annabella Bridal" 
+            className={`h-full w-auto object-contain transition-all duration-300 dark:brightness-0 dark:invert ${isInverse ? 'brightness-0 invert' : ''}`}
+            onError={(e) => {
+                // Eğer URL bir şekilde bozulursa fallback text göster
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<span class="font-serif font-bold text-wedding-500">ANNABELLA</span>';
+            }}
+        />
+        <span className="font-sans font-light text-[10px] tracking-[0.4em] text-wedding-500 dark:text-wedding-300 mt-2 ml-2 hidden sm:block">BLOG</span>
+    </div>
   );
 };

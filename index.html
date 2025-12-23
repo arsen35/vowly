@@ -4,18 +4,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Annabella Bridal - Wedding Moments (v2.3)</title>
+    <title>Annabella Bridal - Wedding Moments</title>
     
     <!-- PWA Settings -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#D34A7D" />
+    <meta name="theme-color" content="#A66D60" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Annabella" />
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3656/3656988.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -26,15 +26,15 @@
               sans: ['"Montserrat"', 'sans-serif'],
             },
             colors: {
-              'theme-dark': '#000000', /* GÜNCELLENDİ: Kart Rengi Mat Siyah */
+              'theme-dark': '#1a1614', /* Daha sıcak bir siyah */
               wedding: {
-                50: '#fdf2f6',   /* Çok açık pembe zemin */
-                100: '#fce7f0',
-                200: '#fad0e0',
-                300: '#f7aabf',
-                500: '#D34A7D',  /* ANA RENK (İstenilen) */
-                600: '#be3568',
-                900: '#851b41',  /* Koyu ton */
+                50: '#f9f6f5',   /* Yumuşak krem zemin */
+                100: '#f1e8e5',
+                200: '#e4d2cc',
+                300: '#d0b2a8',
+                500: '#A66D60',  /* LOGO RENGİ (Rosewood/Terracotta) */
+                600: '#8f5e52',
+                900: '#5c3c35',  /* Derin kahve tonu */
               }
             },
             animation: {
@@ -65,39 +65,29 @@
       }
     </script>
     <style>
-      /* Custom scrollbar for comments */
+      /* Custom scrollbar for brand style */
       .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f1f1f1; 
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-track {
-        background: #1f2937; 
+        background: transparent; 
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #D34A7D; 
+        background: #A66D60; 
         border-radius: 4px;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #be3568; 
+        background: #8f5e52; 
       }
 
       @keyframes floatHeart {
-        0% {
-          transform: translateY(0) scale(0.5);
-          opacity: 1;
-        }
-        100% {
-          transform: translateY(-80px) scale(1.2);
-          opacity: 0;
-        }
+        0% { transform: translateY(0) scale(0.5); opacity: 1; }
+        100% { transform: translateY(-80px) scale(1.2); opacity: 0; }
       }
       .animate-float-heart {
         animation: floatHeart 1s ease-out forwards;
       }
       
-      /* Dark mode transitions */
       body {
         transition: background-color 0.3s ease, color 0.3s ease;
       }
@@ -116,7 +106,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 dark:bg-black text-gray-800 dark:text-gray-100 antialiased overscroll-none">
+  <body class="bg-wedding-50 dark:bg-black text-gray-800 dark:text-gray-100 antialiased overscroll-none">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

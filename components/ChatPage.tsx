@@ -21,7 +21,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load User from LocalStorage or Admin
   useEffect(() => {
     if (isAdmin) {
         setUserId('admin-user');
@@ -39,7 +38,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
     }
   }, [isAdmin]);
 
-  // Subscribe to Realtime Updates
   useEffect(() => {
     if (!isNameSet) return;
 
@@ -50,12 +48,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
     return () => unsubscribe();
   }, [isNameSet]);
 
-  // Auto scroll to bottom whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isNameSet, selectedImage]); 
 
-  // AGRESİF SIKIŞTIRMA FONKSİYONU
   const compressImageForChat = (file: File): Promise<string> => {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -126,7 +122,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
             image: imageToSend || undefined,
             userId: userId,
             userName: userName,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${isAdmin ? '881337' : 'random'}&color=${isAdmin ? 'fff' : 'fff'}`,
+            // YENİ: Krem zemin üzerine Gül Kurusu font (f1e8e5 / A66D60) - Markaya tam uyum
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${isAdmin ? '5c3c35' : 'f1e8e5'}&color=${isAdmin ? 'fff' : 'A66D60'}&bold=true`,
             timestamp: Date.now(),
             isAdmin: isAdmin
         });
@@ -151,12 +148,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
       }
   };
 
-  // --- Long Press Logic for Mobile ---
   const handleTouchStart = (messageId: string, isOwner: boolean) => {
       if (!isOwner) return;
       longPressTimer.current = setTimeout(() => {
           handleDeleteMessage(messageId);
-      }, 600); // 600ms basılı tutma süresi
+      }, 600); 
   };
 
   const handleTouchEnd = () => {
@@ -166,9 +162,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
       }
   };
 
-  const weddingPattern = `data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23D34A7D' stroke-width='0.8' fill='none' fill-rule='evenodd' opacity='0.07'%3E%3Cpath d='M10 10 C 10 5, 15 5, 17 8 C 19 5, 24 5, 24 10 C 24 15, 17 20, 17 20 C 17 20, 10 15, 10 10' /%3E%3Ccircle cx='50' cy='50' r='8' /%3E%3Cpath d='M50 42 L53 38 L47 38 Z' /%3E%3Cpath d='M80 80 C 75 75, 70 80, 75 85 C 70 90, 75 95, 80 90 C 85 95, 90 90, 85 85 C 90 80, 85 75, 80 80' /%3E%3Cpath d='M20 80 L20 90 M15 85 L25 85' /%3E%3Cpath d='M80 15 L80 25 L85 25 L85 15 Z' /%3E%3C/g%3E%3C/svg%3E`;
+  const weddingPattern = `data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23A66D60' stroke-width='0.8' fill='none' fill-rule='evenodd' opacity='0.07'%3E%3Cpath d='M10 10 C 10 5, 15 5, 17 8 C 19 5, 24 5, 24 10 C 24 15, 17 20, 17 20 C 17 20, 10 15, 10 10' /%3E%3Ccircle cx='50' cy='50' r='8' /%3E%3Cpath d='M50 42 L53 38 L47 38 Z' /%3E%3Cpath d='M80 80 C 75 75, 70 80, 75 85 C 70 90, 75 95, 80 90 C 85 95, 90 90, 85 85 C 90 80, 85 75, 80 80' /%3E%3Cpath d='M20 80 L20 90 M15 85 L25 85' /%3E%3Cpath d='M80 15 L80 25 L85 25 L85 15 Z' /%3E%3C/g%3E%3C/svg%3E`;
 
-  // 1. GİRİŞ EKRANI
   if (!isNameSet) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 animate-fadeIn bg-wedding-50 dark:bg-theme-dark" style={{ backgroundImage: `url("${weddingPattern}")` }}>
@@ -197,10 +192,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
     );
   }
 
-  // 2. SOHBET EKRANI
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] bg-wedding-50 dark:bg-theme-dark relative transition-colors duration-300">
-        {/* Background Pattern */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-80 dark:opacity-20 dark:invert" 
              style={{ 
                  backgroundImage: `url("${weddingPattern}")`,
@@ -208,7 +201,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
              }}>
         </div>
 
-        {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 z-10 custom-scrollbar">
             <div className="flex flex-col justify-end min-h-full space-y-2 pb-2">
                 
@@ -228,12 +220,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                     return (
                         <div key={msg.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
                             <div className={`flex max-w-[80%] md:max-w-[60%] gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                {/* Avatar */}
                                 <div className={`w-8 h-8 shrink-0 ${isPrevSame ? 'opacity-0 h-0' : ''}`}>
                                     <img src={msg.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/10 shadow-sm bg-white" alt="avatar" />
                                 </div>
 
-                                {/* Bubble */}
                                 <div 
                                     className={`
                                         p-1.5 shadow-sm relative break-words text-sm group select-none
@@ -247,9 +237,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                     `}
                                     onTouchStart={() => handleTouchStart(msg.id, canDelete)}
                                     onTouchEnd={handleTouchEnd}
-                                    onTouchMove={handleTouchEnd} // Parmağını kaydırırsa iptal et
+                                    onTouchMove={handleTouchEnd} 
                                 >
-                                    {/* DELETE BUTTON (Desktop Hover) */}
                                     {canDelete && (
                                         <button 
                                             onClick={() => handleDeleteMessage(msg.id)}
@@ -271,14 +260,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                                         </p>
                                     )}
                                     
-                                    {/* IMAGE RENDER */}
                                     {msg.image && (
                                         <div className="mb-1 rounded-lg overflow-hidden border border-black/5 dark:border-white/10">
                                             <img src={msg.image} alt="Chat media" className="max-w-full h-auto max-h-60 object-cover" />
                                         </div>
                                     )}
                                     
-                                    {/* TEXT RENDER */}
                                     {msg.text && (
                                         <p className="whitespace-pre-wrap leading-snug mx-1.5 mb-0.5">{msg.text}</p>
                                     )}
@@ -296,10 +283,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
             </div>
         </div>
 
-        {/* Input Area */}
         <div className="bg-white dark:bg-theme-dark px-2 py-2 border-t border-gray-200 dark:border-gray-800 z-20 flex flex-col gap-2 transition-colors duration-300">
-            
-            {/* Image Preview (If selected) */}
             {selectedImage && (
                 <div className="mx-4 mb-1 relative bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md border border-wedding-100 dark:border-gray-700 self-start animate-in slide-in-from-bottom-5">
                     <img src={selectedImage} alt="Preview" className="h-24 w-auto rounded-lg object-cover" />
@@ -323,7 +307,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
                     className="hidden" 
                 />
                 
-                {/* Plus/Attach Button */}
                 <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="text-gray-500 dark:text-gray-400 p-3 mb-1 bg-gray-50 dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm active:scale-95 border border-gray-100 dark:border-gray-700"
