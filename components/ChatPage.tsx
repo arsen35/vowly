@@ -122,8 +122,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin }) => {
             image: imageToSend || undefined,
             userId: userId,
             userName: userName,
-            // YENİ: Krem zemin üzerine Gül Kurusu font (f1e8e5 / A66D60) - Markaya tam uyum
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${isAdmin ? '5c3c35' : 'f1e8e5'}&color=${isAdmin ? 'fff' : 'A66D60'}&bold=true`,
+            // ARKA PLAN: Gül Kurusu (#A66D60), YAZI: Beyaz (#fff) - Marka renk profili tam uyum
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${isAdmin ? '5c3c35' : 'A66D60'}&color=fff&bold=true`,
             timestamp: Date.now(),
             isAdmin: isAdmin
         });

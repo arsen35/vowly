@@ -104,7 +104,6 @@ const App: React.FC = () => {
     const guestUser: User = {
         id: `guest-${Date.now()}`,
         name: data.userName,
-        // ARKA PLAN: Gül Kurusu (#A66D60), YAZI: Beyaz (#fff) - Tam marka uyumu
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.userName)}&background=A66D60&color=fff&bold=true`
     };
 
@@ -213,9 +212,10 @@ const App: React.FC = () => {
   if (viewState === ViewState.ADMIN_DASHBOARD) {
       return (
           <div className="min-h-screen bg-gray-50 dark:bg-black">
-             <header className="sticky top-0 z-30 bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm h-16 flex items-center px-6 justify-between transition-colors duration-300">
+             {/* Header yüksekliği h-16'dan h-14'e düşürüldü */}
+             <header className="sticky top-0 z-30 bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm h-14 flex items-center px-6 justify-between transition-colors duration-300">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-                    <Logo className="h-8" />
+                    <Logo className="h-7" />
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block">Yönetici Modu</span>
@@ -258,33 +258,34 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-black pb-20 md:pb-0 transition-colors duration-300`}>
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors duration-300">
-        <div className="w-full h-16 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
+        {/* h-16 olan yükseklik h-14'e düşürüldü (64px -> 56px) metinler gap-6 ile sıkılaştırıldı */}
+        <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
-             <Logo className="h-9 w-auto" />
+             <Logo className="h-8 w-auto" />
           </div>
-          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
+          <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
                <button 
                   onClick={() => setViewState(ViewState.FEED)} 
-                  className={`text-sm font-bold tracking-wide transition-colors ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                  className={`text-xs font-bold tracking-widest transition-colors ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
                >
                  AKIŞ
                </button>
                <button 
                   onClick={() => setViewState(ViewState.BLOG)} 
-                  className={`text-sm font-bold tracking-wide transition-colors ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                  className={`text-xs font-bold tracking-widest transition-colors ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
                >
                  BLOG
                </button>
                <button 
                   onClick={() => setViewState(ViewState.CHAT)} 
-                  className={`text-sm font-bold tracking-wide transition-colors flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400 dark:text-gray-500'}`}
+                  className={`text-xs font-bold tracking-widest transition-colors flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400 dark:text-gray-500'}`}
                >
                  SOHBET
-                 <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[9px] px-1.5 rounded-full animate-pulse">CANLI</span>
+                 <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[8px] px-1 rounded-full animate-pulse">CANLI</span>
                </button>
                <a 
                   href="https://www.annabellabridal.com"
-                  className="text-sm font-bold tracking-wide text-gray-400 dark:text-gray-500 hover:text-wedding-900 dark:hover:text-wedding-400 transition-colors flex items-center gap-1"
+                  className="text-xs font-bold tracking-widest text-gray-400 dark:text-gray-500 hover:text-wedding-900 dark:hover:text-wedding-400 transition-colors flex items-center gap-1"
                >
                  MAĞAZA
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
@@ -295,15 +296,14 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3">
             <button 
                 onClick={toggleTheme}
-                className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none"
-                aria-label="Karanlık Modu Değiştir"
+                className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none"
             >
                 {isDarkMode ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
                     </svg>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
                     </svg>
                 )}
@@ -311,14 +311,14 @@ const App: React.FC = () => {
             {isAdmin ? (
                 <button 
                    onClick={() => setViewState(ViewState.ADMIN_DASHBOARD)}
-                   className="text-xs font-bold text-wedding-900 bg-wedding-50 px-3 py-1.5 rounded-full hover:bg-wedding-100 transition-colors"
+                   className="text-[10px] font-bold text-wedding-900 bg-wedding-50 px-2.5 py-1 rounded-full hover:bg-wedding-100 transition-colors"
                 >
                     Panel
                 </button>
             ) : (
                 <button 
                    onClick={() => setShowLoginModal(true)}
-                   className="text-xs px-4 py-2 rounded-full font-bold bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors shadow-md"
+                   className="text-[10px] px-3 py-1.5 rounded-full font-bold bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors shadow-sm"
                 >
                     Giriş
                 </button>
@@ -354,6 +354,8 @@ const App: React.FC = () => {
             <ChatPage isAdmin={isAdmin} />
         ) : null}
       </main>
+      
+      {/* Footer vb. alanlar aynı bırakıldı */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 flex justify-around items-center h-16 z-50 px-2 pb-safe transition-colors duration-300">
           <button onClick={() => setViewState(ViewState.FEED)} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 dark:text-gray-500'}`}>
              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={viewState === ViewState.FEED ? "currentColor" : "none"} stroke="currentColor" strokeWidth={viewState === ViewState.FEED ? 0 : 2} className="w-6 h-6">
