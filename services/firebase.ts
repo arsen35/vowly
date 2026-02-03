@@ -2,12 +2,11 @@
 import * as firebaseApp from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
-import { getAuth, Auth } from "firebase/auth";
-
-// ---------------------------------------------------------------------------
-// ADIM 1: Firebase ekranında sana verilen 'const firebaseConfig = { ... }'
-// kod bloğunun tamamını aşağıya yapıştır.
-// ---------------------------------------------------------------------------
+import { 
+  getAuth, 
+  Auth, 
+  GoogleAuthProvider 
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAwgsaLVZ0Lh3w6g1u22gvpWUMcLDvES5U",
@@ -19,22 +18,17 @@ const firebaseConfig = {
   measurementId: "G-WR2GP3MYJ4"
 };
 
-// ---------------------------------------------------------------------------
-
-// Use any for app to avoid type errors if FirebaseApp is missing from exports in the current environment
 let app: any;
 let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
 let auth: Auth | undefined;
+let googleProvider: GoogleAuthProvider | undefined;
 
 try {
-  // Config kontrolü: Eğer anahtarlar boşsa uyarı verir ama uygulamayı çökertmez
-  // Not: apiKey'in dolu olması bağlantı denemesi için yeterlidir.
   // @ts-ignore
   const hasConfig = firebaseConfig?.apiKey;
 
   if (hasConfig) {
-    // Handle potential import issues with firebase/app by checking for initializeApp on the namespace or default export
     const initApp = (firebaseApp as any).initializeApp || (firebaseApp as any).default?.initializeApp;
     
     if (initApp) {
@@ -42,17 +36,12 @@ try {
         db = getFirestore(app);
         storage = getStorage(app);
         auth = getAuth(app);
-        console.log("✅ Firebase bağlantısı kuruldu.");
-    } else {
-        console.error("Firebase initializeApp bulunamadı (Import sorunu).");
+        googleProvider = new GoogleAuthProvider();
+        console.log("✅ Firebase (Google Auth) bağlantısı hazır.");
     }
-  } else {
-    console.warn("⚠️ Firebase ayarları bulunamadı. Uygulama Demo modunda çalışacak.");
-    console.log("Lütfen 'Register app' butonuna bastıktan sonra verilen kodu services/firebase.ts dosyasına ekleyin.");
   }
-
 } catch (error) {
   console.error("🚨 Firebase başlatılamadı:", error);
 }
 
-export { db, storage, auth };
+export { db, storage, auth, googleProvider };

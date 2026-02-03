@@ -58,18 +58,16 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
           <span className="text-[8px] font-bold mt-0.5 tracking-tighter uppercase">SOHBET</span>
         </button>
 
-        {/* MAĞAZA */}
-        <a 
-          href="https://www.annabellabridal.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-col items-center justify-center flex-1 h-full text-gray-400 dark:text-gray-500"
+        {/* PROFİL (Eski Mağaza yerine) */}
+        <button 
+          onClick={() => onNavigate(ViewState.PROFILE)}
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-all ${currentView === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-400 dark:text-gray-500'}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0L3.04 4.354a.75.75 0 01.688-.354h16.544a.75.75 0 01.688.354l.263 1.116" />
+          <svg xmlns="http://www.w3.org/2000/svg" fill={currentView === ViewState.PROFILE ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
-          <span className="text-[8px] font-bold mt-0.5 tracking-tighter uppercase">MAĞAZA</span>
-        </a>
+          <span className="text-[8px] font-bold mt-0.5 tracking-tighter uppercase">PROFİL</span>
+        </button>
       </div>
     </div>
   );

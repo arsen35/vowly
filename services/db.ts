@@ -1,5 +1,5 @@
 
-import { Post, BlogPost, ChatMessage, MediaItem } from '../types';
+import { Post, BlogPost, ChatMessage, MediaItem, User } from '../types';
 import { db, storage } from './firebase';
 import { 
   collection, 
@@ -15,7 +15,9 @@ import {
   addDoc,
   increment,
   getDoc,
-  arrayUnion
+  arrayUnion,
+  where,
+  writeBatch
 } from "firebase/firestore";
 import { 
   ref, 
@@ -26,6 +28,7 @@ import {
 const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
 const CHAT_COLLECTION = 'chat_messages';
+const USERS_COLLECTION = 'users';
 
 const checkDbConnection = () => {
   if (!db || !storage) {
@@ -116,6 +119,38 @@ const uploadMediaItem = async (item: MediaItem | string, path: string): Promise<
 };
 
 export const dbService = {
+  // --- USERS ---
+  saveUser: async (user: User): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    await setDoc(doc(dbInstance, USERS_COLLECTION, user.id), user, { merge: true });
+  },
+
+  updateUser: async (userId: string, data: Partial<User>): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    await updateDoc(doc(dbInstance, USERS_COLLECTION, userId), data);
+  },
+
+  getUser: async (userId: string): Promise<User | null> => {
+    const { dbInstance } = checkDbConnection();
+    const docSnap = await getDoc(doc(dbInstance, USERS_COLLECTION, userId));
+    return docSnap.exists() ? docSnap.data() as User : null;
+  },
+
+  deleteUserAccount: async (userId: string): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    const postsRef = collection(dbInstance, POSTS_COLLECTION);
+    const q = query(postsRef, where("user.id", "==", userId));
+    const querySnapshot = await getDocs(q);
+    
+    const batch = writeBatch(dbInstance);
+    querySnapshot.forEach((postDoc) => {
+        batch.delete(postDoc.ref);
+    });
+    
+    batch.delete(doc(dbInstance, USERS_COLLECTION, userId));
+    await batch.commit();
+  },
+
   // --- FEED (POSTS) ---
   subscribeToPosts: (callback: (posts: Post[]) => void) => {
     if (!db) return () => {};
@@ -156,7 +191,6 @@ export const dbService = {
       const downloadURL = await uploadMediaItem(post.media[index], `posts/${post.id}/media_${index}_${Date.now()}`);
       updatedMedia.push({ ...post.media[index], url: downloadURL });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { isLikedByCurrentUser, ...postToSave } = { ...post, media: updatedMedia };
     await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), postToSave);
   },
@@ -183,7 +217,6 @@ export const dbService = {
   saveBlogPost: async (post: BlogPost): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     let imageUrl = post.coverImage;
-    // Eğer yeni bir görsel (base64) ise yükle, zaten URL ise dokunma
     if (post.coverImage.startsWith('data:') || post.coverImage.startsWith('blob:')) {
         const path = `blog/${post.id}/cover_${Date.now()}`;
         imageUrl = await uploadMediaItem(post.coverImage, path);

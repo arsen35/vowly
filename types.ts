@@ -3,6 +3,8 @@ export interface User {
   id: string;
   name: string;
   avatar: string;
+  bio?: string;
+  weddingDate?: string;
 }
 
 export interface Comment {
@@ -14,9 +16,9 @@ export interface Comment {
 }
 
 export interface MediaItem {
-  url: string; // Ekranda görünen link (blob:...)
+  url: string; 
   type: 'image' | 'video';
-  file?: File; // Seçilen orijinal dosya
+  file?: File; 
   mimeType?: string;
 }
 
@@ -61,5 +63,6 @@ export enum ViewState {
   LOGIN = 'LOGIN',
   ADMIN_DASHBOARD = 'ADMIN_DASHBOARD',
   BLOG = 'BLOG',
-  CHAT = 'CHAT'
+  CHAT = 'CHAT',
+  PROFILE = 'PROFILE'
 }
