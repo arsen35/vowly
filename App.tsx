@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PostCard } from './components/PostCard';
 import { UploadModal } from './components/UploadModal';
 import { AuthModal } from './components/AuthModal';
@@ -24,6 +24,11 @@ const App: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
+  // GIZLI GIRIS ICIN STATE'LER
+  const [showAdminTrigger, setShowAdminTrigger] = useState(false);
+  const logoClicks = useRef(0);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -46,6 +51,25 @@ const App: React.FC = () => {
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
+  // LOGO TIKLAMA TAKIBI
+  const handleLogoClick = () => {
+    logoClicks.current += 1;
+    
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    
+    clickTimer.current = setTimeout(() => {
+        logoClicks.current = 0;
+    }, 3000); // 3 saniye içinde 5 tık
+
+    if (logoClicks.current >= 5) {
+        setShowAdminTrigger(true);
+        logoClicks.current = 0;
+    }
+    
+    // Akışa dön (Normal logo işlevi)
+    setViewState(ViewState.FEED);
+  };
 
   useEffect(() => {
     if (!auth) {
@@ -157,7 +181,10 @@ const App: React.FC = () => {
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
       <header className="sticky top-0 z-30 bg-white/40 dark:bg-theme-black/40 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-          <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}><Logo className="h-8 w-auto" /></div>
+          {/* LOGO GIZLI TIKLAMA DINLEYICISI ILE */}
+          <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
+            <Logo className="h-8 w-auto" />
+          </div>
           
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
                <button onClick={() => setViewState(ViewState.FEED)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>AKIŞ</button>
@@ -167,10 +194,10 @@ const App: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            {/* MINIMAL THEME TOGGLE */}
+            {/* FLAT MINIMAL THEME TOGGLE */}
             <button 
               onClick={toggleTheme} 
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-gray-400 transition-colors"
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors"
               aria-label="Karanlık/Aydınlık Modu Değiştir"
             >
                 {isDarkMode ? (
@@ -185,13 +212,15 @@ const App: React.FC = () => {
                   <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5" alt="Profile" />
                 </div>
             ) : (
-                /* MINIMAL STROKE LOGIN BUTTON - 5PX RADIUS */
-                <button 
-                  onClick={() => setShowAuthModal(true)} 
-                  className="text-[9px] px-4 py-2 rounded-[5px] font-bold border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white bg-transparent hover:border-wedding-500 hover:text-wedding-500 transition-all tracking-widest uppercase"
-                >
-                  Yönetici Girişi
-                </button>
+                /* GIZLI YONETICI GIRIS BUTONU - SADECE 5 TIKLAMADAN SONRA GELIR */
+                showAdminTrigger && (
+                    <button 
+                      onClick={() => setShowAuthModal(true)} 
+                      className="text-[9px] px-4 py-2 rounded-[5px] font-bold border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white bg-transparent hover:border-wedding-500 hover:text-wedding-500 transition-all tracking-widest uppercase animate-fadeIn"
+                    >
+                      Yönetici Girişi
+                    </button>
+                )
             )}
           </div>
         </div>
