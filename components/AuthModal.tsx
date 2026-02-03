@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { auth, googleProvider } from '../services/firebase';
 import { 
@@ -21,7 +21,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [rawError, setRawError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [detectedDomain, setDetectedDomain] = useState<string>("");
+
+  useEffect(() => {
+    const domain = window.location.hostname;
+    setDetectedDomain(domain);
+  }, []);
+
+  const copyText = (text: string) => {
+    try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+        navigator.clipboard.writeText(text);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     if (!auth || !googleProvider) {
@@ -43,13 +66,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       onLoginSuccess();
       onClose();
     } catch (err: any) {
-      console.error("Google Auth Error:", err.code);
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Giriş penceresi kapatıldı.');
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Google girişi Firebase konsolunda aktif edilmemiş! Lütfen "Save" butonuna bastığınızdan emin olun.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError('Bu alan adı (domain) Firebase yetkili listesinde değil.');
+      console.error("Auth Error Object:", err);
+      // Firebase hata mesajından domaini çekmeye çalış
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized')) {
+        setError('unauthorized-domain');
+        setRawError(err.message || "");
       } else {
         setError('Google girişi başarısız: ' + err.code);
       }
@@ -85,17 +106,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       onLoginSuccess();
       onClose();
     } catch (err: any) {
-      console.error("Email Auth Error:", err.code);
-      switch (err.code) {
-        case 'auth/operation-not-allowed':
-            setError('E-posta girişi aktif değil. Firebase\'de "Email Link"i kapatıp "Save" yaptınız mı?');
-            break;
-        case 'auth/weak-password': setError('Şifre en az 6 karakter olmalıdır.'); break;
-        case 'auth/email-already-in-use': setError('Bu e-posta zaten kullanımda.'); break;
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential': setError('E-posta veya şifre hatalı.'); break;
-        default: setError('Hata: ' + err.code);
+      if (err.code === 'auth/unauthorized-domain') {
+          setError('unauthorized-domain');
+          setRawError(err.message || "");
+      } else {
+          setError('Hata: ' + err.code);
       }
     } finally {
       setIsLoading(false);
@@ -150,7 +165,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                 placeholder="Şifren"
               />
 
-              {error && <p className="text-red-500 text-xs text-center font-medium bg-red-50 dark:bg-red-900/10 py-3 px-4 rounded-xl">{error}</p>}
+              {error === 'unauthorized-domain' ? (
+                <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-2xl border border-red-100 dark:border-red-900/20 text-center shadow-inner">
+                    <p className="text-red-600 dark:text-red-400 text-[12px] font-bold mb-3 uppercase tracking-widest">Aktivasyon Gerekli</p>
+                    
+                    <p className="text-gray-600 dark:text-gray-300 text-[10px] leading-relaxed mb-4">
+                        Aşağıdaki <b>iki</b> adresi Firebase Authorized Domains kısmına ekleyin:
+                    </p>
+
+                    <div className="space-y-2 mb-4">
+                        <div className="bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <code className="text-[10px] font-bold text-gray-400">blog.annabellabridal.com</code>
+                            <button type="button" onClick={() => copyText('blog.annabellabridal.com')} className="text-[9px] text-wedding-500 font-bold">Kopyala</button>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <code className="text-[10px] font-bold text-wedding-500">{detectedDomain}</code>
+                            <button type="button" onClick={() => copyText(detectedDomain)} className="text-[9px] text-wedding-500 font-bold">Kopyala</button>
+                        </div>
+                    </div>
+
+                    <p className="text-[9px] text-gray-400 italic">Değişikliklerin aktif olması 1-2 dakika sürebilir.</p>
+                </div>
+              ) : error && (
+                <p className="text-red-500 text-[11px] text-center font-medium bg-red-50 dark:bg-red-900/10 py-3 px-4 rounded-xl leading-relaxed">{error}</p>
+              )}
 
               <Button type="submit" className="w-full py-4 rounded-xl shadow-lg shadow-wedding-500/20" isLoading={isLoading}>
                 {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
