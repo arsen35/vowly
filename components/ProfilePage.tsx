@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Post, User } from '../types';
 import { auth } from '../services/firebase';
 import { signOut } from 'firebase/auth';
@@ -33,12 +33,47 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [editName, setEditName] = useState(user?.name || '');
   const [editBio, setEditBio] = useState(user?.bio || '');
   const [editWeddingDate, setEditWeddingDate] = useState(user?.weddingDate || '');
+  const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [isSaving, setIsSaving] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     if (auth) {
         await signOut(auth);
         onLogout();
+    }
+  };
+
+  const processAvatar = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const size = 300; // Profil için ideal kare boyut
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          
+          // Center crop logic
+          const minDim = Math.min(img.width, img.height);
+          const startX = (img.width - minDim) / 2;
+          const startY = (img.height - minDim) / 2;
+          
+          ctx?.drawImage(img, startX, startY, minDim, minDim, 0, 0, size, size);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+      };
+    });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const base64 = await processAvatar(e.target.files[0]);
+      setEditAvatar(base64);
     }
   };
 
@@ -49,9 +84,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         await dbService.updateUser(user.id, {
             name: editName,
             bio: editBio,
-            weddingDate: editWeddingDate
+            weddingDate: editWeddingDate,
+            avatar: editAvatar
         });
         setIsEditModalOpen(false);
+        // Sayfayı yenilemeden veriyi güncellemek için App seviyesinde bir update gerekebilir 
+        // ancak subscription sayesinde Firebase otomatik güncelleyecektir.
     } catch (e) {
         alert("Profil güncellenirken bir hata oluştu.");
     } finally {
@@ -81,7 +119,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             onClick={() => setShowSettings(!showSettings)}
             className="absolute top-0 right-0 p-2 text-gray-400 hover:text-wedding-500 transition-colors z-10"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
             </svg>
@@ -90,16 +128,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         {showSettings && (
             <div className="absolute top-10 right-0 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl border border-gray-100 dark:border-gray-700 py-2 w-52 z-[110] animate-in fade-in slide-in-from-top-2">
                 <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full text-left px-5 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-wedding-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 font-medium">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     Profili Düzenle
                 </button>
                 <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-wedding-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 font-medium">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     Çıkış Yap
                 </button>
                 <div className="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-3"></div>
                 <button onClick={() => { onDeleteAccount(); setShowSettings(false); }} className="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-bold flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Hesabı Sil
                 </button>
             </div>
@@ -119,7 +157,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <div className="text-xs text-gray-500"><span className="font-bold dark:text-white">{userPosts.length}</span> gönderi</div>
             {user.weddingDate && (
                 <div className="text-xs text-gray-500 flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5 text-wedding-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></svg>
+                    <svg className="w-3.5 h-3.5 text-wedding-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></svg>
                     {new Date(user.weddingDate).toLocaleDateString('tr-TR')}
                 </div>
             )}
@@ -137,33 +175,47 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <div key={post.id} className="aspect-square relative group cursor-pointer overflow-hidden rounded-md md:rounded-xl bg-gray-50 dark:bg-gray-900">
             <img src={post.media[0].url} alt="Post" onClick={() => onPostClick(post)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
             <button onClick={() => setPostToDelete(post.id)} className="absolute top-2 right-2 bg-black/40 hover:bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
           </div>
         ))}
       </div>
 
-      {/* Edit Profile Modal - FIXED Z-INDEX & DESIGN */}
+      {/* Edit Profile Modal - FIXED Z-INDEX [1000] & AVATAR EDIT */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[150] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white dark:bg-theme-dark rounded-3xl w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-8 animate-in zoom-in-95 duration-300 relative">
                 <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
 
                 <div className="text-center mb-8">
                     <h3 className="text-2xl font-serif font-bold dark:text-white">Profilini Düzenle</h3>
-                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-medium">Kişisel Bilgiler</p>
                 </div>
 
                 <div className="space-y-6">
+                    {/* Avatar Edit Section */}
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative group cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                            <img src={editAvatar} className="w-24 h-24 rounded-full object-cover border border-wedding-200 p-0.5" alt="Edit avatar" />
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a48.329 48.329 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <button type="button" onClick={() => avatarInputRef.current?.click()} className="text-[10px] text-wedding-500 font-bold uppercase tracking-widest hover:underline">Fotoğrafı Değiştir</button>
+                        <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
+                    </div>
+
                     <div>
                         <label className="text-[10px] font-bold text-wedding-500 uppercase tracking-[0.2em] mb-2 block">Ad Soyad</label>
                         <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border-0 rounded-2xl px-5 py-3.5 text-sm dark:text-white outline-none focus:ring-1 focus:ring-wedding-500 transition-all font-medium" placeholder="Adınız Soyadınız" />
                     </div>
                     <div>
                         <label className="text-[10px] font-bold text-wedding-500 uppercase tracking-[0.2em] mb-2 block">Biyografi</label>
-                        <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Biraz kendinden bahset..." className="w-full bg-gray-50 dark:bg-gray-800 border-0 rounded-2xl px-5 py-3.5 text-sm dark:text-white outline-none focus:ring-1 focus:ring-wedding-500 h-28 resize-none font-medium leading-relaxed" />
+                        <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Biraz kendinden bahset..." className="w-full bg-gray-50 dark:bg-gray-800 border-0 rounded-2xl px-5 py-3.5 text-sm dark:text-white outline-none focus:ring-1 focus:ring-wedding-500 h-24 resize-none font-medium leading-relaxed" />
                     </div>
                     <div>
                         <label className="text-[10px] font-bold text-wedding-500 uppercase tracking-[0.2em] mb-2 block">Düğün Tarihi</label>
