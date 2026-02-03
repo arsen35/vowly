@@ -9,6 +9,7 @@ import { BlogPage } from './components/BlogPage';
 import { ChatPage } from './components/ChatPage';
 import { Logo } from './components/Logo';
 import { LoadingScreen } from './components/LoadingScreen'; 
+import { BottomNavigation } from './components/BottomNavigation';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
 import { signInAnonymously } from "firebase/auth";
@@ -255,7 +256,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-black pb-20 md:pb-0 transition-colors duration-300`}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-black pb-20 transition-colors duration-300`}>
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors duration-300">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}>
@@ -347,6 +348,13 @@ const App: React.FC = () => {
         ) : null}
       </main>
       
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation 
+        currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} 
+        onNavigate={setViewState} 
+        onUploadClick={handleUploadClick} 
+      />
+
       {/* Footer and Modals... */}
       {viewState === ViewState.UPLOAD && (
         <UploadModal onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />
