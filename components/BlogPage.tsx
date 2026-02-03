@@ -102,9 +102,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const confirmDelete = async () => {
     if (!postToDelete) return;
     try {
+        await dbService.deleteBlogPost(postToDelete);
         setPosts(prev => prev.filter(p => p.id !== postToDelete));
         if (selectedPost?.id === postToDelete) setSelectedPost(null);
-        await dbService.deleteBlogPost(postToDelete);
     } catch (error) {
         console.error("Silme hatası:", error);
         alert("Silme işlemi sırasında bir hata oluştu.");
@@ -134,6 +134,18 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-light leading-relaxed text-sm">
           Gelinlik trendleri, düğün planlama ipuçları ve ilham verici hikayeler.
         </p>
+
+        {/* ADMIN: YENİ YAZI EKLE BUTONU */}
+        {isAdmin && (
+            <div className="mt-8">
+                <Button onClick={() => handleOpenEditor()} className="mx-auto flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Yeni Blog Yazısı Ekle
+                </Button>
+            </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -143,8 +155,21 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
       ) : (
         <>
             {featuredPost && (
-                <div onClick={() => setSelectedPost(featuredPost)} className="mb-12 rounded-3xl overflow-hidden shadow-2xl relative aspect-[16/9] md:aspect-[21/9] group cursor-pointer">
+                <div onClick={() => setSelectedPost(featuredPost)} className="mb-12 rounded-3xl overflow-hidden shadow-2xl relative aspect-[16/9] md:aspect-[21/9] group cursor-pointer border border-gray-100 dark:border-gray-800">
                     <img src={featuredPost.coverImage} alt={featuredPost.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000" />
+                    
+                    {/* ADMIN KONTROLLERİ (ÖNE ÇIKAN YAZI İÇİN) */}
+                    {isAdmin && (
+                        <div className="absolute top-4 right-4 z-20 flex gap-2">
+                            <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(featuredPost); }} className="bg-white/90 backdrop-blur p-2 rounded-full text-blue-500 shadow-lg hover:bg-white transition-colors">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                            <button onClick={(e) => requestDelete(featuredPost.id, e)} className="bg-white/90 backdrop-blur p-2 rounded-full text-red-500 shadow-lg hover:bg-white transition-colors">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    )}
+
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex flex-col justify-end p-6 md:p-10">
                         <div className="max-w-3xl animate-float-up">
                             {featuredPost.badge && (
@@ -195,8 +220,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                     </button>
                     {isAdmin && (
                         <div className="flex gap-1">
-                            <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(post); }} className="text-blue-400 hover:text-blue-600 p-1.5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                            <button onClick={(e) => requestDelete(post.id, e)} className="text-red-400 hover:text-red-600 p-1.5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(post); }} className="text-blue-400 hover:text-blue-600 p-1.5 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                            <button onClick={(e) => requestDelete(post.id, e)} className="text-red-400 hover:text-red-600 p-1.5 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
                     )}
                     </div>
@@ -204,10 +229,15 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                 </article>
             ))}
             </div>
+            {posts.length === 0 && (
+                <div className="text-center py-20 opacity-40">
+                    <p className="font-serif italic text-lg">Henüz bir blog yazısı bulunmuyor.</p>
+                </div>
+            )}
         </>
       )}
 
-      {/* READING MODE MODAL - h-16'dan h-14'e düşürüldü */}
+      {/* READING MODE MODAL */}
       {selectedPost && (
         <div className="fixed inset-0 z-[60] bg-white dark:bg-theme-dark overflow-y-auto animate-in slide-in-from-bottom-5 duration-300">
              <div className="sticky top-0 left-0 right-0 bg-white/80 dark:bg-theme-dark/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 md:px-8 h-14 flex items-center justify-between z-10">
@@ -241,26 +271,76 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
         </div>
       )}
 
-      {/* Admin Editor Modal - Yükseklik limitleri ve gap ayarları daraltıldı */}
+      {/* Admin Editor Modal */}
       {isEditorOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-theme-dark rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-theme-dark z-10">
-              <h3 className="font-serif text-lg font-bold dark:text-white">{editingPostId ? 'Düzenle' : 'Yeni Yazı'}</h3>
-              <button onClick={() => setIsEditorOpen(false)} className="text-gray-400 hover:text-gray-600"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <h3 className="font-serif text-lg font-bold dark:text-white">{editingPostId ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h3>
+              <button onClick={() => setIsEditorOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 bg-gray-100 dark:bg-gray-800 rounded-full transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            <div className="p-5 space-y-4 text-sm">
-                {/* Form alanları benzer şekilde daraltıldı */}
-                <input type="text" className="w-full border dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-4 py-2 outline-none dark:text-white" placeholder="Başlık..." value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-                <textarea className="w-full border dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-4 py-2 h-48 outline-none dark:text-white resize-none" placeholder="İçerik..." value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+            
+            <div className="p-5 space-y-5 text-sm">
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Yazı Başlığı</label>
+                    <input type="text" className="w-full border dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-4 py-2.5 outline-none dark:text-white focus:ring-2 focus:ring-wedding-500/20 focus:border-wedding-500" placeholder="Örn: 2025 Gelinlik Trendleri..." value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Kapak Görseli</label>
+                    <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full h-40 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all overflow-hidden relative group"
+                    >
+                        {editImage ? (
+                            <>
+                                <img src={editImage} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">Değiştir</div>
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-8 h-8 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <span className="text-gray-400">Görsel Seç</span>
+                            </>
+                        )}
+                        <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">İçerik Metni</label>
+                    <textarea className="w-full border dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-4 py-3 h-48 outline-none dark:text-white resize-none focus:ring-2 focus:ring-wedding-500/20 focus:border-wedding-500" placeholder="Blog yazınızı buraya yazın..." value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+                </div>
+
+                <div className="flex items-center gap-6 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" className="w-4 h-4 rounded text-wedding-500 focus:ring-wedding-500" checked={editIsFeatured} onChange={(e) => setEditIsFeatured(e.target.checked)} />
+                        <span className="font-medium dark:text-white">Öne Çıkan Yazı Yap</span>
+                    </label>
+                    <div className="flex-1">
+                        <input type="text" className="w-full bg-transparent border-b border-gray-200 dark:border-gray-700 py-1 outline-none dark:text-white" placeholder="Etiket (Örn: YENİ, TREND)..." value={editBadge} onChange={(e) => setEditBadge(e.target.value)} />
+                    </div>
+                </div>
             </div>
+
             <div className="p-4 border-t dark:border-gray-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-theme-dark">
                <Button variant="secondary" onClick={() => setIsEditorOpen(false)}>İptal</Button>
-               <Button onClick={handleSave} isLoading={isSaving}>Kaydet</Button>
+               <Button onClick={handleSave} isLoading={isSaving} disabled={!editTitle || !editContent || !editImage}>
+                   {editingPostId ? 'Değişiklikleri Kaydet' : 'Yazıyı Yayınla'}
+               </Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* SİLME ONAYI MODALI */}
+      <ConfirmationModal 
+        isOpen={!!postToDelete}
+        title="Blog Yazısını Sil"
+        message="Bu blog yazısını kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        onConfirm={confirmDelete}
+        onCancel={() => setPostToDelete(null)}
+      />
     </div>
   );
 };

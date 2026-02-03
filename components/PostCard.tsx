@@ -133,7 +133,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
 
   return (
     <div className="bg-white dark:bg-theme-dark sm:rounded-xl shadow-sm border-y sm:border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full transform hover:scale-[0.98]">
-      {/* Header Padding p-3'ten p-2.5'e düşürüldü */}
       <div className="p-2.5 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800 relative">
         <img 
           src={brandAvatar} 
@@ -163,7 +162,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         )}
       </div>
 
-      {/* Media & Animation Container */}
       <div 
         className="relative w-full aspect-[4/5] bg-gray-100 dark:bg-gray-800 group touch-pan-y overflow-hidden select-none"
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onDoubleClick={handleDoubleClick}
@@ -185,29 +183,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         </div>
       </div>
       
-      {/* SHOP THE LOOK (ÜRÜNÜ GÖR) BUTONU - py-3.5'ten py-2.5'e düşürülerek daraltıldı */}
       {post.productUrl && (
           <a 
             href={post.productUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-full bg-wedding-500 hover:bg-wedding-600 text-white font-bold text-xs py-2.5 flex items-center justify-between px-5 transition-all duration-300 group shadow-md"
+            className="w-full bg-gradient-to-r from-wedding-500 to-wedding-600 hover:from-wedding-600 hover:to-wedding-700 text-white font-bold text-xs py-2.5 flex items-center justify-between px-5 transition-all duration-300 group shadow-[0_4px_12px_rgba(166,109,96,0.3)] z-10"
           >
              <div className="flex items-center gap-2">
-                 <div className="bg-white/20 p-1 rounded-md backdrop-blur-sm">
+                 <div className="bg-white/20 p-1 rounded-md backdrop-blur-sm group-hover:bg-white/30 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 text-white">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                     </svg>
                  </div>
-                 <span className="tracking-widest uppercase">Ürünü Gör</span>
+                 <span className="tracking-widest uppercase text-[10px] md:text-xs">Ürünü Gör</span>
              </div>
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform duration-300">
                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
              </svg>
           </a>
       )}
 
-      {/* Detail Section Padding p-3.5'ten p-3'e düşürüldü */}
       <div className="p-3 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-4">

@@ -4,18 +4,18 @@
   "short_name": "Annabella",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fdf2f6",
-  "theme_color": "#D34A7D",
+  "background_color": "#f9f6f5",
+  "theme_color": "#A66D60",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3656/3656988.png",
+      "src": "https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3656/3656988.png",
+      "src": "https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
