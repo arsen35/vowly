@@ -97,6 +97,19 @@ const App: React.FC = () => {
       else setViewState(ViewState.UPLOAD);
   };
 
+  const handleShareSite = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Annabella Bridal Blog',
+        text: 'En güzel gelinlik hikayeleri burada! ✨',
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Sayfa linki kopyalandı! ✨');
+    }
+  };
+
   const handleNewPost = async (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl: string | null; location: string | null }) => {
     if (!currentUser) return;
     const newPost: Post = {
@@ -154,7 +167,7 @@ const App: React.FC = () => {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300`}>
+    <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-theme-black/95 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}><Logo className="h-8 w-auto" /></div>
@@ -198,6 +211,25 @@ const App: React.FC = () => {
             />
         ) : null}
       </main>
+
+      {/* DESKTOP QUICK ACTIONS (FLOATING RIGHT BOTTOM) */}
+      <div className="hidden md:flex fixed bottom-10 right-10 flex-col gap-3 z-[100]">
+          <a 
+            href="https://annabellabridal.com" 
+            target="_blank" 
+            className="w-14 h-14 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-full flex items-center justify-center shadow-2xl border border-gray-100 dark:border-zinc-800 transition-all hover:scale-110 hover:bg-wedding-50 group"
+            title="Mağazaya Git"
+          >
+            <svg className="w-6 h-6 group-hover:text-wedding-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
+          </a>
+          <button 
+            onClick={handleShareSite}
+            className="w-14 h-14 bg-wedding-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 hover:bg-wedding-600 group"
+            title="Sitemizi Paylaş"
+          >
+            <svg className="w-6 h-6 transform rotate-[-15deg] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+          </button>
+      </div>
       
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
