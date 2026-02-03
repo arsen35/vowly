@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PostCard } from './components/PostCard';
 import { UploadModal } from './components/UploadModal';
 import { AuthModal } from './components/AuthModal';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BlogPage } from './components/BlogPage';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
@@ -29,6 +31,8 @@ const App: React.FC = () => {
   const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const logoClicks = useRef(0);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const ADMIN_EMAILS = ['jeanbox35@gmail.com', 'swoxagency@gmail.com', 'nossdigital@gmail.com'];
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -52,22 +56,16 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  // LOGO TIKLAMA TAKIBI
+  // LOGO TIKLAMA TAKIBI (SECRET TRIGGER)
   const handleLogoClick = () => {
     logoClicks.current += 1;
-    
     if (clickTimer.current) clearTimeout(clickTimer.current);
-    
-    clickTimer.current = setTimeout(() => {
-        logoClicks.current = 0;
-    }, 3000); // 3 saniye içinde 5 tık
+    clickTimer.current = setTimeout(() => { logoClicks.current = 0; }, 3000);
 
     if (logoClicks.current >= 5) {
         setShowAdminTrigger(true);
         logoClicks.current = 0;
     }
-    
-    // Akışa dön (Normal logo işlevi)
     setViewState(ViewState.FEED);
   };
 
@@ -79,7 +77,9 @@ const App: React.FC = () => {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            if (user.email === 'admin@annabella.com') setIsAdmin(true);
+            const isUserAdmin = ADMIN_EMAILS.includes(user.email || '');
+            setIsAdmin(isUserAdmin);
+            
             const userData = await dbService.getUser(user.uid);
             if (userData) {
                 setCurrentUser(userData);
@@ -181,7 +181,6 @@ const App: React.FC = () => {
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
       <header className="sticky top-0 z-30 bg-white/40 dark:bg-theme-black/40 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-          {/* LOGO GIZLI TIKLAMA DINLEYICISI ILE */}
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
             <Logo className="h-8 w-auto" />
           </div>
@@ -194,12 +193,26 @@ const App: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            {/* FLAT MINIMAL THEME TOGGLE */}
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors"
-              aria-label="Karanlık/Aydınlık Modu Değiştir"
-            >
+            {/* GIZLI YONETICI BUTONU (LOGOYLA AKTIF OLUR) */}
+            {showAdminTrigger && !isAdmin && (
+                <button 
+                  onClick={() => setShowAdminModal(true)} 
+                  className="text-[8px] px-3 py-1.5 rounded-[5px] font-bold border border-wedding-500 text-wedding-500 bg-transparent hover:bg-wedding-50 transition-all tracking-widest uppercase animate-fadeIn"
+                >
+                  YÖNETİCİ GİRİŞİ
+                </button>
+            )}
+
+            {isAdmin && (
+                <button 
+                  onClick={() => setViewState(ViewState.ADMIN_DASHBOARD)} 
+                  className="text-[8px] px-3 py-1.5 rounded-[5px] font-bold bg-wedding-500 text-white transition-all tracking-widest uppercase"
+                >
+                  PANEL
+                </button>
+            )}
+
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors">
                 {isDarkMode ? (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
                 ) : (
@@ -212,15 +225,12 @@ const App: React.FC = () => {
                   <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5" alt="Profile" />
                 </div>
             ) : (
-                /* GIZLI YONETICI GIRIS BUTONU - SADECE 5 TIKLAMADAN SONRA GELIR */
-                showAdminTrigger && (
-                    <button 
-                      onClick={() => setShowAuthModal(true)} 
-                      className="text-[9px] px-4 py-2 rounded-[5px] font-bold border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white bg-transparent hover:border-wedding-500 hover:text-wedding-500 transition-all tracking-widest uppercase animate-fadeIn"
-                    >
-                      Yönetici Girişi
-                    </button>
-                )
+                <button 
+                  onClick={() => setShowAuthModal(true)} 
+                  className="text-[9px] px-4 py-2 rounded-[5px] font-bold border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white hover:border-wedding-500 hover:text-wedding-500 transition-all tracking-widest uppercase"
+                >
+                  Giriş Yap
+                </button>
             )}
           </div>
         </div>
@@ -245,31 +255,15 @@ const App: React.FC = () => {
                 onDeleteAccount={() => {}}
                 onDeletePost={setPostToDelete}
             />
+        ) : viewState === ViewState.ADMIN_DASHBOARD ? (
+            <AdminDashboard posts={posts} onDeletePost={setPostToDelete} onResetData={() => dbService.clearAll()} onClose={() => setViewState(ViewState.FEED)} />
         ) : null}
       </main>
 
-      {/* DESKTOP QUICK ACTIONS */}
-      <div className="hidden md:flex fixed bottom-10 right-10 flex-col gap-3 z-[100]">
-          <a 
-            href="https://annabellabridal.com" 
-            target="_blank" 
-            className="w-14 h-14 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-full flex items-center justify-center shadow-2xl border border-gray-100 dark:border-zinc-800 transition-all hover:scale-110 hover:bg-wedding-50 group"
-            title="Mağazaya Git"
-          >
-            <svg className="w-6 h-6 group-hover:text-wedding-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
-          </a>
-          <button 
-            onClick={handleUploadClick}
-            className="w-14 h-14 bg-wedding-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 hover:bg-wedding-600 group"
-            title="Yeni Paylaşım Yap"
-          >
-            <svg className="w-7 h-7 transition-transform group-hover:rotate-90 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          </button>
-      </div>
-      
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLoginSuccess={() => setViewState(ViewState.FEED)} />}
+      {showAdminModal && <AdminLoginModal onClose={() => setShowAdminModal(false)} onLoginSuccess={() => { setIsAdmin(true); setShowAdminTrigger(false); }} />}
       <ConfirmationModal isOpen={!!postToDelete} title="Gönderiyi Sil" message="Emin misin?" onConfirm={handleConfirmDelete} onCancel={() => setPostToDelete(null)} />
     </div>
   );
