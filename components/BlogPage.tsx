@@ -28,15 +28,14 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    loadBlogPosts();
-  }, []);
-
-  const loadBlogPosts = async () => {
     setIsLoading(true);
-    const data = await dbService.getAllBlogPosts();
-    setPosts(data);
-    setIsLoading(false);
-  };
+    // Gerçek zamanlı abone ol
+    const unsubscribe = dbService.subscribeToBlogPosts((data) => {
+        setPosts(data);
+        setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -83,7 +82,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
       };
 
       await dbService.saveBlogPost(newPost);
-      await loadBlogPosts();
+      // Not: Subscription sayesinde posts state'i otomatik güncellenecek
       setIsEditorOpen(false);
       resetForm();
     } catch (error) {
@@ -103,12 +102,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
     if (!postToDelete) return;
     try {
         await dbService.deleteBlogPost(postToDelete);
-        setPosts(prev => prev.filter(p => p.id !== postToDelete));
         if (selectedPost?.id === postToDelete) setSelectedPost(null);
     } catch (error) {
         console.error("Silme hatası:", error);
         alert("Silme işlemi sırasında bir hata oluştu.");
-        loadBlogPosts();
     } finally {
         setPostToDelete(null);
     }
@@ -135,7 +132,6 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
           Gelinlik trendleri, düğün planlama ipuçları ve ilham verici hikayeler.
         </p>
 
-        {/* ADMIN: YENİ YAZI EKLE BUTONU */}
         {isAdmin && (
             <div className="mt-8">
                 <Button onClick={() => handleOpenEditor()} className="mx-auto flex items-center gap-2">
@@ -158,7 +154,6 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isAdmin }) => {
                 <div onClick={() => setSelectedPost(featuredPost)} className="mb-12 rounded-3xl overflow-hidden shadow-2xl relative aspect-[16/9] md:aspect-[21/9] group cursor-pointer border border-gray-100 dark:border-gray-800">
                     <img src={featuredPost.coverImage} alt={featuredPost.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000" />
                     
-                    {/* ADMIN KONTROLLERİ (ÖNE ÇIKAN YAZI İÇİN) */}
                     {isAdmin && (
                         <div className="absolute top-4 right-4 z-20 flex gap-2">
                             <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(featuredPost); }} className="bg-white/90 backdrop-blur p-2 rounded-full text-blue-500 shadow-lg hover:bg-white transition-colors">
