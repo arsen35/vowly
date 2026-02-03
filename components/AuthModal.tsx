@@ -21,7 +21,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [rawError, setRawError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [detectedDomain, setDetectedDomain] = useState<string>("");
@@ -46,6 +45,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
     }
   };
 
+  const getFriendlyErrorMessage = (code: string) => {
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return 'Bu e-posta adresi zaten kullanımda. Lütfen giriş yapmayı deneyin.';
+      case 'auth/invalid-email':
+        return 'Lütfen geçerli bir e-posta adresi girin.';
+      case 'auth/weak-password':
+        return 'Şifreniz çok zayıf. En az 6 karakter olmalıdır.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'E-posta adresi veya şifre hatalı.';
+      case 'auth/popup-closed-by-user':
+        return 'Giriş penceresi kapatıldı.';
+      case 'auth/too-many-requests':
+        return 'Çok fazla deneme yaptınız. Lütfen bir süre sonra tekrar deneyin.';
+      default:
+        return 'Bir hata oluştu. Lütfen tekrar deneyin.';
+    }
+  };
+
   const handleGoogleLogin = async () => {
     if (!auth || !googleProvider) {
         setError('Firebase bağlantısı henüz hazır değil.');
@@ -66,13 +86,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       onLoginSuccess();
       onClose();
     } catch (err: any) {
-      console.error("Auth Error Object:", err);
-      // Firebase hata mesajından domaini çekmeye çalış
       if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized')) {
         setError('unauthorized-domain');
-        setRawError(err.message || "");
       } else {
-        setError('Google girişi başarısız: ' + err.code);
+        setError(getFriendlyErrorMessage(err.code));
       }
     } finally {
       setIsLoading(false);
@@ -108,9 +125,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
     } catch (err: any) {
       if (err.code === 'auth/unauthorized-domain') {
           setError('unauthorized-domain');
-          setRawError(err.message || "");
       } else {
-          setError('Hata: ' + err.code);
+          setError(getFriendlyErrorMessage(err.code));
       }
     } finally {
       setIsLoading(false);
@@ -183,11 +199,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                             <button type="button" onClick={() => copyText(detectedDomain)} className="text-[9px] text-wedding-500 font-bold">Kopyala</button>
                         </div>
                     </div>
-
-                    <p className="text-[9px] text-gray-400 italic">Değişikliklerin aktif olması 1-2 dakika sürebilir.</p>
                 </div>
               ) : error && (
-                <p className="text-red-500 text-[11px] text-center font-medium bg-red-50 dark:bg-red-900/10 py-3 px-4 rounded-xl leading-relaxed">{error}</p>
+                <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-xl border border-red-100 dark:border-red-900/20">
+                    <p className="text-red-600 dark:text-red-400 text-[11px] text-center font-bold leading-relaxed">
+                        {error}
+                    </p>
+                    {error.includes('giriş yapmayı deneyin') && (
+                        <button 
+                            type="button"
+                            onClick={() => { setMode('login'); setError(''); }}
+                            className="w-full mt-2 text-[10px] text-wedding-600 font-bold uppercase underline"
+                        >
+                            Giriş Ekranına Git
+                        </button>
+                    )}
+                </div>
               )}
 
               <Button type="submit" className="w-full py-4 rounded-xl shadow-lg shadow-wedding-500/20" isLoading={isLoading}>
