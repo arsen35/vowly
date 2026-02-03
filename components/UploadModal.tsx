@@ -6,7 +6,7 @@ import { MediaItem } from '../types';
 
 interface UploadModalProps {
   onClose: () => void;
-  onUpload: (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl?: string }) => void;
+  onUpload: (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl: string | null }) => void;
 }
 
 export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
@@ -21,7 +21,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
   const [isProcessing, setIsProcessing] = useState(false); 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Görseli Tarayıcıda Sıkıştır ve Base64'e Çevir (Nükleer Çözüm)
   const processFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -31,7 +30,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             img.src = event.target?.result as string;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                // Maksimum genişlik 1200px olsun (Yeterli kalite, düşük boyut)
                 const MAX_WIDTH = 1200; 
                 let width = img.width;
                 let height = img.height;
@@ -45,8 +43,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
-                
-                // JPEG formatında %80 kalite ile sıkıştır
                 resolve(canvas.toDataURL('image/jpeg', 0.8));
             };
             img.onerror = (err) => reject(err);
@@ -63,11 +59,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
       try {
         for (const file of files) {
            if (file.type.startsWith('image/')) {
-               // Dosyayı hemen string'e çeviriyoruz. Artık File objesiyle işimiz yok.
                const base64Data = await processFile(file);
-               
                newMediaItems.push({ 
-                   url: base64Data, // Hem önizleme hem upload için bu string kullanılacak
+                   url: base64Data,
                    type: 'image', 
                    mimeType: 'image/jpeg'
                });
@@ -77,8 +71,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         if (newMediaItems.length > 0) {
             setSelectedMedia(newMediaItems);
             setCurrentPreviewIndex(0);
-      
-            // AI Caption Generate (İlk görselin base64 verisi zaten elimizde)
             if (!caption) {
                 const firstImageBase64 = newMediaItems[0].url.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
                 generateAICaption(firstImageBase64);
@@ -114,7 +106,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
         caption,
         hashtags,
         userName: userName.trim(),
-        productUrl: productUrl.trim() || undefined
+        productUrl: productUrl.trim() || null
     });
     
     onClose();
@@ -134,8 +126,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
           ${selectedMedia.length > 0 ? 'md:max-w-5xl md:h-[90vh]' : 'max-w-lg md:h-auto'}
           h-full md:h-auto transition-all duration-300
       `}>
-        
-        {/* Header */}
         <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-theme-dark shrink-0 h-14">
           <h2 className="text-lg font-serif font-bold text-gray-800 dark:text-white">Anını Paylaş</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-200 dark:bg-gray-700 dark:text-gray-300 p-1.5 rounded-full">
@@ -145,9 +135,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
-          
           {selectedMedia.length === 0 ? (
             <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center bg-gray-50 dark:bg-theme-dark">
                 <div 
@@ -165,14 +153,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
             </div>
           ) : (
             <>
-              {/* Preview */}
               <div className="w-full md:w-3/5 h-[40vh] md:h-full bg-black flex items-center justify-center relative group shrink-0">
                  <div className="w-full h-full flex items-center justify-center">
-                    <img 
-                        src={selectedMedia[currentPreviewIndex].url} 
-                        alt="Preview" 
-                        className="max-w-full max-h-full object-contain pointer-events-none select-none" 
-                    />
+                    <img src={selectedMedia[currentPreviewIndex].url} alt="Preview" className="max-w-full max-h-full object-contain pointer-events-none select-none" />
                  </div>
 
                 <button 
@@ -199,7 +182,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                  )}
               </div>
 
-              {/* Form */}
               <div className="w-full md:w-2/5 bg-white dark:bg-theme-dark flex flex-col h-full overflow-hidden">
                  <div className="flex-1 overflow-y-auto p-5 pb-4">
                      <div className="space-y-5">
@@ -241,7 +223,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                             </div>
                          </div>
                          
-                         {/* Shoppable Products Section */}
                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                              <div className="flex items-center gap-2 mb-3">
                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-wedding-500">
@@ -265,7 +246,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) =
                      </div>
                  </div>
 
-                 {/* Footer */}
                  <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-theme-dark shrink-0 z-10 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <Button variant="secondary" onClick={onClose} className="!px-4">İptal</Button>
                     <Button onClick={handleSubmit} disabled={selectedMedia.length === 0 || isGeneratingAI || isProcessing || !userName.trim()} className="flex-1" isLoading={isProcessing}>

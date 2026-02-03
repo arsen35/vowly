@@ -56,10 +56,7 @@ const App: React.FC = () => {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Admin kontrolü (İstersen burayı email bazlı yapabilirsin)
             if (user.email === 'admin@annabella.com') setIsAdmin(true);
-            
-            // Kullanıcı bilgilerini DB'den al veya oluştur
             const userData = await dbService.getUser(user.uid);
             if (userData) {
                 setCurrentUser(userData);
@@ -140,7 +137,7 @@ const App: React.FC = () => {
       comments: [],
       timestamp: Date.now(),
       isLikedByCurrentUser: false,
-      productUrl: data.productUrl
+      productUrl: data.productUrl || null // null kullanımı kritik
     };
 
     setViewState(ViewState.FEED);

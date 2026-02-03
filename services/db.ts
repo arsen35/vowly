@@ -38,6 +38,13 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
+// Firestore'un sevmediği undefined değerleri temizleyen yardımcı fonksiyon
+const sanitizeData = (data: any) => {
+    const cleanData = JSON.parse(JSON.stringify(data));
+    // JSON parse/stringify döngüsü undefined değerleri otomatik siler
+    return cleanData;
+};
+
 const optimizeImage = async (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -122,12 +129,12 @@ export const dbService = {
   // --- USERS ---
   saveUser: async (user: User): Promise<void> => {
     const { dbInstance } = checkDbConnection();
-    await setDoc(doc(dbInstance, USERS_COLLECTION, user.id), user, { merge: true });
+    await setDoc(doc(dbInstance, USERS_COLLECTION, user.id), sanitizeData(user), { merge: true });
   },
 
   updateUser: async (userId: string, data: Partial<User>): Promise<void> => {
     const { dbInstance } = checkDbConnection();
-    await updateDoc(doc(dbInstance, USERS_COLLECTION, userId), data);
+    await updateDoc(doc(dbInstance, USERS_COLLECTION, userId), sanitizeData(data));
   },
 
   getUser: async (userId: string): Promise<User | null> => {
@@ -181,7 +188,7 @@ export const dbService = {
 
   addComment: async (postId: string, comment: any): Promise<void> => {
     const { dbInstance } = checkDbConnection();
-    await updateDoc(doc(dbInstance, POSTS_COLLECTION, postId), { comments: arrayUnion(comment) });
+    await updateDoc(doc(dbInstance, POSTS_COLLECTION, postId), { comments: arrayUnion(sanitizeData(comment)) });
   },
 
   savePost: async (post: Post): Promise<void> => {
@@ -192,7 +199,7 @@ export const dbService = {
       updatedMedia.push({ ...post.media[index], url: downloadURL });
     }
     const { isLikedByCurrentUser, ...postToSave } = { ...post, media: updatedMedia };
-    await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), postToSave);
+    await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), sanitizeData(postToSave));
   },
 
   deletePost: async (id: string): Promise<void> => {
@@ -222,7 +229,7 @@ export const dbService = {
         imageUrl = await uploadMediaItem(post.coverImage, path);
     }
     const blogToSave = { ...post, coverImage: imageUrl };
-    await setDoc(doc(dbInstance, BLOG_COLLECTION, post.id), blogToSave);
+    await setDoc(doc(dbInstance, BLOG_COLLECTION, post.id), sanitizeData(blogToSave));
   },
 
   deleteBlogPost: async (id: string): Promise<void> => {
@@ -247,7 +254,7 @@ export const dbService = {
     if (message.image) {
          finalMessage.image = await uploadMediaItem(message.image, `chat_images/${Date.now()}_img`);
     }
-    await addDoc(collection(dbInstance, CHAT_COLLECTION), finalMessage);
+    await addDoc(collection(dbInstance, CHAT_COLLECTION), sanitizeData(finalMessage));
   },
 
   deleteChatMessage: async (id: string): Promise<void> => {
