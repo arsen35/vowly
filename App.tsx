@@ -35,14 +35,14 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-      const root = window.document.documentElement;
-      if (isDarkMode) {
-          root.classList.add('dark');
-          localStorage.setItem('theme', 'dark');
-      } else {
-          root.classList.remove('dark');
-          localStorage.setItem('theme', 'light');
-      }
+    const root = window.document.documentElement;
+    if (isDarkMode) {
+        root.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        root.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    }
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
@@ -155,23 +155,43 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-theme-black/95 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
+      <header className="sticky top-0 z-30 bg-white/40 dark:bg-theme-black/40 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}><Logo className="h-8 w-auto" /></div>
+          
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
                <button onClick={() => setViewState(ViewState.FEED)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>AKIŞ</button>
                <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>BLOG</button>
                <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[11px] font-bold tracking-widest flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400'}`}>SOHBET <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[8px] px-1 rounded-full animate-pulse">CANLI</span></button>
                <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>PROFİLİM</button>
           </nav>
-          <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="p-1.5 rounded-full bg-gray-50 dark:bg-zinc-900 text-gray-500 transition-colors">
-                {isDarkMode ? '☀️' : '🌙'}
+
+          <div className="flex items-center gap-4">
+            {/* MINIMAL THEME TOGGLE */}
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-gray-400 transition-colors"
+              aria-label="Karanlık/Aydınlık Modu Değiştir"
+            >
+                {isDarkMode ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                )}
             </button>
+
             {currentUser ? (
-                <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer"><img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5" alt="Profile" /></div>
+                <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer">
+                  <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5" alt="Profile" />
+                </div>
             ) : (
-                <button onClick={() => setShowAuthModal(true)} className="text-[10px] px-3 py-1.5 rounded-full font-bold bg-black dark:bg-white text-white dark:text-black">Giriş</button>
+                /* MINIMAL STROKE LOGIN BUTTON - 5PX RADIUS */
+                <button 
+                  onClick={() => setShowAuthModal(true)} 
+                  className="text-[9px] px-4 py-2 rounded-[5px] font-bold border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white bg-transparent hover:border-wedding-500 hover:text-wedding-500 transition-all tracking-widest uppercase"
+                >
+                  Yönetici Girişi
+                </button>
             )}
           </div>
         </div>
@@ -199,9 +219,8 @@ const App: React.FC = () => {
         ) : null}
       </main>
 
-      {/* DESKTOP QUICK ACTIONS (FLOATING RIGHT BOTTOM) */}
+      {/* DESKTOP QUICK ACTIONS */}
       <div className="hidden md:flex fixed bottom-10 right-10 flex-col gap-3 z-[100]">
-          {/* MAĞAZA İKONU */}
           <a 
             href="https://annabellabridal.com" 
             target="_blank" 
@@ -210,7 +229,6 @@ const App: React.FC = () => {
           >
             <svg className="w-6 h-6 group-hover:text-wedding-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
           </a>
-          {/* YÜKLEME / PAYLAŞIM İKONU (+) */}
           <button 
             onClick={handleUploadClick}
             className="w-14 h-14 bg-wedding-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 hover:bg-wedding-600 group"
