@@ -27,9 +27,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
   const menuRef = useRef<HTMLDivElement>(null);
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [showBigHeart, setShowBigHeart] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const minSwipeDistance = 50;
 
   useEffect(() => {
     setLikesCount(post.likes);
@@ -92,16 +89,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
     setCommentText('');
   };
 
-  const nextSlide = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (currentMediaIndex < post.media.length - 1) setCurrentMediaIndex(prev => prev + 1);
-  };
-
-  const prevSlide = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (currentMediaIndex > 0) setCurrentMediaIndex(prev => prev - 1);
-  };
-
   return (
     <div className="bg-white dark:bg-theme-dark sm:rounded-xl border-y sm:border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col h-full transform transition-all duration-300">
       {/* HEADER */}
@@ -113,7 +100,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate">{post.user.name}</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white text-[13px] truncate">{post.user.name}</h3>
             {post.location && (
                 <span className="text-[10px] text-wedding-500 font-medium opacity-80">• {post.location}</span>
             )}
@@ -168,11 +155,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
           </a>
       )}
 
-      {/* INTERACTIONS - GÖRSELDEKİ YENİ YAPI */}
+      {/* INTERACTIONS */}
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-1.5">
                 <button 
                   onClick={handleLike} 
                   className={`transition-transform duration-200 active:scale-75 ${isLiked ? 'text-wedding-500' : 'text-gray-900 dark:text-white'}`}
@@ -187,7 +174,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 ))}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
                 <button onClick={() => setIsCommentOpen(!isCommentOpen)} className="text-gray-900 dark:text-white active:scale-90">
                    <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-7 h-7">
                     <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
@@ -196,8 +183,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
                 <span className="text-sm font-bold text-gray-900 dark:text-white">{post.comments.length}</span>
             </div>
             
-            <button onClick={handleShare} className="text-gray-900 dark:text-white active:scale-90">
-               <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-7 h-7">
+            <button onClick={handleShare} className="text-gray-900 dark:text-white active:scale-90 transform rotate-[-15deg] mt-0.5">
+               <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-6.5 h-6.5">
                  <path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                </svg>
             </button>
