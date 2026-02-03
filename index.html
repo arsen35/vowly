@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550" />
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -23,10 +23,11 @@
           extend: {
             fontFamily: {
               serif: ['"Playfair Display"', 'serif'],
-              sans: ['"Montserrat"', 'sans-serif'],
+              sans: ['"Poppins"', 'sans-serif'],
             },
             colors: {
-              'theme-dark': '#1a1614',
+              'theme-dark': '#121212', // Instagram Card Dark
+              'theme-black': '#000000', // Instagram BG Dark
               wedding: {
                 50: '#f9f6f5',
                 100: '#f1e8e5',
@@ -89,6 +90,7 @@
       
       body {
         transition: background-color 0.3s ease, color 0.3s ease;
+        font-family: 'Poppins', sans-serif;
       }
     </style>
   <script type="importmap">
@@ -105,7 +107,7 @@
 }
 </script>
 </head>
-  <body class="bg-wedding-50 dark:bg-black text-gray-800 dark:text-gray-100 antialiased overscroll-none">
+  <body class="bg-white dark:bg-theme-black text-gray-900 dark:text-gray-100 antialiased overscroll-none">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

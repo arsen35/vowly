@@ -11,7 +11,7 @@ interface BottomNavigationProps {
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView, onNavigate, onUploadClick }) => {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-[50] px-5 pb-8 pt-2 pointer-events-none">
-      <div className="bg-white/95 dark:bg-black/95 backdrop-blur-3xl border border-gray-100 dark:border-gray-800 rounded-[24px] flex items-center justify-around h-16 pointer-events-auto max-w-sm mx-auto shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
+      <div className="bg-white/95 dark:bg-theme-dark backdrop-blur-3xl border border-gray-100 dark:border-gray-800 rounded-[24px] flex items-center justify-around h-16 pointer-events-auto max-w-sm mx-auto shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
         
         {/* AKIŞ (HOME) */}
         <button 
@@ -35,7 +35,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
           <span className="text-[7px] font-bold mt-1 tracking-widest uppercase">BLOG</span>
         </button>
 
-        {/* "+" BUTTON (GÖRSELDEKİ KARE YAPI) */}
+        {/* "+" BUTTON */}
         <div className="flex-1 flex justify-center items-center">
             <button 
               onClick={onUploadClick}

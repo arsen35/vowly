@@ -24,7 +24,6 @@ const App: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -111,7 +110,7 @@ const App: React.FC = () => {
       timestamp: Date.now(),
       isLikedByCurrentUser: false,
       productUrl: data.productUrl,
-      location: data.location // Konum kaydediliyor
+      location: data.location
     };
     setViewState(ViewState.FEED);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -155,8 +154,8 @@ const App: React.FC = () => {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-black pb-20 transition-colors duration-300`}>
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm">
+    <div className={`min-h-screen bg-white dark:bg-theme-black pb-20 transition-colors duration-300`}>
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-theme-black/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 shadow-sm">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}><Logo className="h-8 w-auto" /></div>
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
@@ -194,14 +193,14 @@ const App: React.FC = () => {
                 user={currentUser} posts={posts} 
                 onPostClick={(p) => setViewState(ViewState.FEED)} 
                 onLogout={() => { setCurrentUser(null); setViewState(ViewState.FEED); }}
-                onDeleteAccount={() => setShowDeleteAccountModal(true)}
+                onDeleteAccount={() => {}}
                 onDeletePost={setPostToDelete}
             />
         ) : null}
       </main>
       
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
-      {viewState === ViewState.UPLOAD && <UploadModal onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
+      {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLoginSuccess={() => setViewState(ViewState.FEED)} />}
       <ConfirmationModal isOpen={!!postToDelete} title="Gönderiyi Sil" message="Emin misin?" onConfirm={handleConfirmDelete} onCancel={() => setPostToDelete(null)} />
     </div>
