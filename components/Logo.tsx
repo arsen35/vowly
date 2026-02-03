@@ -6,14 +6,14 @@ interface LogoProps {
   isInverse?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = "h-12 w-auto", isInverse = false }) => {
+export const Logo: React.FC<LogoProps> = ({ className = "h-12 w-auto" }) => {
   return (
     <div className={`flex items-baseline gap-1 group cursor-pointer transition-transform duration-300 hover:scale-105 ${className}`}>
-        {/* Kullanıcının sağladığı AB Logosu */}
+        {/* Kullanıcının sağladığı AB Logosu - Filtreler kaldırıldı, her zaman orijinal renkler */}
         <img 
             src="https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550" 
             alt="Annabella Bridal" 
-            className={`h-full w-auto object-contain transition-all duration-300 dark:brightness-0 dark:invert ${isInverse ? 'brightness-0 invert' : ''}`}
+            className="h-full w-auto object-contain transition-all duration-300"
             onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 if (e.currentTarget.parentElement) {
