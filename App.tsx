@@ -97,19 +97,6 @@ const App: React.FC = () => {
       else setViewState(ViewState.UPLOAD);
   };
 
-  const handleShareSite = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Annabella Bridal Blog',
-        text: 'En güzel gelinlik hikayeleri burada! ✨',
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Sayfa linki kopyalandı! ✨');
-    }
-  };
-
   const handleNewPost = async (data: { media: MediaItem[]; caption: string; hashtags: string[]; userName: string; productUrl: string | null; location: string | null }) => {
     if (!currentUser) return;
     const newPost: Post = {
@@ -214,6 +201,7 @@ const App: React.FC = () => {
 
       {/* DESKTOP QUICK ACTIONS (FLOATING RIGHT BOTTOM) */}
       <div className="hidden md:flex fixed bottom-10 right-10 flex-col gap-3 z-[100]">
+          {/* MAĞAZA İKONU */}
           <a 
             href="https://annabellabridal.com" 
             target="_blank" 
@@ -222,12 +210,13 @@ const App: React.FC = () => {
           >
             <svg className="w-6 h-6 group-hover:text-wedding-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
           </a>
+          {/* YÜKLEME / PAYLAŞIM İKONU (+) */}
           <button 
-            onClick={handleShareSite}
+            onClick={handleUploadClick}
             className="w-14 h-14 bg-wedding-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 hover:bg-wedding-600 group"
-            title="Sitemizi Paylaş"
+            title="Yeni Paylaşım Yap"
           >
-            <svg className="w-6 h-6 transform rotate-[-15deg] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+            <svg className="w-7 h-7 transition-transform group-hover:rotate-90 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
           </button>
       </div>
       
