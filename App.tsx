@@ -154,22 +154,22 @@ const App: React.FC = () => {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className={`min-h-screen bg-white dark:bg-theme-black pb-20 transition-colors duration-300`}>
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-theme-black/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 shadow-sm">
+    <div className={`min-h-screen bg-white dark:bg-theme-black pb-[60px] md:pb-0 transition-colors duration-300`}>
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-theme-black/95 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}><Logo className="h-8 w-auto" /></div>
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
-               <button onClick={() => setViewState(ViewState.FEED)} className={`text-xs font-bold tracking-widest ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}>AKIŞ</button>
-               <button onClick={() => setViewState(ViewState.BLOG)} className={`text-xs font-bold tracking-widest ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}>BLOG</button>
-               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-xs font-bold tracking-widest flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400'}`}>SOHBET <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[8px] px-1 rounded-full animate-pulse">CANLI</span></button>
-               <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-xs font-bold tracking-widest ${viewState === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}>PROFİLİM</button>
+               <button onClick={() => setViewState(ViewState.FEED)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>AKIŞ</button>
+               <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>BLOG</button>
+               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[11px] font-bold tracking-widest flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400'}`}>SOHBET <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[8px] px-1 rounded-full animate-pulse">CANLI</span></button>
+               <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>PROFİLİM</button>
           </nav>
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors">
+            <button onClick={toggleTheme} className="p-1.5 rounded-full bg-gray-50 dark:bg-zinc-900 text-gray-500 transition-colors">
                 {isDarkMode ? '☀️' : '🌙'}
             </button>
             {currentUser ? (
-                <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer"><img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-wedding-200" alt="Profile" /></div>
+                <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer"><img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5" alt="Profile" /></div>
             ) : (
                 <button onClick={() => setShowAuthModal(true)} className="text-[10px] px-3 py-1.5 rounded-full font-bold bg-black dark:bg-white text-white dark:text-black">Giriş</button>
             )}
@@ -180,12 +180,12 @@ const App: React.FC = () => {
       <main className="w-full">
         {viewState === ViewState.FEED ? (
             <div className="pt-0 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
                 {posts.map(post => <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} />)}
               </div>
             </div>
         ) : viewState === ViewState.BLOG ? (
-            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setShowAuthModal(true)} />
+            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setShowAuthModal(false)} />
         ) : viewState === ViewState.CHAT ? (
             <ChatPage isAdmin={isAdmin} />
         ) : viewState === ViewState.PROFILE ? (
