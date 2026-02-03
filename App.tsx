@@ -154,7 +154,7 @@ const App: React.FC = () => {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className={`min-h-screen bg-white dark:bg-theme-black pb-[60px] md:pb-0 transition-colors duration-300`}>
+    <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300`}>
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-theme-black/95 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer" onClick={() => setViewState(ViewState.FEED)}><Logo className="h-8 w-auto" /></div>
@@ -185,7 +185,7 @@ const App: React.FC = () => {
               </div>
             </div>
         ) : viewState === ViewState.BLOG ? (
-            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setShowAuthModal(false)} />
+            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setShowAuthModal(true)} />
         ) : viewState === ViewState.CHAT ? (
             <ChatPage isAdmin={isAdmin} />
         ) : viewState === ViewState.PROFILE ? (
