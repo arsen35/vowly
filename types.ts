@@ -33,6 +33,7 @@ export interface Post {
   timestamp: number;
   isLikedByCurrentUser?: boolean;
   productUrl?: string; 
+  location?: string; // Konum bilgisi eklendi
 }
 
 export interface BlogPost {
