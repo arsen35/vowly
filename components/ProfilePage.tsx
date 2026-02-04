@@ -176,22 +176,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
         </div>
 
-        {/* PROFILE BUTTONS */}
-        <div className="flex gap-2">
+        {/* PROFILE BUTTONS - 3 SEPARATE BUTTONS, NO PUDRA, GREY STROKES */}
+        <div className="grid grid-cols-3 gap-2">
             <button 
                 onClick={() => setIsEditModalOpen(true)} 
-                className="flex-1 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 text-[10px] font-bold py-3.5 rounded-md uppercase tracking-widest transition-all hover:bg-gray-50 dark:hover:bg-zinc-800"
+                className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 text-[9px] font-bold py-3 rounded-md uppercase tracking-widest transition-all hover:bg-gray-50 dark:hover:bg-zinc-800 active:scale-95"
             >
-                Profili Düzenle
+                Düzenle
             </button>
             <button 
-                onClick={() => setActiveTab(activeTab === 'posts' ? 'liked' : 'posts')} 
-                className={`flex-1 border transition-all text-[10px] font-bold py-3.5 rounded-md uppercase tracking-widest flex items-center justify-center gap-2 ${activeTab === 'liked' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
+                onClick={() => setActiveTab('posts')} 
+                className={`border transition-all text-[9px] font-bold py-3 rounded-md uppercase tracking-widest active:scale-95 ${activeTab === 'posts' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
             >
-                <svg className="w-3.5 h-3.5" fill={activeTab === 'liked' ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-                    <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </svg>
-                {activeTab === 'posts' ? 'Beğendiklerim' : 'Paylaştıklarım'}
+                Paylaşımlar
+            </button>
+            <button 
+                onClick={() => setActiveTab('liked')} 
+                className={`border transition-all text-[9px] font-bold py-3 rounded-md uppercase tracking-widest active:scale-95 ${activeTab === 'liked' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
+            >
+                Beğeniler
             </button>
         </div>
       </div>
@@ -202,17 +205,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <div 
             key={post.id} 
             onClick={() => setSelectedPost(post)} 
-            className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-50 dark:bg-zinc-900 rounded-md shadow-sm"
+            className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-50 dark:bg-zinc-900 rounded-md shadow-sm border border-gray-100 dark:border-zinc-800"
           >
             <img src={post.media[0].url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="post" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <div className="flex items-center gap-4 text-white">
-                    <div className="flex items-center gap-1 text-[11px] font-bold">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <div className="flex items-center gap-3 text-white">
+                    <div className="flex items-center gap-1 text-[10px] font-bold">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
                         {post.likes}
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-bold">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
+                    <div className="flex items-center gap-1 text-[10px] font-bold">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
                         {post.comments.length}
                     </div>
                 </div>
