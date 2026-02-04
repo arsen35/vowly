@@ -38,7 +38,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [activeTab, setActiveTab] = useState<'posts' | 'liked'>('posts');
   const [showSettings, setShowSettings] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<string | null>(null);
+  const [isDeleteAccConfirmOpen, setIsDeleteAccConfirmOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [followData, setFollowData] = useState<{ followers: string[], following: string[] }>({ followers: [], following: [] });
   const [isFollowModalOpen, setIsFollowModalOpen] = useState<'followers' | 'following' | null>(null);
@@ -51,7 +51,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [usernameError, setUsernameError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -66,6 +68,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       return () => unsubscribe();
     }
   }, [user]);
+
+  // Settings menüsü dışına tıklayınca kapatma
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    if (showSettings) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSettings]);
 
   useEffect(() => {
     if (isFollowModalOpen) {
@@ -142,10 +157,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const displayPosts = activeTab === 'posts' ? userPosts : likedPosts;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-14 pb-32 animate-fadeIn">
+    <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-14 pb-32 animate-fadeIn relative">
       {/* PROFILE HEADER */}
       <div className="flex flex-col gap-6 mb-12">
-        <div className="flex items-center gap-6 md:gap-12">
+        <div className="flex items-center gap-6 md:gap-12 relative">
             <div className="shrink-0">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-lg p-1 border border-gray-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
                     <img src={user.avatar} className="w-full h-full rounded-md object-cover" alt={user.name} />
@@ -158,9 +173,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <h2 className="font-serif text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
                         <p className="text-[11px] text-gray-400 font-bold italic">@{user.username || 'annabella_gelini'}</p>
                     </div>
-                    <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all">
-                        <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
-                    </button>
+                    
+                    {/* ÜÇ NOKTA AYARLAR MENÜSÜ */}
+                    <div className="relative" ref={settingsRef}>
+                        <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90">
+                            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                        </button>
+                        
+                        {showSettings && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
+                                <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
+                                <div className="h-px bg-gray-100 dark:bg-zinc-900 mx-2"></div>
+                                <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Çıkış Yap</button>
+                                <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Hesabı Sil</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex gap-6 items-center mt-3">
@@ -354,6 +383,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
         </div>
       )}
+
+      {/* HESABI SİL ONAY MODALI */}
+      <ConfirmationModal 
+        isOpen={isDeleteAccConfirmOpen}
+        title="Hesabını Sil"
+        message="Hesabını ve tüm paylaşımlarını kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz."
+        onConfirm={() => { onDeleteAccount(); setIsDeleteAccConfirmOpen(false); }}
+        onCancel={() => setIsDeleteAccConfirmOpen(false)}
+      />
     </div>
   );
 };
