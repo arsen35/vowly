@@ -56,15 +56,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       case 'auth/weak-password':
         return 'Şifre çok zayıf (en az 6 karakter).';
       case 'auth/user-not-found':
-        return 'Kullanıcı bulunamadı.';
+        return 'Bu e-posta ile kayıtlı bir kullanıcı bulunamadı.';
       case 'auth/wrong-password':
-        return 'Hatalı şifre.';
+        return 'Hatalı şifre girdiniz.';
       case 'auth/invalid-credential':
         return 'E-posta veya şifre hatalı.';
       case 'auth/operation-not-allowed':
-        return 'E-posta girişi şu an pasif. Lütfen yöneticiyle iletişime geçin.';
+        return 'DİKKAT: Firebase Console üzerinden Email/Password girişini aktif etmelisiniz!';
       default:
-        return 'İşlem sırasında bir hata oluştu.';
+        return 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.';
     }
   };
 
@@ -113,7 +113,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
             <div className="w-14 h-14 bg-zinc-900 border border-wedding-500/20 text-wedding-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
             </div>
-            <h2 className="text-3xl font-serif font-bold text-white mb-2">{mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}</h2>
+            <h2 className="text-3xl font-serif font-bold text-white mb-2">
+                {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+            </h2>
         </div>
 
         <button 
@@ -161,7 +163,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                     )}
                 </button>
             </div>
-            {error && <p className="text-[#ff4d4d] text-[11px] text-center font-bold animate-fadeIn">{error}</p>}
+            {error && <p className="text-[#ff4d4d] text-[11px] text-center font-bold animate-fadeIn leading-tight">{error}</p>}
             
             <Button 
                 type="submit" 
@@ -173,6 +175,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
         </form>
 
         <button 
+            type="button"
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
             className="w-full mt-6 text-[11px] text-gray-500 hover:text-wedding-500 font-bold uppercase tracking-widest transition-all"
         >
