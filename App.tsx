@@ -73,13 +73,19 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
+  // Temizlik işlemini admin girince tetikle
+  useEffect(() => {
+    if (isAdmin) {
+        dbService.performDailyCleanup();
+    }
+  }, [isAdmin]);
+
   const handleLogoClick = () => {
     logoClicks.current += 1;
     if (clickTimer.current) clearTimeout(clickTimer.current);
     clickTimer.current = setTimeout(() => { logoClicks.current = 0; }, 3000);
     
     if (logoClicks.current >= 5) {
-        // Eğer zaten admin olarak giriş yapmışsa direkt paneli aç
         if (isAdmin) {
             setShowAdminModal(true);
         } else {
@@ -323,7 +329,7 @@ const App: React.FC = () => {
 
       <div className="hidden md:flex fixed bottom-8 right-8 flex-col gap-3 z-50">
         <a href="https://annabellabridal.com" target="_blank" className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-95" title="Anasayfa">
-           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
         </a>
         <button onClick={handleUploadClick} className="bg-gray-900 dark:bg-white p-3 rounded-lg shadow-xl text-white dark:text-gray-900 hover:scale-105 transition-all active:scale-95" title="Paylaşım Yap">
            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>

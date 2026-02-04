@@ -35,6 +35,7 @@ const USERS_COLLECTION = 'users';
 const FOLLOWS_COLLECTION = 'follows';
 const CONVERSATIONS_COLLECTION = 'conversations';
 const DIRECT_MESSAGES_COLLECTION = 'direct_messages';
+const MAINTENANCE_COLLECTION = 'maintenance';
 
 const checkDbConnection = () => {
   if (!db || !storage) throw new Error("Veritabanı bağlantısı yok.");
@@ -44,6 +45,57 @@ const checkDbConnection = () => {
 const sanitizeData = (data: any) => JSON.parse(JSON.stringify(data));
 
 export const dbService = {
+  // --- MAINTENANCE & CLEANUP (24h Auto-Delete) ---
+  performDailyCleanup: async () => {
+    const { dbInstance } = checkDbConnection();
+    const now = Date.now();
+    const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
+    
+    try {
+      // 1. Son temizlik zamanını kontrol et
+      const maintRef = doc(dbInstance, MAINTENANCE_COLLECTION, 'last_cleanup');
+      const maintSnap = await getDoc(maintRef);
+      
+      if (maintSnap.exists()) {
+        const lastCleanup = maintSnap.data().timestamp;
+        // Eğer son temizlik üzerinden 24 saat geçmemişse işlemi durdur
+        if (now - lastCleanup < (24 * 60 * 60 * 1000)) return;
+      }
+
+      console.log("🧹 24 saatlik temizlik işlemi başlatılıyor...");
+      const batch = writeBatch(dbInstance);
+
+      // 2. Genel Sohbeti Temizle (Eski mesajlar)
+      const globalChatQ = query(collection(dbInstance, CHAT_COLLECTION), where("timestamp", "<", twentyFourHoursAgo));
+      const globalChatSnap = await getDocs(globalChatQ);
+      globalChatSnap.forEach(d => batch.delete(d.ref));
+
+      // 3. Özel Mesajları Temizle
+      const convsSnap = await getDocs(collection(dbInstance, CONVERSATIONS_COLLECTION));
+      for (const convDoc of convsSnap.docs) {
+        const dmQ = query(collection(dbInstance, CONVERSATIONS_COLLECTION, convDoc.id, DIRECT_MESSAGES_COLLECTION), where("timestamp", "<", twentyFourHoursAgo));
+        const dmSnap = await getDocs(dmQ);
+        dmSnap.forEach(d => batch.delete(d.ref));
+        
+        // Eğer konuşmadaki tüm mesajlar eskiyse, konuşma özetini de güncelle veya sil
+        if (!dmSnap.empty) {
+            batch.update(convDoc.ref, {
+                lastMessage: "Sohbet geçmişi temizlendi.",
+                unreadBy: []
+            });
+        }
+      }
+
+      // 4. Temizlik zamanını güncelle
+      batch.set(maintRef, { timestamp: now });
+      
+      await batch.commit();
+      console.log("✅ Temizlik başarıyla tamamlandı.");
+    } catch (error) {
+      console.error("Cleanup Error:", error);
+    }
+  },
+
   // --- MEDIA UPLOAD ---
   uploadMedia: async (file: File, path: string): Promise<string> => {
     const { storageInstance } = checkDbConnection();
@@ -157,8 +209,6 @@ export const dbService = {
 
   subscribeToConversations: (uid: string, callback: (convs: Conversation[]) => void) => {
     if (!db) return () => {};
-    // NOT: orderBy kaldırıldı çünkü composite index gerektiriyor. 
-    // Sıralama ChatPage içinde manuel yapılacak.
     const q = query(
       collection(db, CONVERSATIONS_COLLECTION), 
       where("participants", "array-contains", uid)
