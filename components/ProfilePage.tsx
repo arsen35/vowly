@@ -123,10 +123,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   if (!user) {
       return (
           <div className="max-w-md mx-auto px-6 py-20 text-center animate-fadeIn">
-              <div className="w-20 h-20 bg-gray-50 rounded-lg flex items-center justify-center mx-auto mb-8 border border-gray-100">
+              <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-900 rounded-lg flex items-center justify-center mx-auto mb-8 border border-gray-100 dark:border-zinc-800">
                   <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
               </div>
-              <h2 className="text-xl font-serif font-bold text-gray-900 mb-2 uppercase tracking-widest">Aramıza Katıl</h2>
+              <h2 className="text-xl font-serif font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-widest">Hoş Geldin Gelin Adayı</h2>
               <AuthModalContent onLoginSuccess={onLoginSuccess} />
           </div>
       );
@@ -137,11 +137,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const displayPosts = activeTab === 'posts' ? userPosts : likedPosts;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-16 pb-32 animate-fadeIn">
+    <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-14 pb-32 animate-fadeIn">
+      {/* PROFILE HEADER */}
       <div className="flex flex-col gap-6 mb-12">
-        <div className="flex items-center gap-6 md:gap-14">
-            <div className="shrink-0 relative">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-lg p-1 border border-wedding-500/20 overflow-hidden shadow-sm">
+        <div className="flex items-center gap-6 md:gap-12">
+            <div className="shrink-0">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-lg p-1 border border-gray-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
                     <img src={user.avatar} className="w-full h-full rounded-md object-cover" alt={user.name} />
                 </div>
             </div>
@@ -150,62 +151,120 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="font-serif text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
-                        <p className="text-[11px] text-wedding-500 font-bold italic">@{user.username || 'annabella_gelini'}</p>
+                        <p className="text-[11px] text-gray-400 font-bold italic">@{user.username || 'annabella_gelini'}</p>
                     </div>
-                    <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-wedding-500 rounded-md transition-all">
+                    <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all">
                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
                     </button>
                 </div>
 
-                <div className="flex gap-6 items-center mt-2">
-                    <div className="flex flex-col md:flex-row md:items-center gap-1">
-                        <span className="text-sm font-bold leading-none">{userPosts.length}</span>
+                <div className="flex gap-6 items-center mt-3">
+                    <div className="flex flex-col md:flex-row md:items-center gap-1.5">
+                        <span className="text-sm font-bold leading-none dark:text-white">{userPosts.length}</span>
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Paylaşım</span>
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-1 cursor-pointer" onClick={() => setIsFollowModalOpen('followers')}>
-                        <span className="text-sm font-bold leading-none">{followData.followers.length}</span>
+                    <div className="flex flex-col md:flex-row md:items-center gap-1.5 cursor-pointer" onClick={() => setIsFollowModalOpen('followers')}>
+                        <span className="text-sm font-bold leading-none dark:text-white">{followData.followers.length}</span>
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Takipçi</span>
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-1 cursor-pointer" onClick={() => setIsFollowModalOpen('following')}>
-                        <span className="text-sm font-bold leading-none">{followData.following.length}</span>
+                    <div className="flex flex-col md:flex-row md:items-center gap-1.5 cursor-pointer" onClick={() => setIsFollowModalOpen('following')}>
+                        <span className="text-sm font-bold leading-none dark:text-white">{followData.following.length}</span>
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Takip</span>
                     </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 font-serif italic line-clamp-2">{user.bio || "Hayalindeki gelinliği Annabella'da buldu."}</p>
+                <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Mutlu anlarını Annabella'da paylaşıyor."}</p>
             </div>
         </div>
 
+        {/* PROFILE BUTTONS */}
         <div className="flex gap-2">
-            <button onClick={() => setIsEditModalOpen(true)} className="flex-1 bg-white border border-gray-200 text-gray-700 text-[10px] font-bold py-3 rounded-md uppercase tracking-widest">Düzenle</button>
-            <button onClick={() => setActiveTab(activeTab === 'posts' ? 'liked' : 'posts')} className={`flex-1 border ${activeTab === 'liked' ? 'bg-wedding-500 border-wedding-500 text-white' : 'bg-white border-gray-200 text-gray-700'} text-[10px] font-bold py-3 rounded-md uppercase tracking-widest transition-all`}>
-                {activeTab === 'posts' ? 'Beğeniler' : 'Paylaşımlar'}
+            <button 
+                onClick={() => setIsEditModalOpen(true)} 
+                className="flex-1 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 text-[10px] font-bold py-3.5 rounded-md uppercase tracking-widest transition-all hover:bg-gray-50 dark:hover:bg-zinc-800"
+            >
+                Profili Düzenle
+            </button>
+            <button 
+                onClick={() => setActiveTab(activeTab === 'posts' ? 'liked' : 'posts')} 
+                className={`flex-1 border transition-all text-[10px] font-bold py-3.5 rounded-md uppercase tracking-widest flex items-center justify-center gap-2 ${activeTab === 'liked' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
+            >
+                <svg className="w-3.5 h-3.5" fill={activeTab === 'liked' ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+                {activeTab === 'posts' ? 'Beğendiklerim' : 'Paylaştıklarım'}
             </button>
         </div>
       </div>
 
+      {/* GRID VIEW */}
       <div className="grid grid-cols-3 gap-1 md:gap-2">
         {displayPosts.map((post) => (
-          <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-50 rounded-md">
-            <img src={post.media[0].url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+          <div 
+            key={post.id} 
+            onClick={() => setSelectedPost(post)} 
+            className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-50 dark:bg-zinc-900 rounded-md shadow-sm"
+          >
+            <img src={post.media[0].url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="post" />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <div className="flex items-center gap-3 text-white">
-                    <div className="flex items-center gap-1 text-xs font-bold"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>{post.likes}</div>
-                    <div className="flex items-center gap-1 text-xs font-bold"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>{post.comments.length}</div>
+                <div className="flex items-center gap-4 text-white">
+                    <div className="flex items-center gap-1 text-[11px] font-bold">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+                        {post.likes}
+                    </div>
+                    <div className="flex items-center gap-1 text-[11px] font-bold">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
+                        {post.comments.length}
+                    </div>
                 </div>
             </div>
           </div>
         ))}
+        {displayPosts.length === 0 && (
+            <div className="col-span-3 py-24 text-center">
+                <p className="text-gray-400 italic font-serif text-sm">Burada henüz bir içerik yok ✨</p>
+            </div>
+        )}
       </div>
 
+      {/* READING MODE MODAL */}
+      {selectedPost && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+              <button onClick={() => setSelectedPost(null)} className="fixed top-6 right-6 text-white/50 hover:text-white p-2 z-[110] transition-colors">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+              <div className="w-full max-w-sm md:max-w-md animate-in zoom-in-95 duration-500">
+                  <PostCard 
+                    post={selectedPost} 
+                    onLike={onLike} 
+                    onAddComment={onAddComment} 
+                    onDelete={onDeletePost} 
+                    isAdmin={user.id === selectedPost.user.id} 
+                    isFollowing={followingIds.includes(selectedPost.user.id)}
+                    onFollow={() => onFollowToggle(selectedPost.user.id)}
+                    currentUserId={user.id}
+                  />
+              </div>
+          </div>
+      )}
+
+      {/* EDIT PROFILE MODAL */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
-            <div className="bg-white rounded-lg w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100">
-                <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-wedding-500 p-1 transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg></button>
-                <h3 className="text-lg font-serif font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profil Güncelle</h3>
+        <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100 dark:border-zinc-900">
+                <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 transition-all">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                
+                <h3 className="text-lg font-serif font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profilini Güncelle</h3>
+                
                 <div className="space-y-5">
                     <div className="flex flex-col items-center mb-4">
-                        <div onClick={() => avatarInputRef.current?.click()} className="relative w-24 h-24 rounded-lg border-2 border-wedding-500/10 p-1 group cursor-pointer overflow-hidden shadow-md">
-                            <img src={editAvatar} className="w-full h-full rounded-md object-cover" />
+                        <div 
+                            onClick={() => avatarInputRef.current?.click()}
+                            className="relative w-24 h-24 rounded-lg border border-gray-100 dark:border-zinc-800 p-1 group cursor-pointer overflow-hidden shadow-sm"
+                        >
+                            <img src={editAvatar} className="w-full h-full rounded-md object-cover" alt="avatar" />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[9px] font-bold tracking-widest">DEĞİŞTİR</div>
                         </div>
                         <input type="file" ref={avatarInputRef} onChange={async (e) => {
                            if (e.target.files?.[0]) {
@@ -215,21 +274,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                            }
                         }} accept="image/*" className="hidden" />
                     </div>
+
                     <div className="space-y-4">
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Görünen İsim</label>
-                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-md px-3 py-2 text-sm outline-none focus:border-wedding-500" />
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Kullanıcı Adı (@)</label>
-                            <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-md px-3 py-2 text-sm outline-none focus:border-wedding-500" placeholder="sadece_harfler" />
+                            <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all" placeholder="sadece_harfler" />
                         </div>
-                        {usernameError && <p className="text-[10px] text-red-500 font-bold px-1">{usernameError}</p>}
+                        {usernameError && <p className="text-[9px] text-red-500 font-bold px-1">{usernameError}</p>}
                     </div>
                 </div>
+
                 <div className="mt-8 flex flex-col gap-2">
-                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-3.5 rounded-md text-xs uppercase tracking-widest">Kaydet</Button>
-                    <button onClick={() => setIsEditModalOpen(false)} className="w-full py-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">İptal</button>
+                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-3.5 rounded-md text-[10px] uppercase tracking-widest">Değişiklikleri Kaydet</Button>
+                    <button onClick={() => setIsEditModalOpen(false)} className="w-full py-2.5 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center hover:text-gray-600 transition-all">İptal</button>
                 </div>
             </div>
         </div>
