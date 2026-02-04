@@ -58,6 +58,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     }
   }, [user]);
 
+  // Modalı açtığımızda kullanıcı detaylarını getir
   useEffect(() => {
     if (isFollowModalOpen) {
         const loadUsers = async () => {
@@ -68,7 +69,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             }
             setIsFollowListLoading(true);
             try {
-                // Ensure unique IDs and fetch
                 const users = await dbService.getUsersByIds(ids);
                 setFollowListUsers(users);
             } catch (e) {

@@ -19,7 +19,7 @@ import {
   arrayRemove,
   where,
   writeBatch,
-  FieldPath
+  documentId
 } from "firebase/firestore";
 import { 
   ref, 
@@ -148,7 +148,7 @@ export const dbService = {
     if (!userIds || userIds.length === 0) return [];
     const { dbInstance } = checkDbConnection();
     
-    // IDs must be unique and non-empty
+    // Temiz ve benzersiz ID'ler
     const uniqueIds = Array.from(new Set(userIds.filter(id => id && id.trim() !== '')));
     if (uniqueIds.length === 0) return [];
 
@@ -159,8 +159,8 @@ export const dbService = {
     
     const users: User[] = [];
     for (const chunk of chunks) {
-        // FieldPath.documentId() is more robust for 'in' queries on document IDs
-        const q = query(collection(dbInstance, USERS_COLLECTION), where(new FieldPath('__name__'), "in", chunk));
+        // documentId() Firestore'da direkt döküman ID'si üzerinden sorgu yapmayı sağlar
+        const q = query(collection(dbInstance, USERS_COLLECTION), where(documentId(), "in", chunk));
         const snap = await getDocs(q);
         snap.forEach(d => users.push({ ...d.data(), id: d.id } as User));
     }
