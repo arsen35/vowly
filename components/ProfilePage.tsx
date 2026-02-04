@@ -55,6 +55,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   useEffect(() => {
     if (user) {
+      setEditName(user.name);
+      setEditUsername(user.username || '');
+      setEditBio(user.bio || '');
+      setEditAvatar(user.avatar);
+      
       const unsubscribe = dbService.subscribeToFollowData(user.id, (data) => {
         setFollowData(data);
       });
@@ -172,11 +177,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Takip</span>
                     </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Mutlu anlarını Annabella'da paylaşıyor."}</p>
+                <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Mutlu anlarını Annabella'da paylaşıyor ✨"}</p>
             </div>
         </div>
 
-        {/* PROFILE BUTTONS - 3 SEPARATE BUTTONS, NO PUDRA, GREY STROKES */}
+        {/* PROFILE BUTTONS */}
         <div className="grid grid-cols-3 gap-2">
             <button 
                 onClick={() => setIsEditModalOpen(true)} 
@@ -286,6 +291,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Kullanıcı Adı (@)</label>
                             <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all" placeholder="sadece_harfler" />
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Biyografi / Hakkımda</label>
+                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all h-20 resize-none font-serif italic" placeholder="Hayallerini anlat..." />
                         </div>
                         {usernameError && <p className="text-[9px] text-red-500 font-bold px-1">{usernameError}</p>}
                     </div>

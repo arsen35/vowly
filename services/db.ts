@@ -44,7 +44,18 @@ const checkDbConnection = () => {
 const sanitizeData = (data: any) => JSON.parse(JSON.stringify(data));
 
 export const dbService = {
-  // --- USERS & USERNAME CHECK ---
+  // --- USERS ---
+  subscribeToUser: (userId: string, callback: (user: User | null) => void) => {
+    if (!db) return () => {};
+    return onSnapshot(doc(db, USERS_COLLECTION, userId), (docSnap) => {
+      if (docSnap.exists()) {
+        callback({ ...docSnap.data(), id: docSnap.id } as User);
+      } else {
+        callback(null);
+      }
+    });
+  },
+
   checkUsernameUnique: async (username: string, excludeUserId?: string): Promise<boolean> => {
     const { dbInstance } = checkDbConnection();
     const q = query(collection(dbInstance, USERS_COLLECTION), where("username", "==", username.toLowerCase().trim()));
@@ -59,7 +70,6 @@ export const dbService = {
     const term = searchTerm.toLowerCase().trim();
     if (term.length < 2) return [];
     
-    // Basit bir prefix search
     const q = query(
         collection(dbInstance, USERS_COLLECTION), 
         where("username", ">=", term),
@@ -102,44 +112,23 @@ export const dbService = {
     return users;
   },
 
-  // --- DIRECT MESSAGING (DM) ---
-  getConversationId: (uid1: string, uid2: string) => {
-    return [uid1, uid2].sort().join('_');
-  },
+  // --- DM & FOLLOWS ---
+  getConversationId: (uid1: string, uid2: string) => [uid1, uid2].sort().join('_'),
 
   sendDirectMessage: async (sender: User, receiverId: string, text: string) => {
     const { dbInstance } = checkDbConnection();
     const convId = dbService.getConversationId(sender.id, receiverId);
-    
     const batch = writeBatch(dbInstance);
-    
-    // Mesaj dökümanı
     const msgRef = doc(collection(dbInstance, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION));
-    batch.set(msgRef, {
-        senderId: sender.id,
-        text,
-        timestamp: Date.now()
-    });
-
-    // Konuşma özeti
+    batch.set(msgRef, { senderId: sender.id, text, timestamp: Date.now() });
     const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
-    batch.set(convRef, {
-        id: convId,
-        participants: [sender.id, receiverId],
-        lastMessage: text,
-        lastMessageTimestamp: Date.now()
-    }, { merge: true });
-
+    batch.set(convRef, { id: convId, participants: [sender.id, receiverId], lastMessage: text, lastMessageTimestamp: Date.now() }, { merge: true });
     await batch.commit();
   },
 
   subscribeToConversations: (uid: string, callback: (convs: Conversation[]) => void) => {
     if (!db) return () => {};
-    const q = query(
-        collection(db, CONVERSATIONS_COLLECTION), 
-        where("participants", "array-contains", uid),
-        orderBy("lastMessageTimestamp", "desc")
-    );
+    const q = query(collection(db, CONVERSATIONS_COLLECTION), where("participants", "array-contains", uid), orderBy("lastMessageTimestamp", "desc"));
     return onSnapshot(q, (snap) => {
         const convs: Conversation[] = [];
         snap.forEach(d => convs.push(d.data() as Conversation));
@@ -149,11 +138,7 @@ export const dbService = {
 
   subscribeToDirectMessages: (convId: string, callback: (msgs: any[]) => void) => {
     if (!db) return () => {};
-    const q = query(
-        collection(db, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION),
-        orderBy("timestamp", "asc"),
-        limit(50)
-    );
+    const q = query(collection(db, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION), orderBy("timestamp", "asc"), limit(50));
     return onSnapshot(q, (snap) => {
         const msgs: any[] = [];
         snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
@@ -161,7 +146,6 @@ export const dbService = {
     });
   },
 
-  // --- EXISTING SERVICES ---
   followUser: async (followerId: string, targetUserId: string): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     await setDoc(doc(dbInstance, FOLLOWS_COLLECTION, followerId), { following: arrayUnion(targetUserId) }, { merge: true });
@@ -186,6 +170,7 @@ export const dbService = {
     });
   },
 
+  // --- POSTS ---
   subscribeToPosts: (callback: (posts: Post[]) => void) => {
     if (!db) return () => {};
     const q = query(collection(db, POSTS_COLLECTION), orderBy("timestamp", "desc"), limit(100));
@@ -217,6 +202,7 @@ export const dbService = {
     await deleteDoc(doc(dbInstance, POSTS_COLLECTION, id));
   },
 
+  // --- BLOG & CHAT ---
   subscribeToBlogPosts: (callback: (posts: BlogPost[]) => void) => {
     if (!db) return () => {};
     return onSnapshot(query(collection(db, BLOG_COLLECTION), orderBy("date", "desc")), (snapshot) => {
@@ -226,13 +212,11 @@ export const dbService = {
     });
   },
 
-  // Fix: Adding missing saveBlogPost method for mutations in BlogPage.tsx
   saveBlogPost: async (post: BlogPost): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     await setDoc(doc(dbInstance, BLOG_COLLECTION, post.id), sanitizeData(post));
   },
 
-  // Fix: Adding missing deleteBlogPost method for mutations in BlogPage.tsx
   deleteBlogPost: async (id: string): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     await deleteDoc(doc(dbInstance, BLOG_COLLECTION, id));
@@ -243,6 +227,7 @@ export const dbService = {
     const q = query(collection(db, CHAT_COLLECTION), orderBy("timestamp", "asc"), limit(100));
     return onSnapshot(q, (snapshot) => {
         const messages: ChatMessage[] = [];
+        // Fixed: Renamed 'd' to 'doc' to match the loop variable name
         snapshot.forEach((doc) => messages.push({ id: doc.id, ...doc.data() } as ChatMessage));
         callback(messages);
     });
@@ -251,11 +236,6 @@ export const dbService = {
   sendChatMessage: async (message: Omit<ChatMessage, 'id'>) => {
     const { dbInstance } = checkDbConnection();
     await addDoc(collection(dbInstance, CHAT_COLLECTION), sanitizeData(message));
-  },
-
-  deleteUserAccount: async (userId: string): Promise<void> => {
-    const { dbInstance } = checkDbConnection();
-    await deleteDoc(doc(dbInstance, USERS_COLLECTION, userId));
   },
 
   getStorageEstimate: async () => ({ usage: 0, quota: 0 }),

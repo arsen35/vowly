@@ -93,28 +93,32 @@ const App: React.FC = () => {
       setDeferredPrompt(e);
     });
 
-    const unsubscribeAuth = onAuthStateChanged(auth!, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth!, (user) => {
         if (user) {
             const isUserAdmin = ADMIN_EMAILS.includes(user.email || '');
             setIsAdmin(isUserAdmin);
             
-            const userData = await dbService.getUser(user.uid);
-            if (userData) {
-                setCurrentUser(userData);
-            } else {
-                const newUser: User = {
-                    id: user.uid,
-                    name: user.displayName || 'İsimsiz Gelin',
-                    username: user.displayName?.toLowerCase().replace(/\s+/g, '_') || `user_${user.uid.slice(0,5)}`,
-                    avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'G')}&background=A66D60&color=fff&bold=true`
-                };
-                setCurrentUser(newUser);
-                await dbService.saveUser(newUser);
-            }
+            // Profil verilerini canlı izle
+            const unsubUser = dbService.subscribeToUser(user.uid, (userData) => {
+                if (userData) {
+                    setCurrentUser(userData);
+                } else {
+                    const newUser: User = {
+                        id: user.uid,
+                        name: user.displayName || 'İsimsiz Gelin',
+                        username: `user_${user.uid.slice(0,5)}`,
+                        avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'G')}&background=A66D60&color=fff&bold=true`
+                    };
+                    setCurrentUser(newUser);
+                    dbService.saveUser(newUser);
+                }
+            });
 
             dbService.subscribeToFollowData(user.uid, (data) => {
               setFollowingIds(data.following);
             });
+
+            return () => unsubUser();
         } else {
             setCurrentUser(null);
             setIsAdmin(false);
