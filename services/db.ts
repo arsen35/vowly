@@ -19,7 +19,7 @@ import {
   arrayRemove,
   where,
   writeBatch,
-  documentId
+  FieldPath
 } from "firebase/firestore";
 import { 
   ref, 
@@ -148,15 +148,19 @@ export const dbService = {
     if (!userIds || userIds.length === 0) return [];
     const { dbInstance } = checkDbConnection();
     
-    // Firestore queries limit to 10-30 depending on 'in' clause. Let's do batches if needed but usually 10 is the limit for 'in'.
+    // IDs must be unique and non-empty
+    const uniqueIds = Array.from(new Set(userIds.filter(id => id && id.trim() !== '')));
+    if (uniqueIds.length === 0) return [];
+
     const chunks = [];
-    for (let i = 0; i < userIds.length; i += 10) {
-        chunks.push(userIds.slice(i, i + 10));
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+        chunks.push(uniqueIds.slice(i, i + 10));
     }
     
     const users: User[] = [];
     for (const chunk of chunks) {
-        const q = query(collection(dbInstance, USERS_COLLECTION), where(documentId(), "in", chunk));
+        // FieldPath.documentId() is more robust for 'in' queries on document IDs
+        const q = query(collection(dbInstance, USERS_COLLECTION), where(new FieldPath('__name__'), "in", chunk));
         const snap = await getDocs(q);
         snap.forEach(d => users.push({ ...d.data(), id: d.id } as User));
     }
@@ -181,11 +185,9 @@ export const dbService = {
   // --- FOLLOWS ---
   followUser: async (followerId: string, targetUserId: string): Promise<void> => {
     const { dbInstance } = checkDbConnection();
-    // Takip edenin listesine ekle
     await setDoc(doc(dbInstance, FOLLOWS_COLLECTION, followerId), { 
       following: arrayUnion(targetUserId) 
     }, { merge: true });
-    // Takip edilenin listesine ekle
     await setDoc(doc(dbInstance, FOLLOWS_COLLECTION, targetUserId), { 
       followers: arrayUnion(followerId) 
     }, { merge: true });
