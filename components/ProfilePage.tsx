@@ -41,7 +41,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Profil Fotoğrafı İşleme
   const processAvatar = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -75,7 +74,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   if (!user) {
       return (
           <div className="max-w-md mx-auto px-6 py-20 text-center animate-fadeIn">
-              <div className="w-24 h-24 bg-gray-50 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8 border border-gray-100 dark:border-zinc-800">
+              <div className="w-24 h-24 bg-gray-50 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8 border border-gray-100 dark:border-zinc-800 shadow-inner">
                   <svg className="w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
               </div>
               <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-white mb-3">Profiline Eriş</h2>
@@ -207,25 +206,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         )}
       </div>
 
-      {/* SINGLE POST DETAIL MODAL */}
+      {/* SINGLE POST DETAIL MODAL (CLEAN VERSION) */}
       {selectedPost && (
-          <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col md:flex-row items-center justify-center p-0 md:p-8 animate-in fade-in zoom-in-95 backdrop-blur-sm">
-              <button onClick={() => setSelectedPost(null)} className="absolute top-6 right-6 text-white/70 hover:text-white p-2 z-[160] transition-colors">
+          <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
+              <button onClick={() => setSelectedPost(null)} className="absolute top-6 right-6 text-white/50 hover:text-white p-2 z-[160] transition-colors">
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
-              <div className="w-full max-w-4xl max-h-full overflow-y-auto md:overflow-visible bg-white dark:bg-theme-black rounded-none md:rounded-xl shadow-2xl flex flex-col md:flex-row">
-                  <div className="w-full md:w-2/3 bg-black flex items-center justify-center">
-                      <img src={selectedPost.media[0].url} className="w-full h-auto object-contain" alt="Post detail" />
-                  </div>
-                  <div className="w-full md:w-1/3 flex flex-col bg-white dark:bg-theme-black border-l dark:border-zinc-800">
-                      <PostCard 
-                        post={selectedPost} 
-                        onLike={onLike} 
-                        onAddComment={onAddComment} 
-                        onDelete={onDeletePost} 
-                        isAdmin={user.id === selectedPost.user.id} 
-                      />
-                  </div>
+              
+              <div className="w-full max-w-sm md:max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-theme-black rounded-xl shadow-2xl animate-in slide-in-from-bottom-5">
+                  <PostCard 
+                    post={selectedPost} 
+                    onLike={onLike} 
+                    onAddComment={onAddComment} 
+                    onDelete={onDeletePost} 
+                    isAdmin={user.id === selectedPost.user.id} 
+                  />
               </div>
           </div>
       )}
@@ -257,7 +252,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <div className="flex flex-col items-center gap-3">
                         <div 
                             onClick={() => avatarInputRef.current?.click()}
-                            className="relative w-28 h-28 rounded-full border-2 border-wedding-500/30 p-1 group cursor-pointer overflow-hidden"
+                            className="relative w-28 h-28 rounded-full border-2 border-wedding-500/30 p-1 group cursor-pointer overflow-hidden shadow-inner"
                         >
                             <img src={editAvatar} className="w-full h-full rounded-full object-cover transition-transform group-hover:scale-110" alt="edit-avatar" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -271,11 +266,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <div className="space-y-4">
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Ad Soyad</label>
-                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-colors" placeholder="Ad Soyad" />
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-colors shadow-inner" placeholder="Ad Soyad" />
                         </div>
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Biyografi</label>
-                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none h-28 border border-gray-100 dark:border-zinc-800 resize-none focus:border-wedding-500 transition-colors font-light italic" placeholder="Hayallerini anlat..." />
+                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none h-28 border border-gray-100 dark:border-zinc-800 resize-none focus:border-wedding-500 transition-colors font-light italic shadow-inner" placeholder="Hayallerini anlat..." />
                         </div>
                     </div>
                 </div>
