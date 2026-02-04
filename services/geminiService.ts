@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
 // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
@@ -6,7 +7,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateWeddingCaption = async (base64Image: string): Promise<{ caption: string; hashtags: string[] }> => {
   try {
-    const model = "gemini-2.5-flash";
+    // Corrected model to gemini-3-flash-preview for general text and vision tasks
+    const model = 'gemini-3-flash-preview';
     
     const prompt = `
       Bu bir gelinlik ve düğün fotoğrafı. 
@@ -45,7 +47,9 @@ export const generateWeddingCaption = async (base64Image: string): Promise<{ cap
               type: Type.ARRAY,
               items: { type: Type.STRING }
             }
-          }
+          },
+          // Fix: Added propertyOrdering as per latest Gemini API guidelines
+          propertyOrdering: ["caption", "hashtags"],
         }
       }
     });

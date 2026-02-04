@@ -2,6 +2,7 @@
 export interface User {
   id: string;
   name: string;
+  username?: string; // Benzersiz @kullaniciadi
   avatar: string;
   bio?: string;
   weddingDate?: string;
@@ -33,7 +34,7 @@ export interface Post {
   timestamp: number;
   isLikedByCurrentUser?: boolean;
   productUrl?: string; 
-  location?: string; // Konum bilgisi eklendi
+  location?: string;
 }
 
 export interface BlogPost {
@@ -58,6 +59,14 @@ export interface ChatMessage {
   isAdmin?: boolean;
 }
 
+export interface Conversation {
+  id: string; // user1_user2 formatında
+  participants: string[]; // [uid1, uid2]
+  lastMessage?: string;
+  lastMessageTimestamp?: number;
+  otherUser?: User; // Frontend için kolaylık
+}
+
 export enum ViewState {
   FEED = 'FEED',
   UPLOAD = 'UPLOAD',
@@ -65,5 +74,6 @@ export enum ViewState {
   ADMIN_DASHBOARD = 'ADMIN_DASHBOARD',
   BLOG = 'BLOG',
   CHAT = 'CHAT',
-  PROFILE = 'PROFILE'
+  PROFILE = 'PROFILE',
+  DM_CHAT = 'DM_CHAT'
 }
