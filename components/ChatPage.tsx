@@ -30,9 +30,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
         const unsubscribe = dbService.subscribeToChat(setGlobalMessages);
         return () => unsubscribe();
     } else if (currentUser) {
-        // Tüm konuşmaları dinle
         const unsubscribe = dbService.subscribeToConversations(currentUser.id, async (convs) => {
-            // Manuel sıralama (Firestore index hatasını önlemek için)
             const sortedConvs = [...convs].sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
             
             const enriched = await Promise.all(sortedConvs.map(async (c) => {
@@ -48,7 +46,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
 
   useEffect(() => {
     if (activeConv && currentUser) {
-        // Sohbet açıldığında okunmuş olarak işaretle
         dbService.markConversationAsRead(activeConv.id, currentUser.id);
         const unsubscribe = dbService.subscribeToDirectMessages(activeConv.id, (msgs) => {
             setDmMessages(msgs);
@@ -174,20 +171,22 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
-                    <form onSubmit={handleSendGlobal} className="p-4 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
+                    {/* GLOBAL CHAT INPUT - MODIFIED */}
+                    <form onSubmit={handleSendGlobal} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center">
                         <input 
                             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-xl px-5 py-3 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500/20 transition-all"
-                            placeholder="Bir şeyler yaz..."
+                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-2xl px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all"
+                            placeholder="Mesaj yazın..."
                         />
-                        <button className="bg-wedding-500 text-white p-3 rounded-xl transition-all active:scale-90 hover:bg-wedding-600"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
+                        <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-2xl shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                        </button>
                     </form>
                 </>
             ) : (
                 <div className="flex flex-col h-full bg-white dark:bg-theme-black">
                     {!activeConv ? (
                         <>
-                            {/* DÜZELTİLMİŞ ARAMA ÇUBUĞU VE İKONU */}
                             <div className="px-5 py-4 border-b border-gray-50 dark:border-zinc-900/50">
                                 <div className="relative group flex items-center">
                                     <svg className="w-4 h-4 absolute left-4 text-gray-400 group-focus-within:text-wedding-500 transition-colors pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -282,13 +281,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <form onSubmit={handleSendDM} className="p-4 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
+                            {/* DM INPUT - MODIFIED FOR BETTER MOBILE VIEW */}
+                            <form onSubmit={handleSendDM} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center">
                                 <input 
                                     value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-xl px-5 py-3.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all shadow-inner"
-                                    placeholder="Mesaj gönder..."
+                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-2xl px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-inner"
+                                    placeholder="Mesaj yazın..."
                                 />
-                                <button type="submit" className="bg-wedding-500 text-white p-3.5 rounded-xl transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
+                                <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-2xl shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                                </button>
                             </form>
                         </div>
                     )}
