@@ -12,6 +12,7 @@ import { ProfilePage } from './components/ProfilePage';
 import { Logo } from './components/Logo';
 import { LoadingScreen } from './components/LoadingScreen'; 
 import { BottomNavigation } from './components/BottomNavigation';
+import { InstallModal } from './components/InstallModal';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -28,21 +29,20 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   
+  // PWA Install States
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  
   const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const logoClicks = useRef(0);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ADMIN_EMAILS = ['jeanbox35@gmail.com', 'swoxagency@gmail.com', 'nossdigital@gmail.com'];
 
-  // Akıllı Sıralama Mantığı
   const posts = useMemo(() => {
     if (!followingIds.length) return allPosts;
-    
-    // Takip edilenler ve edilmeyenler olarak ayır
     const followingPosts = allPosts.filter(p => followingIds.includes(p.user.id));
     const otherPosts = allPosts.filter(p => !followingIds.includes(p.user.id));
-    
-    // Takip edilenleri en başa koy, her grubu kendi içinde tarihe göre sırala
     return [...followingPosts, ...otherPosts];
   }, [allPosts, followingIds]);
 
@@ -81,6 +81,12 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    // PWA Install Listener
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+
     if (!auth) {
         setIsLoading(false);
         return;
@@ -104,7 +110,6 @@ const App: React.FC = () => {
                 await dbService.saveUser(newUser);
             }
 
-            // Takip listesini dinle
             dbService.subscribeToFollowData(user.uid, (data) => {
               setFollowingIds(data.following);
             });
@@ -133,6 +138,18 @@ const App: React.FC = () => {
         unsubscribePosts();
     };
   }, []);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      setShowInstallModal(true);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -165,7 +182,7 @@ const App: React.FC = () => {
 
   const handleDeleteAccount = async () => {
     if (!currentUser || !auth?.currentUser) return;
-    const confirm = window.confirm("Hesabınızı ve tüm gönderilerinizi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.");
+    const confirm = window.confirm("Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz?");
     if (!confirm) return;
 
     try {
@@ -177,12 +194,7 @@ const App: React.FC = () => {
       setViewState(ViewState.FEED);
     } catch (e: any) {
       console.error("Delete account error", e);
-      if (e.code === 'auth/requires-recent-login') {
-        alert("Bu işlem için yakın zamanda giriş yapmış olmanız gerekiyor. Lütfen tekrar giriş yapıp deneyin.");
-        await signOut(auth!);
-      } else {
-        alert("Hesap silinirken bir hata oluştu.");
-      }
+      alert("Hesap silinirken bir hata oluştu.");
     } finally {
       setIsLoading(false);
     }
@@ -249,6 +261,8 @@ const App: React.FC = () => {
 
   if (isLoading) return <LoadingScreen />;
 
+  const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 'android';
+
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
       <header className="sticky top-0 z-30 bg-white/40 dark:bg-theme-black/40 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
@@ -260,7 +274,7 @@ const App: React.FC = () => {
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
                <button onClick={() => setViewState(ViewState.FEED)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>AKIŞ</button>
                <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>BLOG</button>
-               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[11px] font-bold tracking-widest flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400'}`}>SOHBET <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[8px] px-1 rounded-full animate-pulse">CANLI</span></button>
+               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[11px] font-bold tracking-widest flex items-center gap-1 ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400'}`}>SOHBET <span className="bg-wedding-100 dark:bg-wedding-900 text-wedding-600 dark:text-wedding-300 text-[8px] px-1 rounded-md animate-pulse">CANLI</span></button>
                <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[11px] font-bold tracking-widest ${viewState === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600'}`}>PROFİLİM</button>
           </nav>
 
@@ -268,7 +282,7 @@ const App: React.FC = () => {
             {showAdminTrigger && !isAdmin && (
                 <button 
                   onClick={() => setShowAdminModal(true)} 
-                  className="text-[8px] px-3 py-1.5 rounded-[5px] font-bold border border-wedding-500 text-wedding-500 bg-transparent hover:bg-wedding-50 transition-all tracking-widest uppercase animate-fadeIn"
+                  className="text-[8px] px-3 py-1.5 rounded-md font-bold border border-wedding-500 text-wedding-500 bg-transparent hover:bg-wedding-50 transition-all tracking-widest uppercase animate-fadeIn"
                 >
                   YÖNETİCİ GİRİŞİ
                 </button>
@@ -277,7 +291,7 @@ const App: React.FC = () => {
             {isAdmin && (
                 <button 
                   onClick={() => setViewState(ViewState.ADMIN_DASHBOARD)} 
-                  className="text-[8px] px-3 py-1.5 rounded-[5px] font-bold bg-wedding-500 text-white transition-all tracking-widest uppercase"
+                  className="text-[8px] px-3 py-1.5 rounded-md font-bold bg-wedding-500 text-white transition-all tracking-widest uppercase"
                 >
                   PANEL
                 </button>
@@ -293,7 +307,7 @@ const App: React.FC = () => {
 
             {currentUser && (
                 <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer">
-                  <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5" alt="Profile" />
+                  <img src={currentUser.avatar} className="w-8 h-8 rounded-md border border-black/5 dark:border-white/5" alt="Profile" />
                 </div>
             )}
           </div>
@@ -335,66 +349,41 @@ const App: React.FC = () => {
                 onAddComment={handleAddComment}
                 followingIds={followingIds}
                 onFollowToggle={handleFollowToggle}
+                onInstallApp={handleInstallApp}
             />
         ) : viewState === ViewState.ADMIN_DASHBOARD ? (
             <AdminDashboard posts={posts} onDeletePost={setPostToDelete} onResetData={() => dbService.clearAll()} onClose={() => setViewState(ViewState.FEED)} />
         ) : null}
       </main>
 
-      {/* Masaüstü Yüzen Butonlar (Üst Üste) */}
       <div className="hidden md:flex fixed bottom-8 right-8 z-[100] flex-col gap-4">
-          {/* Paylaş Butonu */}
           <div className="relative group flex items-center justify-end">
-              <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
-                  {[...Array(4)].map((_, i) => (
-                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.5}s`, transformOrigin: 'center center' }}></div>
-                  ))}
-              </div>
               <button 
                 onClick={handleUploadClick}
-                className="w-14 h-14 bg-wedding-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
+                className="w-14 h-14 bg-wedding-500 text-white rounded-md shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
               </button>
-              <span className="absolute right-16 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-bold uppercase tracking-widest text-wedding-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full shadow-sm whitespace-nowrap">Paylaş</span>
+              <span className="absolute right-16 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-bold uppercase tracking-widest text-wedding-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-md shadow-sm whitespace-nowrap">Paylaş</span>
           </div>
 
-          {/* Mağaza Butonu */}
           <div className="relative group flex items-center justify-end">
-              <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
-                  {[...Array(4)].map((_, i) => (
-                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500/50 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.5}s`, transformOrigin: 'center center' }}></div>
-                  ))}
-              </div>
               <a 
                 href="https://annabellabridal.com" 
                 target="_blank"
-                className="w-14 h-14 bg-white dark:bg-zinc-900 border border-wedding-500/20 text-wedding-500 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
+                className="w-14 h-14 bg-white dark:bg-zinc-900 border border-wedding-500/20 text-wedding-500 rounded-md shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
               </a>
-              <span className="absolute right-16 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-bold uppercase tracking-widest text-wedding-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full shadow-sm whitespace-nowrap">Website</span>
+              <span className="absolute right-16 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-bold uppercase tracking-widest text-wedding-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-md shadow-sm whitespace-nowrap">Mağaza</span>
           </div>
       </div>
-
-      <style>{`
-        @keyframes orbit {
-            from { transform: rotate(0deg) translateX(35px) rotate(0deg); }
-            to { transform: rotate(360deg) translateX(35px) rotate(-360deg); }
-        }
-        .animate-orbit {
-            animation: orbit 3s linear infinite;
-            top: 50%;
-            left: 50%;
-            margin-top: -3px;
-            margin-left: -3px;
-        }
-      `}</style>
 
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLoginSuccess={() => setViewState(ViewState.FEED)} />}
       {showAdminModal && <AdminLoginModal onClose={() => setShowAdminModal(false)} onLoginSuccess={() => { setIsAdmin(true); setShowAdminTrigger(false); }} />}
+      {showInstallModal && <InstallModal platform={platform} canTriggerNative={!!deferredPrompt} onClose={() => setShowInstallModal(false)} onInstall={handleInstallApp} />}
       <ConfirmationModal isOpen={!!postToDelete} title="Gönderiyi Sil" message="Emin misin?" onConfirm={handleConfirmDelete} onCancel={() => setPostToDelete(null)} />
     </div>
   );
