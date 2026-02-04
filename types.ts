@@ -65,6 +65,7 @@ export interface Conversation {
   lastMessage?: string;
   lastMessageTimestamp?: number;
   otherUser?: User; // Frontend için kolaylık
+  unreadBy?: string[]; // Okunmamış olan kullanıcı ID'leri
 }
 
 export enum ViewState {

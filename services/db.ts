@@ -127,16 +127,41 @@ export const dbService = {
     const { dbInstance } = checkDbConnection();
     const convId = dbService.getConversationId(sender.id, receiverId);
     const batch = writeBatch(dbInstance);
+    
     const msgRef = doc(collection(dbInstance, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION));
-    batch.set(msgRef, { senderId: sender.id, text, timestamp: Date.now() });
+    batch.set(msgRef, { 
+      senderId: sender.id, 
+      text, 
+      timestamp: Date.now() 
+    });
+
     const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
-    batch.set(convRef, { id: convId, participants: [sender.id, receiverId], lastMessage: text, lastMessageTimestamp: Date.now() }, { merge: true });
+    batch.set(convRef, { 
+      id: convId, 
+      participants: [sender.id, receiverId], 
+      lastMessage: text, 
+      lastMessageTimestamp: Date.now(),
+      unreadBy: arrayUnion(receiverId) // Alıcı için okunmamış olarak işaretle
+    }, { merge: true });
+    
     await batch.commit();
+  },
+
+  markConversationAsRead: async (convId: string, userId: string) => {
+    const { dbInstance } = checkDbConnection();
+    const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
+    await updateDoc(convRef, {
+      unreadBy: arrayRemove(userId)
+    });
   },
 
   subscribeToConversations: (uid: string, callback: (convs: Conversation[]) => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, CONVERSATIONS_COLLECTION), where("participants", "array-contains", uid), orderBy("lastMessageTimestamp", "desc"));
+    const q = query(
+      collection(db, CONVERSATIONS_COLLECTION), 
+      where("participants", "array-contains", uid), 
+      orderBy("lastMessageTimestamp", "desc")
+    );
     return onSnapshot(q, (snap) => {
         const convs: Conversation[] = [];
         snap.forEach(d => convs.push(d.data() as Conversation));

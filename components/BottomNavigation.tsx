@@ -6,9 +6,10 @@ interface BottomNavigationProps {
   currentView: ViewState;
   onNavigate: (view: ViewState) => void;
   onUploadClick: () => void;
+  unreadDMCount?: number;
 }
 
-export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView, onNavigate, onUploadClick }) => {
+export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView, onNavigate, onUploadClick, unreadDMCount = 0 }) => {
   const handleHomeClick = () => {
     if (currentView === ViewState.FEED) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -58,12 +59,15 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
         {/* SOHBET */}
         <button 
           onClick={() => onNavigate(ViewState.CHAT)}
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-90 ${currentView === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}
+          className={`relative flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-90 ${currentView === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}
         >
           <svg fill={currentView === ViewState.CHAT ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
             <path d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.197.388-1.609.208-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
           </svg>
           <span className="text-[7px] font-bold mt-1 tracking-widest uppercase">SOHBET</span>
+          {unreadDMCount > 0 && (
+            <span className="absolute top-2 right-4 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-black animate-pulse"></span>
+          )}
         </button>
 
         {/* PROFİL */}

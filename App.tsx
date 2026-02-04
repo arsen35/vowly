@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const [unreadDMCount, setUnreadDMCount] = useState(0);
   
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -96,6 +97,7 @@ const App: React.FC = () => {
 
     let unsubUser: (() => void) | undefined;
     let unsubFollow: (() => void) | undefined;
+    let unsubConvs: (() => void) | undefined;
 
     if (!auth) {
       setIsLoading(false);
@@ -107,6 +109,7 @@ const App: React.FC = () => {
         
         if (unsubUser) unsubUser();
         if (unsubFollow) unsubFollow();
+        if (unsubConvs) unsubConvs();
 
         if (user) {
             const isUserAdmin = ADMIN_EMAILS.includes(user.email || '');
@@ -130,10 +133,17 @@ const App: React.FC = () => {
             unsubFollow = dbService.subscribeToFollowData(user.uid, (data) => {
               setFollowingIds(data.following);
             });
+
+            // DM bildirimlerini dinle
+            unsubConvs = dbService.subscribeToConversations(user.uid, (convs) => {
+              const unreadCount = convs.filter(c => c.unreadBy?.includes(user.uid)).length;
+              setUnreadDMCount(unreadCount);
+            });
         } else {
             setCurrentUser(null);
             setIsAdmin(false);
             setFollowingIds([]);
+            setUnreadDMCount(0);
         }
         setIsLoading(false);
     });
@@ -146,6 +156,7 @@ const App: React.FC = () => {
         unsubscribePosts();
         if (unsubUser) unsubUser();
         if (unsubFollow) unsubFollow();
+        if (unsubConvs) unsubConvs();
     };
   }, []);
 
@@ -267,7 +278,10 @@ const App: React.FC = () => {
           <nav className="hidden md:flex items-center gap-10 absolute left-1/2 transform -translate-x-1/2">
                <button onClick={() => setViewState(ViewState.FEED)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.FEED ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>AKIŞ</button>
                <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.BLOG ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>BLOG</button>
-               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.CHAT ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>SOHBET</button>
+               <button onClick={() => setViewState(ViewState.CHAT)} className={`relative text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.CHAT ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>
+                 SOHBET
+                 {unreadDMCount > 0 && <span className="absolute -top-1 -right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
+               </button>
                <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.PROFILE ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>PROFİLİM</button>
           </nav>
 
@@ -313,7 +327,12 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
+      <BottomNavigation 
+        currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} 
+        onNavigate={setViewState} 
+        onUploadClick={handleUploadClick} 
+        unreadDMCount={unreadDMCount}
+      />
       
       {/* Modals & Triggers */}
       {showAdminTrigger && (
