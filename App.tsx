@@ -151,7 +151,7 @@ const App: React.FC = () => {
   };
 
   const handleUploadClick = () => {
-      if (!currentUser) setShowAuthModal(true);
+      if (!currentUser) setViewState(ViewState.PROFILE);
       else setViewState(ViewState.UPLOAD);
   };
 
@@ -197,7 +197,7 @@ const App: React.FC = () => {
   };
 
   const handleAddComment = async (postId: string, text: string) => {
-    if (!currentUser) { setShowAuthModal(true); return; }
+    if (!currentUser) { setViewState(ViewState.PROFILE); return; }
     const newComment: Comment = {
       id: Date.now().toString(),
       userId: currentUser.id,
@@ -253,17 +253,10 @@ const App: React.FC = () => {
                 )}
             </button>
 
-            {currentUser ? (
+            {currentUser && (
                 <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer">
                   <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5" alt="Profile" />
                 </div>
-            ) : (
-                <button 
-                  onClick={() => setShowAuthModal(true)} 
-                  className="text-[9px] px-4 py-2 rounded-[5px] font-bold border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white hover:border-wedding-500 hover:text-wedding-500 transition-all tracking-widest uppercase"
-                >
-                  Giriş Yap
-                </button>
             )}
           </div>
         </div>
@@ -277,7 +270,7 @@ const App: React.FC = () => {
               </div>
             </div>
         ) : viewState === ViewState.BLOG ? (
-            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setShowAuthModal(true)} />
+            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
         ) : viewState === ViewState.CHAT ? (
             <ChatPage isAdmin={isAdmin} />
         ) : viewState === ViewState.PROFILE ? (
@@ -287,6 +280,7 @@ const App: React.FC = () => {
                 onLogout={handleLogout}
                 onDeleteAccount={handleDeleteAccount}
                 onDeletePost={setPostToDelete}
+                onLoginSuccess={() => setViewState(ViewState.PROFILE)}
             />
         ) : viewState === ViewState.ADMIN_DASHBOARD ? (
             <AdminDashboard posts={posts} onDeletePost={setPostToDelete} onResetData={() => dbService.clearAll()} onClose={() => setViewState(ViewState.FEED)} />
@@ -297,9 +291,10 @@ const App: React.FC = () => {
       <div className="hidden md:flex fixed bottom-8 right-8 z-[100] flex-col gap-4">
           {/* Paylaş Butonu */}
           <div className="relative group flex items-center justify-end">
+              {/* Dönen 4 İkon Efekti */}
               <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
                   {[...Array(4)].map((_, i) => (
-                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.25}s`, transformOrigin: 'center center' }}></div>
+                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.5}s`, transformOrigin: 'center center' }}></div>
                   ))}
               </div>
               <button 
@@ -313,9 +308,10 @@ const App: React.FC = () => {
 
           {/* Mağaza Butonu */}
           <div className="relative group flex items-center justify-end">
+              {/* Dönen 4 İkon Efekti */}
               <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
                   {[...Array(4)].map((_, i) => (
-                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500/50 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.25}s`, transformOrigin: 'center center' }}></div>
+                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500/50 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.5}s`, transformOrigin: 'center center' }}></div>
                   ))}
               </div>
               <a 
@@ -331,11 +327,11 @@ const App: React.FC = () => {
 
       <style>{`
         @keyframes orbit {
-            from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
-            to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
+            from { transform: rotate(0deg) translateX(35px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(35px) rotate(-360deg); }
         }
         .animate-orbit {
-            animation: orbit 2s linear infinite;
+            animation: orbit 3s linear infinite;
             top: 50%;
             left: 50%;
             margin-top: -3px;
