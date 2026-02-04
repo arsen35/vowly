@@ -44,6 +44,14 @@ const checkDbConnection = () => {
 const sanitizeData = (data: any) => JSON.parse(JSON.stringify(data));
 
 export const dbService = {
+  // --- MEDIA UPLOAD ---
+  uploadMedia: async (file: File, path: string): Promise<string> => {
+    const { storageInstance } = checkDbConnection();
+    const fileRef = ref(storageInstance, `${path}/${Date.now()}_${file.name}`);
+    const snapshot = await uploadBytes(fileRef, file);
+    return await getDownloadURL(snapshot.ref);
+  },
+
   // --- USERS ---
   subscribeToUser: (userId: string, callback: (user: User | null) => void) => {
     if (!db) return () => {};
@@ -227,7 +235,6 @@ export const dbService = {
     const q = query(collection(db, CHAT_COLLECTION), orderBy("timestamp", "asc"), limit(100));
     return onSnapshot(q, (snapshot) => {
         const messages: ChatMessage[] = [];
-        // Fixed: Renamed 'd' to 'doc' to match the loop variable name
         snapshot.forEach((doc) => messages.push({ id: doc.id, ...doc.data() } as ChatMessage));
         callback(messages);
     });

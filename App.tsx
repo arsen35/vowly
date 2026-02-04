@@ -48,11 +48,9 @@ const App: React.FC = () => {
       isLikedByCurrentUser: likedPosts.includes(p.id)
     }));
 
-    if (!followingIds.length) return processed;
-    const followingPosts = processed.filter(p => followingIds.includes(p.user.id));
-    const otherPosts = processed.filter(p => !followingIds.includes(p.user.id));
-    return [...followingPosts, ...otherPosts];
-  }, [allPosts, followingIds]);
+    // Talebe istinaden: Yeni paylaşımlar HER ZAMAN üstte. (Strict chronological sorting)
+    return [...processed].sort((a, b) => b.timestamp - a.timestamp);
+  }, [allPosts]);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -88,7 +86,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // Safety timeout: Eğer Firebase 5 saniye içinde yanıt vermezse yükleme ekranını kapat
     const safetyTimer = setTimeout(() => {
       setIsLoading(false);
     }, 5000);
@@ -189,20 +186,39 @@ const App: React.FC = () => {
 
   const handleNewPost = async (data: any) => {
     if (!currentUser) return;
-    const newPost: Post = {
-      id: Date.now().toString(),
-      user: currentUser,
-      media: data.media,
-      caption: data.caption,
-      hashtags: data.hashtags,
-      likes: 0,
-      comments: [],
-      timestamp: Date.now(),
-      productUrl: data.productUrl,
-      location: data.location
-    };
-    setViewState(ViewState.FEED);
-    try { await dbService.savePost(newPost); } catch (e) { console.error(e); }
+    setViewState(ViewState.FEED); // Optimizm için hemen dönüyoruz
+    
+    try {
+      const mediaWithUrls: MediaItem[] = [];
+      
+      // Her bir medyayı Firebase Storage'a yükle
+      for (const item of data.media) {
+          if (item.file) {
+              const url = await dbService.uploadMedia(item.file, 'posts');
+              mediaWithUrls.push({ url, type: item.type });
+          } else {
+              mediaWithUrls.push(item);
+          }
+      }
+
+      const newPost: Post = {
+        id: Date.now().toString(),
+        user: currentUser,
+        media: mediaWithUrls,
+        caption: data.caption,
+        hashtags: data.hashtags,
+        likes: 0,
+        comments: [],
+        timestamp: Date.now(),
+        productUrl: data.productUrl,
+        location: data.location
+      };
+
+      await dbService.savePost(newPost);
+    } catch (e) { 
+      console.error("Paylaşım Hatası:", e); 
+      alert("Paylaşım yapılırken bir hata oluştu. Lütfen tekrar deneyin.");
+    }
   };
 
   const handleLike = async (postId: string) => {

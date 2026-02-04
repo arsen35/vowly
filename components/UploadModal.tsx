@@ -30,7 +30,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUploa
               reader.readAsDataURL(file);
               reader.onload = () => resolve(reader.result as string);
           });
-          newMediaItems.push({ url: base64, type: 'image' });
+          // URL'i Base64 tutuyoruz (önizleme için), file objesini saklıyoruz (yükleme için)
+          newMediaItems.push({ url: base64, type: 'image', file });
       }
       setSelectedMedia(newMediaItems);
       const cleanBase64 = newMediaItems[0].url.replace(/^data:image\/(png|jpeg|webp|jpg);base64,/, "");
@@ -51,8 +52,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUploa
   const handleSubmit = async () => {
     if (selectedMedia.length === 0 || !caption || !user) return;
     setIsProcessing(true);
-    onUpload({ media: selectedMedia, caption, hashtags, userName: user.name, productUrl: productUrl.trim() || null, location: location.trim() || null });
-    onClose();
+    // Verileri gönder
+    onUpload({ 
+        media: selectedMedia, 
+        caption, 
+        hashtags, 
+        userName: user.name, 
+        productUrl: productUrl.trim() || null, 
+        location: location.trim() || null 
+    });
+    // App.tsx tarafında setViewState(FEED) zaten yapılıyor, modalı burada bekletmiyoruz.
     setIsProcessing(false);
   };
 
@@ -77,6 +86,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUploa
                 <div className="aspect-square w-full rounded-lg overflow-hidden relative shadow-inner">
                     <img src={selectedMedia[0].url} className="w-full h-full object-cover" />
                     <button onClick={() => setSelectedMedia([])} className="absolute top-4 right-4 bg-black/50 text-white text-[10px] font-bold px-3 py-1.5 rounded-md backdrop-blur-sm">Değiştir</button>
+                    {isGeneratingAI && (
+                        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-white text-[9px] font-bold uppercase tracking-widest">AI Başlık Yazıyor...</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
             
@@ -86,20 +103,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUploa
                 <div className="grid grid-cols-2 gap-3">
                     <div className="bg-gray-50 dark:bg-zinc-900 p-3 rounded-lg">
                         <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-1">Konum</label>
-                        <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-transparent text-sm outline-none" placeholder="Şehir, Ülke" />
+                        <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-transparent text-sm outline-none dark:text-white" placeholder="Şehir, Ülke" />
                     </div>
                     <div className="bg-gray-50 dark:bg-zinc-900 p-3 rounded-lg">
                         <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-1">Ürün Linki</label>
-                        <input type="url" value={productUrl} onChange={(e) => setProductUrl(e.target.value)} className="w-full bg-transparent text-sm outline-none" placeholder="Shopify Linki" />
+                        <input type="url" value={productUrl} onChange={(e) => setProductUrl(e.target.value)} className="w-full bg-transparent text-sm outline-none dark:text-white" placeholder="Shopify Linki" />
                     </div>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-lg">
                     <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-2">Açıklama</label>
-                    <textarea value={caption} onChange={(e) => setCaption(e.target.value)} className="w-full bg-transparent text-sm outline-none h-24 resize-none font-serif italic" placeholder="Bu anı anlat..." />
+                    <textarea value={caption} onChange={(e) => setCaption(e.target.value)} className="w-full bg-transparent text-sm outline-none h-24 dark:text-white resize-none font-serif italic" placeholder="Bu anı anlat..." />
                     <div className="mt-3 flex flex-wrap gap-1">
                         {hashtags.map((tag, i) => (
-                            <span key={i} className="text-[9px] font-bold text-wedding-500 bg-wedding-100 px-2 py-0.5 rounded-md">#{tag}</span>
+                            <span key={i} className="text-[9px] font-bold text-wedding-500 bg-wedding-100 dark:bg-wedding-900/30 px-2 py-0.5 rounded-md">#{tag.replace('#', '')}</span>
                         ))}
                     </div>
                 </div>
@@ -107,8 +124,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUploa
         </div>
 
         <div className="p-5 bg-white dark:bg-zinc-950 border-t flex gap-3">
-            <button onClick={onClose} className="flex-1 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-md">Vazgeç</button>
-            <Button onClick={handleSubmit} isLoading={isProcessing} className="flex-[2] py-3 rounded-md text-[10px] uppercase tracking-widest">Paylaş</Button>
+            <button onClick={onClose} className="flex-1 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-zinc-900 rounded-md">Vazgeç</button>
+            <Button onClick={handleSubmit} isLoading={isProcessing} disabled={isGeneratingAI} className="flex-[2] py-3 rounded-md text-[10px] uppercase tracking-widest">Paylaş</Button>
         </div>
       </div>
     </div>
