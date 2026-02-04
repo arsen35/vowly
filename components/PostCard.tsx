@@ -103,14 +103,14 @@ export const PostCard: React.FC<PostCardProps> = ({
   const isOwnPost = currentUserId === post.user.id;
 
   return (
-    <div className="bg-white dark:bg-theme-black sm:rounded-md border-y sm:border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-200">
-      {/* HEADER - MINIMAL & FLAT */}
+    <div className="bg-white dark:bg-theme-black sm:rounded-lg border-y sm:border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-200">
+      {/* HEADER */}
       <div className="px-3 py-2.5 flex items-center justify-between border-b border-gray-50 dark:border-zinc-900/50">
         <div className="flex items-center gap-2.5">
           <img 
             src={post.user.avatar} 
             alt={post.user.name} 
-            className="w-8 h-8 rounded-full object-cover border border-black/5 dark:border-white/5"
+            className="w-8 h-8 rounded-md object-cover border border-black/5 dark:border-white/5"
           />
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 leading-none">
@@ -162,7 +162,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         <img src={post.media[0].url} alt="Post" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
       </div>
       
-      {/* SHOP BUTTON (FLAT) */}
+      {/* SHOP BUTTON */}
       {post.productUrl && (
           <a href={post.productUrl} target="_blank" className="w-full px-5 py-3.5 bg-gray-50 dark:bg-zinc-900/50 flex items-center justify-between text-[11px] font-bold text-gray-900 dark:text-gray-200 uppercase tracking-widest border-b border-gray-100 dark:border-zinc-900/50 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900">
              <div className="flex items-center gap-2">
@@ -187,9 +187,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                   </svg>
                 </button>
                 <span className="text-[14px] font-bold text-gray-900 dark:text-white tracking-tight">{likesCount}</span>
-                {hearts.map(heart => (
-                    <span key={heart.id} className="absolute pointer-events-none animate-float-heart" style={{ left: `${20 + heart.x}px`, color: heart.color, animationDelay: `${heart.delay}s` }}>❤️</span>
-                ))}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -221,7 +218,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
 
         {isCommentOpen && (
-          <div className="bg-gray-50 dark:bg-zinc-900/30 rounded-lg p-3 mt-3 border border-gray-100 dark:border-zinc-800 animate-fadeIn">
+          <div className="bg-gray-50 dark:bg-zinc-900/30 rounded-md p-3 mt-3 border border-gray-100 dark:border-zinc-800 animate-fadeIn">
             <div className="space-y-2 mb-3 max-h-32 overflow-y-auto custom-scrollbar px-1">
                {post.comments.map((comment) => (
                  <div key={comment.id} className="text-[11px] pb-1 border-b border-gray-100 dark:border-zinc-800/50 last:border-0">
@@ -230,9 +227,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                  </div>
                ))}
             </div>
-            <div className="flex gap-2 items-center bg-white dark:bg-theme-black rounded-full px-1 py-1 ring-1 ring-gray-100 dark:ring-zinc-800">
+            <div className="flex gap-2 items-center bg-white dark:bg-theme-black rounded-md px-1 py-1 ring-1 ring-gray-100 dark:ring-zinc-800">
               <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()} placeholder="Yorum yap..." className="flex-1 bg-transparent px-3 text-[11px] outline-none dark:text-white" />
-              <button onClick={handleSubmitComment} disabled={!commentText.trim()} className="text-wedding-500 font-bold text-[10px] px-3 disabled:opacity-30 uppercase tracking-widest">Paylaş</button>
+              <button onClick={handleSubmitComment} disabled={!commentText.trim()} className="text-wedding-500 font-bold text-[10px] px-3 disabled:opacity-30 uppercase tracking-widest text-center">Paylaş</button>
             </div>
           </div>
         )}

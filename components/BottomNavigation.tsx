@@ -18,10 +18,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[50] px-5 pb-8 pt-2 pointer-events-none">
-      <div className="bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[12px] flex items-center justify-around h-16 pointer-events-auto max-w-sm mx-auto shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[50] px-5 pb-8 pt-2 pointer-events-none text-center">
+      <div className="bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-lg flex items-center justify-around h-16 pointer-events-auto max-w-sm mx-auto shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
         
-        {/* AKIŞ (HOME) - Tıklanınca en üste çıkar */}
+        {/* AKIŞ (HOME) */}
         <button 
           onClick={handleHomeClick}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-90 ${currentView === ViewState.FEED ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}
@@ -32,7 +32,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
           <span className="text-[7px] font-bold mt-1 tracking-widest uppercase">AKIŞ</span>
         </button>
 
-        {/* BLOG (DOCUMENT) */}
+        {/* BLOG */}
         <button 
           onClick={() => onNavigate(ViewState.BLOG)}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-90 ${currentView === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}
@@ -43,11 +43,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
           <span className="text-[7px] font-bold mt-1 tracking-widest uppercase">BLOG</span>
         </button>
 
-        {/* "+" BUTTON - Yeni Şeffaf & Stroke Tasarımı */}
+        {/* "+" BUTTON */}
         <div className="flex-1 flex justify-center items-center">
             <button 
               onClick={onUploadClick}
-              className="w-11 h-11 bg-white/10 dark:bg-white/5 text-wedding-500 rounded-[12px] flex items-center justify-center transform active:scale-90 transition-all border border-wedding-500/40 shadow-sm"
+              className="w-11 h-11 bg-white/10 dark:bg-white/5 text-wedding-500 rounded-lg flex items-center justify-center transform active:scale-90 transition-all border border-wedding-500/40 shadow-sm"
             >
               <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
                 <path d="M12 4.5v15m7.5-7.5h-15" />
@@ -55,7 +55,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
             </button>
         </div>
 
-        {/* SOHBET (CHAT) */}
+        {/* SOHBET */}
         <button 
           onClick={() => onNavigate(ViewState.CHAT)}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-90 ${currentView === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}
@@ -66,7 +66,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentView,
           <span className="text-[7px] font-bold mt-1 tracking-widest uppercase">SOHBET</span>
         </button>
 
-        {/* PROFİL (USER) */}
+        {/* PROFİL */}
         <button 
           onClick={() => onNavigate(ViewState.PROFILE)}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-90 ${currentView === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-500 dark:text-gray-400'}`}
