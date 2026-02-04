@@ -73,7 +73,6 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  // Temizlik işlemini admin girince tetikle
   useEffect(() => {
     if (isAdmin) {
         dbService.performDailyCleanup();
@@ -101,9 +100,11 @@ const App: React.FC = () => {
       setIsLoading(false);
     }, 5000);
 
+    // PWA Yükleme mekanizması - Android/Chrome için event yakalama
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      console.log('✅ Yükleme istemi hazır.');
     });
 
     let unsubUser: (() => void) | undefined;
@@ -170,12 +171,32 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const getPlatform = (): 'ios' | 'android' | 'desktop' => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(userAgent)) return 'ios';
+    if (/android/.test(userAgent)) return 'android';
+    return 'desktop';
+  };
+
   const handleInstallApp = async () => {
+    const platform = getPlatform();
+    
+    // Eğer iOS ise her zaman modalı aç (talimatlar için)
+    if (platform === 'ios') {
+      setShowInstallModal(true);
+      return;
+    }
+
+    // Android/Desktop için native prompt kontrolü
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setDeferredPrompt(null);
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setShowInstallModal(false);
+      }
     } else {
+      // Prompt yakalanamadıysa yine de modalı açıp bilgi verebiliriz
       setShowInstallModal(true);
     }
   };
@@ -361,7 +382,16 @@ const App: React.FC = () => {
       )}
 
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
-      {showInstallModal && <InstallModal platform="ios" canTriggerNative={false} onClose={() => setShowInstallModal(false)} onInstall={() => {}} />}
+      
+      {showInstallModal && (
+        <InstallModal 
+          platform={getPlatform()} 
+          canTriggerNative={!!deferredPrompt} 
+          onClose={() => setShowInstallModal(false)} 
+          onInstall={handleInstallApp} 
+        />
+      )}
+
       <ConfirmationModal isOpen={!!postToDelete} title="Sil" message="Bu içeriği silmek istediğine emin misin?" onConfirm={async () => { if(postToDelete) await dbService.deletePost(postToDelete); setPostToDelete(null); }} onCancel={() => setPostToDelete(null)} />
     </div>
   );
