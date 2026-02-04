@@ -143,10 +143,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   if (!user) {
       return (
           <div className="max-w-md mx-auto px-6 py-20 text-center animate-fadeIn">
-              <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-900 rounded-lg flex items-center justify-center mx-auto mb-8 border border-gray-100 dark:border-zinc-800">
-                  <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+              <div className="w-16 h-16 bg-transparent rounded-2xl flex items-center justify-center mx-auto mb-10 border border-gray-100 dark:border-zinc-900">
+                  <svg className="w-7 h-7 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
               </div>
-              <h2 className="text-xl font-serif font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-widest">Hoş Geldin Gelin Adayı</h2>
+              <h2 className="text-xl font-serif font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-[0.2em]">Topluluğa Katıl</h2>
               <AuthModalContent onLoginSuccess={onLoginSuccess} />
           </div>
       );
@@ -171,7 +171,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="font-serif text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
-                        <p className="text-[11px] text-gray-400 font-bold italic">@{user.username || 'annabella_gelini'}</p>
+                        <p className="text-[11px] text-gray-400 font-bold italic">@{user.username || 'user'}</p>
                     </div>
                     
                     {/* ÜÇ NOKTA AYARLAR MENÜSÜ */}
@@ -206,7 +206,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takip</span>
                     </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Mutlu anlarını Annabella'da paylaşıyor ✨"}</p>
+                <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Hikayesini paylaşıyor ✨"}</p>
             </div>
         </div>
 
@@ -339,7 +339,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 
-                <h3 className="text-lg font-serif font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profilini Güncelle</h3>
+                <h3 className="text-lg font-serif font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profili Güncelle</h3>
                 
                 <div className="space-y-5">
                     <div className="flex flex-col items-center mb-4">
@@ -362,22 +362,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <div className="space-y-4">
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Görünen İsim</label>
-                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all" />
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Kullanıcı Adı (@)</label>
-                            <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all" placeholder="sadece_harfler" />
+                            <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all" placeholder="kullanici_adi" />
                         </div>
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Biyografi / Hakkımda</label>
-                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-400 transition-all h-20 resize-none font-serif italic" placeholder="Hayallerini anlat..." />
+                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all h-20 resize-none font-serif italic" placeholder="Kendinden bahset..." />
                         </div>
                         {usernameError && <p className="text-[9px] text-red-500 font-bold px-1">{usernameError}</p>}
                     </div>
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
-                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-3.5 rounded-md text-[10px] uppercase tracking-widest">Değişiklikleri Kaydet</Button>
+                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-3.5 rounded-md text-[10px] uppercase tracking-widest border border-wedding-500 shadow-none">Değişiklikleri Kaydet</Button>
                     <button onClick={() => setIsEditModalOpen(false)} className="w-full py-2.5 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center hover:text-gray-600 transition-all">İptal</button>
                 </div>
             </div>
