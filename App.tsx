@@ -100,11 +100,14 @@ const App: React.FC = () => {
       setIsLoading(false);
     }, 5000);
 
-    // PWA Prompt Catching
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    });
+    // PWA Prompt Catching - Android için kritik
+    const handleBeforeInstall = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        console.log('✅ Android yükleme sistemi hazır.');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
     let unsubUser: (() => void) | undefined;
     let unsubFollow: (() => void) | undefined;
@@ -164,6 +167,7 @@ const App: React.FC = () => {
         clearTimeout(safetyTimer);
         unsubscribeAuth();
         unsubscribePosts();
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
         if (unsubUser) unsubUser();
         if (unsubFollow) unsubFollow();
         if (unsubConvs) unsubConvs();
@@ -180,13 +184,12 @@ const App: React.FC = () => {
   const handleInstallApp = async () => {
     const platform = getPlatform();
     
-    // Eğer iOS ise modalı talimat görseli için açıyoruz
     if (platform === 'ios') {
       setShowInstallModal(true);
       return;
     }
 
-    // Android/Desktop için direkt prompt tetikleme
+    // Android/Desktop için tarayıcı yükleme penceresini aç
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -195,7 +198,7 @@ const App: React.FC = () => {
         setShowInstallModal(false);
       }
     } else {
-      // Prompt henüz yakalanmadıysa bilgi modalını aç
+      // Prompt henüz gelmediyse veya desteklenmiyorsa bilgilendir
       setShowInstallModal(true);
     }
   };
