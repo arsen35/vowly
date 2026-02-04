@@ -27,7 +27,6 @@ const App: React.FC = () => {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  // GIZLI GIRIS ICIN STATE'LER
   const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const logoClicks = useRef(0);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -293,6 +292,56 @@ const App: React.FC = () => {
             <AdminDashboard posts={posts} onDeletePost={setPostToDelete} onResetData={() => dbService.clearAll()} onClose={() => setViewState(ViewState.FEED)} />
         ) : null}
       </main>
+
+      {/* Masaüstü Yüzen Butonlar (Üst Üste) */}
+      <div className="hidden md:flex fixed bottom-8 right-8 z-[100] flex-col gap-4">
+          {/* Paylaş Butonu */}
+          <div className="relative group flex items-center justify-end">
+              <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
+                  {[...Array(4)].map((_, i) => (
+                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.25}s`, transformOrigin: 'center center' }}></div>
+                  ))}
+              </div>
+              <button 
+                onClick={handleUploadClick}
+                className="w-14 h-14 bg-wedding-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              </button>
+              <span className="absolute right-16 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-bold uppercase tracking-widest text-wedding-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full shadow-sm whitespace-nowrap">Paylaş</span>
+          </div>
+
+          {/* Mağaza Butonu */}
+          <div className="relative group flex items-center justify-end">
+              <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
+                  {[...Array(4)].map((_, i) => (
+                      <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500/50 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.25}s`, transformOrigin: 'center center' }}></div>
+                  ))}
+              </div>
+              <a 
+                href="https://annabellabridal.com" 
+                target="_blank"
+                className="w-14 h-14 bg-white dark:bg-zinc-900 border border-wedding-500/20 text-wedding-500 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
+              </a>
+              <span className="absolute right-16 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-bold uppercase tracking-widest text-wedding-500 bg-white dark:bg-zinc-900 px-3 py-1 rounded-full shadow-sm whitespace-nowrap">Website</span>
+          </div>
+      </div>
+
+      <style>{`
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
+        }
+        .animate-orbit {
+            animation: orbit 2s linear infinite;
+            top: 50%;
+            left: 50%;
+            margin-top: -3px;
+            margin-left: -3px;
+        }
+      `}</style>
 
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}

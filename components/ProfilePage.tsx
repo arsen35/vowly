@@ -33,7 +33,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Filtreleme Mantığı
   const userPosts = posts.filter(p => p.user.id === user?.id);
   const likedPosts = posts.filter(p => p.isLikedByCurrentUser);
   const displayPosts = activeTab === 'posts' ? userPosts : likedPosts;
@@ -92,8 +91,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-8 mb-10">
         <div className="flex items-center gap-6 md:gap-14">
-            <div className="relative group shrink-0">
-                <div className="w-24 h-24 md:w-36 md:h-36 rounded-full p-[3px] border border-wedding-500/30 overflow-hidden shadow-sm">
+            <div className="shrink-0">
+                <div className="w-24 h-24 md:w-36 md:h-36 rounded-full p-[3px] border border-wedding-500/20 overflow-hidden shadow-sm">
                     <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
                 </div>
             </div>
@@ -121,39 +120,38 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
                 
                 <p className="hidden md:block text-sm dark:text-gray-400 leading-snug font-light italic">
-                    {user.bio || "Annabella gelini olmanın ayrıcalığını yaşıyor ✨"}
+                    {user.bio || "Hayalindeki gelinliği Annabella'da buldu ✨"}
                 </p>
             </div>
         </div>
 
         <p className="md:hidden text-sm dark:text-gray-400 leading-snug font-light italic -mt-2">
-            {user.bio || "Annabella gelini olmanın ayrıcalığını yaşıyor ✨"}
+            {user.bio || "Hayalindeki gelinliği Annabella'da buldu ✨"}
         </p>
 
-        {/* EQUAL STROKE BUTTONS */}
+        {/* 3 EQUAL STROKE BUTTONS */}
         <div className="flex gap-3">
             <button 
                 onClick={() => setIsEditModalOpen(true)} 
-                className="flex-1 bg-transparent border border-gray-200 dark:border-zinc-800 hover:border-wedding-500 hover:text-wedding-500 text-gray-500 dark:text-gray-400 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.15em]"
+                className="flex-1 bg-transparent border border-gray-200 dark:border-zinc-800 hover:border-wedding-500 hover:text-wedding-500 text-gray-500 dark:text-gray-400 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.1em] text-center"
             >
-                Profili Düzenle
+                Düzenle
             </button>
+            
             <button 
                 onClick={() => setActiveTab(activeTab === 'posts' ? 'liked' : 'posts')}
-                className={`flex-1 bg-transparent border ${activeTab === 'liked' ? 'border-wedding-500 text-wedding-500' : 'border-gray-200 dark:border-zinc-800 text-gray-500 dark:text-gray-400'} hover:border-wedding-500 hover:text-wedding-500 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.15em] flex items-center justify-center gap-2`}
+                className={`flex-1 bg-transparent border ${activeTab === 'liked' ? 'border-wedding-500 text-wedding-500' : 'border-gray-200 dark:border-zinc-800 text-gray-500 dark:text-gray-400'} hover:border-wedding-500 hover:text-wedding-500 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.1em]`}
             >
-                {activeTab === 'posts' ? (
-                    <>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-                        Beğendiklerim
-                    </>
-                ) : (
-                    <>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25v-2.25z" /></svg>
-                        Gönderilerim
-                    </>
-                )}
+                {activeTab === 'posts' ? 'Beğeniler' : 'Gönderiler'}
             </button>
+
+            <a 
+                href="https://annabellabridal.com" 
+                target="_blank"
+                className="flex-1 bg-transparent border border-gray-200 dark:border-zinc-800 hover:border-wedding-500 hover:text-wedding-500 text-gray-500 dark:text-gray-400 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.1em] flex items-center justify-center gap-2"
+            >
+                Website
+            </a>
         </div>
       </div>
 
@@ -163,7 +161,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             onClick={() => setActiveTab('posts')}
             className={`flex-1 flex flex-col items-center justify-center py-4 transition-all relative ${activeTab === 'posts' ? 'text-wedding-500' : 'text-gray-400'}`}
         >
-            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1"><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25v-2.25z" /></svg>
+            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1"><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25v-2.25z" /></svg>
             <span className="text-[8px] font-bold uppercase tracking-widest">Paylaşımlar</span>
             {activeTab === 'posts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-wedding-500 animate-in slide-in-from-left-full"></div>}
         </button>
@@ -171,7 +169,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             onClick={() => setActiveTab('liked')}
             className={`flex-1 flex flex-col items-center justify-center py-4 transition-all relative ${activeTab === 'liked' ? 'text-wedding-500' : 'text-gray-400'}`}
         >
-            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
             <span className="text-[8px] font-bold uppercase tracking-widest">Beğenilenler</span>
             {activeTab === 'liked' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-wedding-500 animate-in slide-in-from-right-full"></div>}
         </button>
@@ -242,7 +240,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none h-24 border border-gray-100 dark:border-zinc-800 resize-none focus:border-wedding-500 transition-colors" placeholder="Biyografi" />
                 </div>
                 <div className="mt-8">
-                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-4 rounded-xl shadow-none">Değişiklikleri Kaydet</Button>
+                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-4 rounded-xl shadow-none">Kaydet</Button>
                     <button onClick={() => setIsEditModalOpen(false)} className="w-full mt-4 text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Vazgeç</button>
                 </div>
             </div>
