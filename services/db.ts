@@ -128,6 +128,7 @@ export const dbService = {
     const convId = dbService.getConversationId(sender.id, receiverId);
     const batch = writeBatch(dbInstance);
     
+    // 1. Yeni mesajı ekle
     const msgRef = doc(collection(dbInstance, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION));
     batch.set(msgRef, { 
       senderId: sender.id, 
@@ -135,13 +136,14 @@ export const dbService = {
       timestamp: Date.now() 
     });
 
+    // 2. Sohbet başlığını güncelle/oluştur ve alıcıyı "okunmamış" olarak işaretle
     const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
     batch.set(convRef, { 
       id: convId, 
       participants: [sender.id, receiverId], 
       lastMessage: text, 
       lastMessageTimestamp: Date.now(),
-      unreadBy: arrayUnion(receiverId) // Alıcı için okunmamış olarak işaretle
+      unreadBy: arrayUnion(receiverId) 
     }, { merge: true });
     
     await batch.commit();
@@ -150,9 +152,12 @@ export const dbService = {
   markConversationAsRead: async (convId: string, userId: string) => {
     const { dbInstance } = checkDbConnection();
     const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
-    await updateDoc(convRef, {
-      unreadBy: arrayRemove(userId)
-    });
+    const docSnap = await getDoc(convRef);
+    if (docSnap.exists()) {
+      await updateDoc(convRef, {
+        unreadBy: arrayRemove(userId)
+      });
+    }
   },
 
   subscribeToConversations: (uid: string, callback: (convs: Conversation[]) => void) => {
@@ -164,14 +169,20 @@ export const dbService = {
     );
     return onSnapshot(q, (snap) => {
         const convs: Conversation[] = [];
-        snap.forEach(d => convs.push(d.data() as Conversation));
+        snap.forEach(d => {
+            convs.push({ ...d.data() } as Conversation);
+        });
         callback(convs);
     });
   },
 
   subscribeToDirectMessages: (convId: string, callback: (msgs: any[]) => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION), orderBy("timestamp", "asc"), limit(50));
+    const q = query(
+      collection(db, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION), 
+      orderBy("timestamp", "asc"), 
+      limit(100)
+    );
     return onSnapshot(q, (snap) => {
         const msgs: any[] = [];
         snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));

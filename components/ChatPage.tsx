@@ -30,6 +30,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
         const unsubscribe = dbService.subscribeToChat(setGlobalMessages);
         return () => unsubscribe();
     } else if (currentUser) {
+        // Tüm konuşmaları dinle
         const unsubscribe = dbService.subscribeToConversations(currentUser.id, async (convs) => {
             const enriched = await Promise.all(convs.map(async (c) => {
                 const otherUid = c.participants.find(p => p !== currentUser.id);
@@ -46,7 +47,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
     if (activeConv && currentUser) {
         // Sohbet açıldığında okunmuş olarak işaretle
         dbService.markConversationAsRead(activeConv.id, currentUser.id);
-        const unsubscribe = dbService.subscribeToDirectMessages(activeConv.id, setDmMessages);
+        const unsubscribe = dbService.subscribeToDirectMessages(activeConv.id, (msgs) => {
+            setDmMessages(msgs);
+        });
         return () => unsubscribe();
     }
   }, [activeConv, currentUser]);
@@ -69,11 +72,18 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
 
   const startDM = (targetUser: User) => {
     const convId = dbService.getConversationId(currentUser!.id, targetUser.id);
-    setActiveConv({
-        id: convId,
-        participants: [currentUser!.id, targetUser.id],
-        otherUser: targetUser
-    });
+    const existing = conversations.find(c => c.id === convId);
+    
+    if (existing) {
+        setActiveConv(existing);
+    } else {
+        setActiveConv({
+            id: convId,
+            participants: [currentUser!.id, targetUser.id],
+            otherUser: targetUser,
+            unreadBy: []
+        });
+    }
     setSearchTerm('');
     setSearchResults([]);
   };
@@ -99,10 +109,20 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeConv || isSending) return;
     setIsSending(true);
+    const msgText = newMessage;
+    setNewMessage('');
     try {
-        await dbService.sendDirectMessage(currentUser!, activeConv.otherUser!.id, newMessage);
-        setNewMessage('');
+        await dbService.sendDirectMessage(currentUser!, activeConv.otherUser!.id, msgText);
+    } catch (err) {
+        setNewMessage(msgText); // Hata olursa mesajı geri koy
     } finally { setIsSending(false); }
+  };
+
+  // Görüldü durumunu kontrol et
+  const isMessageSeen = (conv: Conversation | null) => {
+    if (!conv || !currentUser) return false;
+    const otherUid = conv.participants.find(p => p !== currentUser.id);
+    return !conv.unreadBy?.includes(otherUid!);
   };
 
   if (!currentUser) {
@@ -129,12 +149,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                 className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all ${activeTab === 'direct' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
             >
                 Mesajlarım
+                {conversations.some(c => c.unreadBy?.includes(currentUser.id)) && <span className="ml-2 inline-block w-1.5 h-1.5 bg-red-500 rounded-full"></span>}
             </button>
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col">
             {activeTab === 'global' ? (
-                /* GLOBAL CHAT */
                 <>
                     <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                         {globalMessages.map((msg) => (
@@ -160,7 +180,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                     </form>
                 </>
             ) : (
-                /* DIRECT MESSAGES */
                 <div className="flex flex-col h-full">
                     {!activeConv ? (
                         <>
@@ -193,22 +212,26 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                     return (
                                         <div key={c.id} onClick={() => setActiveConv(c)} className={`p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-900 cursor-pointer border-b border-gray-50 dark:border-zinc-900/50 transition-colors ${isUnread ? 'bg-wedding-50/10 dark:bg-wedding-500/5' : ''}`}>
                                             <div className="relative">
-                                                <img src={c.otherUser?.avatar} className="w-12 h-12 rounded-md object-cover" />
-                                                {isUnread && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-black"></span>}
+                                                <img src={c.otherUser?.avatar} className="w-12 h-12 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
+                                                {isUnread && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white dark:border-black animate-pulse"></span>}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-center mb-0.5">
                                                     <span className={`text-sm dark:text-white truncate ${isUnread ? 'font-bold' : 'font-medium'}`}>{c.otherUser?.name}</span>
                                                     <span className="text-[9px] text-gray-400 whitespace-nowrap ml-2">{c.lastMessageTimestamp ? new Date(c.lastMessageTimestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
                                                 </div>
-                                                <p className="text-xs text-gray-500 truncate italic mb-0.5">@{c.otherUser?.username || 'Kullanıcı'}</p>
-                                                <p className={`text-[11px] truncate ${isUnread ? 'font-bold text-gray-900 dark:text-gray-200' : 'text-gray-400'}`}>{c.lastMessage}</p>
+                                                <p className={`text-[11px] truncate ${isUnread ? 'font-bold text-gray-900 dark:text-gray-200' : 'text-gray-400'}`}>{c.lastMessage || 'Henüz mesaj yok'}</p>
                                             </div>
                                         </div>
                                     );
                                 })}
                                 {conversations.length === 0 && (
-                                    <div className="py-20 text-center opacity-30 italic text-xs">Henüz mesajın yok.</div>
+                                    <div className="py-20 text-center flex flex-col items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-300">
+                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                                        </div>
+                                        <p className="opacity-30 italic text-[11px] uppercase tracking-widest font-bold">Mesaj kutun boş</p>
+                                    </div>
                                 )}
                             </div>
                         </>
@@ -222,15 +245,25 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                     <p className="text-[9px] text-wedding-500 font-medium italic mt-0.5">@{activeConv.otherUser?.username}</p>
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar">
-                                {dmMessages.map(m => (
-                                    <div key={m.id} className={`flex ${m.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`px-3 py-2 rounded-lg text-sm max-w-[75%] shadow-sm ${m.senderId === currentUser.id ? 'bg-wedding-500 text-white' : 'bg-gray-100 dark:bg-zinc-800 dark:text-white'}`}>
-                                            {m.text}
-                                            <span className={`block text-[8px] text-right mt-1 opacity-60`}>{new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar bg-white dark:bg-theme-black">
+                                {dmMessages.map((m, idx) => {
+                                    const isLastMessage = idx === dmMessages.length - 1;
+                                    const isSeen = isMessageSeen(conversations.find(c => c.id === activeConv.id) || null);
+                                    
+                                    return (
+                                        <div key={m.id} className={`flex flex-col ${m.senderId === currentUser.id ? 'items-end' : 'items-start'}`}>
+                                            <div className={`px-3 py-2 rounded-lg text-sm max-w-[75%] shadow-sm ${m.senderId === currentUser.id ? 'bg-wedding-500 text-white' : 'bg-gray-100 dark:bg-zinc-800 dark:text-white'}`}>
+                                                {m.text}
+                                                <span className={`block text-[8px] text-right mt-1 opacity-60`}>{new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                            </div>
+                                            {m.senderId === currentUser.id && isLastMessage && (
+                                                <span className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">
+                                                    {isSeen ? 'Görüldü ✓✓' : 'İletildi ✓'}
+                                                </span>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 <div ref={messagesEndRef} />
                             </div>
                             <form onSubmit={handleSendDM} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
@@ -239,7 +272,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                     className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-md px-4 py-2.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all"
                                     placeholder="Mesaj yaz..."
                                 />
-                                <button className="bg-wedding-500 text-white p-2.5 rounded-md transition-transform active:scale-90"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
+                                <button type="submit" className="bg-wedding-500 text-white p-2.5 rounded-md transition-transform active:scale-90"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
                             </form>
                         </div>
                     )}
