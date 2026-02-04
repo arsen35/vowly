@@ -187,17 +187,18 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                 <div className="flex flex-col h-full bg-white dark:bg-theme-black">
                     {!activeConv ? (
                         <>
-                            <div className="p-5">
-                                <div className="relative group">
+                            {/* DÜZELTİLMİŞ ARAMA ÇUBUĞU VE İKONU */}
+                            <div className="px-5 py-4 border-b border-gray-50 dark:border-zinc-900/50">
+                                <div className="relative group flex items-center">
+                                    <svg className="w-4 h-4 absolute left-4 text-gray-400 group-focus-within:text-wedding-500 transition-colors pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                     <input 
                                         value={searchTerm} onChange={(e) => handleSearch(e.target.value)}
-                                        className="w-full bg-gray-50 dark:bg-zinc-900 rounded-xl pl-11 pr-5 py-3.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all shadow-sm"
+                                        className="w-full bg-gray-100/50 dark:bg-zinc-900 rounded-xl pl-11 pr-5 py-2.5 text-xs outline-none border border-transparent focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-sm dark:text-white"
                                         placeholder="@kullaniciadi ile ara ve yaz..."
                                     />
-                                    <svg className="w-4.5 h-4.5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-wedding-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 </div>
                                 {searchResults.length > 0 && (
-                                    <div className="mt-3 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xl absolute z-50 w-[calc(100%-2.5rem)] animate-in fade-in slide-in-from-top-2 overflow-hidden">
+                                    <div className="mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xl absolute z-50 w-[calc(100%-2.5rem)] animate-in fade-in slide-in-from-top-1 overflow-hidden">
                                         {searchResults.map(u => (
                                             <div key={u.id} onClick={() => startDM(u)} className="p-4 flex items-center gap-4 hover:bg-wedding-50 dark:hover:bg-wedding-900/10 cursor-pointer border-b last:border-0 border-gray-50 dark:border-zinc-800/50 transition-all">
                                                 <img src={u.avatar} className="w-10 h-10 rounded-lg object-cover" />
@@ -247,7 +248,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                     ) : (
                         <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-300">
                             <div className="p-4 border-b border-gray-100 dark:border-zinc-900 flex items-center gap-4 bg-white/80 dark:bg-theme-black/80 backdrop-blur-md sticky top-0 z-20">
-                                <button onClick={() => setActiveConv(null)} className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg></button>
+                                <button onClick={() => setActiveConv(null)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-90"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg></button>
                                 <img src={activeConv.otherUser?.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 shadow-sm" />
                                 <div className="min-w-0">
                                     <p className="text-sm font-bold dark:text-white leading-none truncate">{activeConv.otherUser?.name}</p>
@@ -284,7 +285,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                             <form onSubmit={handleSendDM} className="p-4 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
                                 <input 
                                     value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-xl px-5 py-3.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all"
+                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-xl px-5 py-3.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all shadow-inner"
                                     placeholder="Mesaj gönder..."
                                 />
                                 <button type="submit" className="bg-wedding-500 text-white p-3.5 rounded-xl transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>

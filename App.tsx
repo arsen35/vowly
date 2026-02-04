@@ -134,7 +134,6 @@ const App: React.FC = () => {
               setFollowingIds(data.following);
             });
 
-            // DM bildirimlerini dinle
             unsubConvs = dbService.subscribeToConversations(user.uid, (convs) => {
               const unreadCount = convs.filter(c => c.unreadBy?.includes(user.uid)).length;
               setUnreadDMCount(unreadCount);
@@ -269,7 +268,8 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-theme-black/90 backdrop-blur-sm border-b border-gray-100 dark:border-zinc-900 h-14">
+      {/* ÜST BAR TASARIMI - ALT BAR İLE EŞLENDİ */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white/60 dark:bg-black/40 backdrop-blur-xl border-b border-white/20 dark:border-white/10 h-14">
         <div className="w-full h-full flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
             <Logo className="h-7 w-auto" />
@@ -291,7 +291,7 @@ const App: React.FC = () => {
                     PANEL
                 </button>
             )}
-            <button onClick={toggleTheme} className="p-2 text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all">
+            <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
                 {isDarkMode ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>}
             </button>
             {currentUser && <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer rounded-md overflow-hidden border border-gray-100 dark:border-zinc-800"><img src={currentUser.avatar} className="w-8 h-8 object-cover" alt="Avatar" /></div>}
