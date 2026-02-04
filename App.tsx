@@ -281,6 +281,8 @@ const App: React.FC = () => {
                 onDeleteAccount={handleDeleteAccount}
                 onDeletePost={setPostToDelete}
                 onLoginSuccess={() => setViewState(ViewState.PROFILE)}
+                onLike={handleLike}
+                onAddComment={handleAddComment}
             />
         ) : viewState === ViewState.ADMIN_DASHBOARD ? (
             <AdminDashboard posts={posts} onDeletePost={setPostToDelete} onResetData={() => dbService.clearAll()} onClose={() => setViewState(ViewState.FEED)} />
@@ -291,7 +293,6 @@ const App: React.FC = () => {
       <div className="hidden md:flex fixed bottom-8 right-8 z-[100] flex-col gap-4">
           {/* Paylaş Butonu */}
           <div className="relative group flex items-center justify-end">
-              {/* Dönen 4 İkon Efekti */}
               <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
                   {[...Array(4)].map((_, i) => (
                       <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.5}s`, transformOrigin: 'center center' }}></div>
@@ -308,7 +309,6 @@ const App: React.FC = () => {
 
           {/* Mağaza Butonu */}
           <div className="relative group flex items-center justify-end">
-              {/* Dönen 4 İkon Efekti */}
               <div className="absolute inset-0 scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
                   {[...Array(4)].map((_, i) => (
                       <div key={i} className={`absolute w-1.5 h-1.5 bg-wedding-500/50 rounded-full animate-orbit`} style={{ animationDelay: `${i * 0.5}s`, transformOrigin: 'center center' }}></div>
