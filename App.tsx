@@ -23,8 +23,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false); // AdminDashboard için
-  const [showAdminTrigger, setShowAdminTrigger] = useState(false); // Login için
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -81,7 +81,7 @@ const App: React.FC = () => {
         setShowAdminTrigger(true);
         logoClicks.current = 0;
     }
-    setViewState(ViewState.FEED);
+    if (viewState !== ViewState.FEED) setViewState(ViewState.FEED);
   };
 
   useEffect(() => {
@@ -285,8 +285,8 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <main className="w-full pt-14"> {/* FIX: Padding top added to offset the fixed header */}
-        <div className="px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px] pt-4">
+      <main className="w-full pt-14">
+        <div className={`px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px] ${viewState === ViewState.FEED ? 'pt-0' : 'pt-4'}`}>
           {viewState === ViewState.FEED ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
                 {posts.map(post => (
@@ -298,7 +298,7 @@ const App: React.FC = () => {
           ) : viewState === ViewState.CHAT ? (
               <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
           ) : viewState === ViewState.PROFILE ? (
-              <ProfilePage user={currentUser} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.PROFILE)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} />
+              <ProfilePage user={currentUser} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} />
           ) : null}
         </div>
       </main>
