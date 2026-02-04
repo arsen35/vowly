@@ -18,7 +18,8 @@ import {
   arrayUnion,
   arrayRemove,
   where,
-  writeBatch
+  writeBatch,
+  documentId
 } from "firebase/firestore";
 import { 
   ref, 
@@ -141,6 +142,25 @@ export const dbService = {
     const { dbInstance } = checkDbConnection();
     const docSnap = await getDoc(doc(dbInstance, USERS_COLLECTION, userId));
     return docSnap.exists() ? docSnap.data() as User : null;
+  },
+
+  getUsersByIds: async (userIds: string[]): Promise<User[]> => {
+    if (!userIds || userIds.length === 0) return [];
+    const { dbInstance } = checkDbConnection();
+    
+    // Firestore queries limit to 10-30 depending on 'in' clause. Let's do batches if needed but usually 10 is the limit for 'in'.
+    const chunks = [];
+    for (let i = 0; i < userIds.length; i += 10) {
+        chunks.push(userIds.slice(i, i + 10));
+    }
+    
+    const users: User[] = [];
+    for (const chunk of chunks) {
+        const q = query(collection(dbInstance, USERS_COLLECTION), where(documentId(), "in", chunk));
+        const snap = await getDocs(q);
+        snap.forEach(d => users.push({ ...d.data(), id: d.id } as User));
+    }
+    return users;
   },
 
   deleteUserAccount: async (userId: string): Promise<void> => {

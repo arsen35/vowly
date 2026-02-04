@@ -38,7 +38,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+  const [followData, setFollowData] = useState<{ followers: string[], following: string[] }>({ followers: [], following: [] });
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState<'followers' | 'following' | null>(null);
+  const [followListUsers, setFollowListUsers] = useState<User[]>([]);
+  const [isFollowListLoading, setIsFollowListLoading] = useState(false);
   
   const [editName, setEditName] = useState(user?.name || '');
   const [editBio, setEditBio] = useState(user?.bio || '');
@@ -49,14 +52,32 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   useEffect(() => {
     if (user) {
       const unsubscribe = dbService.subscribeToFollowData(user.id, (data) => {
-        setFollowCounts({
-          followers: data.followers.length,
-          following: data.following.length
-        });
+        setFollowData(data);
       });
       return () => unsubscribe();
     }
   }, [user]);
+
+  // Modalı açtığımızda kullanıcı detaylarını getir
+  useEffect(() => {
+    if (isFollowModalOpen) {
+        const loadUsers = async () => {
+            setIsFollowListLoading(true);
+            const ids = isFollowModalOpen === 'followers' ? followData.followers : followData.following;
+            try {
+                const users = await dbService.getUsersByIds(ids);
+                setFollowListUsers(users);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setIsFollowListLoading(false);
+            }
+        };
+        loadUsers();
+    } else {
+        setFollowListUsers([]);
+    }
+  }, [isFollowModalOpen, followData]);
 
   const processAvatar = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -129,33 +150,33 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-12 pb-24 animate-fadeIn">
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-8 mb-10">
-        <div className="flex items-center gap-6 md:gap-14">
+        <div className="flex items-center gap-4 md:gap-14">
             <div className="shrink-0">
-                <div className="w-24 h-24 md:w-36 md:h-36 rounded-full p-[3px] border border-wedding-500/20 overflow-hidden shadow-sm">
+                <div className="w-20 h-20 md:w-36 md:h-36 rounded-full p-[3px] border border-wedding-500/20 overflow-hidden shadow-sm">
                     <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
                 </div>
             </div>
 
-            <div className="flex flex-col gap-4 flex-1">
+            <div className="flex flex-col gap-3 flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                    <h2 className="font-serif text-xl md:text-2xl font-bold dark:text-white tracking-tight">{user.name}</h2>
+                    <h2 className="font-serif text-lg md:text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
                     <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-wedding-500 transition-colors">
-                        <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                        <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
                     </button>
                 </div>
 
-                <div className="flex gap-8">
-                    <div>
-                        <span className="text-sm font-bold dark:text-white">{userPosts.length}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Gönderi</span>
+                <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-1">
+                    <div className="flex flex-col md:flex-row md:items-center">
+                        <span className="text-sm font-bold dark:text-white leading-none">{userPosts.length}</span>
+                        <span className="text-[9px] md:text-[10px] text-gray-400 uppercase tracking-widest font-bold md:ml-1.5 mt-1 md:mt-0">Gönderi</span>
                     </div>
-                    <div>
-                        <span className="text-sm font-bold dark:text-white">{followCounts.followers}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Takipçi</span>
+                    <div className="flex flex-col md:flex-row md:items-center cursor-pointer hover:opacity-70 transition-opacity" onClick={() => setIsFollowModalOpen('followers')}>
+                        <span className="text-sm font-bold dark:text-white leading-none">{followData.followers.length}</span>
+                        <span className="text-[9px] md:text-[10px] text-gray-400 uppercase tracking-widest font-bold md:ml-1.5 mt-1 md:mt-0">Takipçi</span>
                     </div>
-                    <div>
-                        <span className="text-sm font-bold dark:text-white">{followCounts.following}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Takip</span>
+                    <div className="flex flex-col md:flex-row md:items-center cursor-pointer hover:opacity-70 transition-opacity" onClick={() => setIsFollowModalOpen('following')}>
+                        <span className="text-sm font-bold dark:text-white leading-none">{followData.following.length}</span>
+                        <span className="text-[9px] md:text-[10px] text-gray-400 uppercase tracking-widest font-bold md:ml-1.5 mt-1 md:mt-0">Takip</span>
                     </div>
                 </div>
                 
@@ -166,7 +187,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
 
         {/* 3 EQUAL STROKE BUTTONS */}
-        <div className="flex gap-3">
+        <div className="flex gap-2 md:gap-3">
             <button 
                 onClick={() => setIsEditModalOpen(true)} 
                 className="flex-1 bg-transparent border border-gray-200 dark:border-zinc-800 hover:border-wedding-500 hover:text-wedding-500 text-gray-500 dark:text-gray-400 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.1em]"
@@ -186,7 +207,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 target="_blank"
                 className="flex-1 bg-transparent border border-gray-200 dark:border-zinc-800 hover:border-wedding-500 hover:text-wedding-500 text-gray-500 dark:text-gray-400 text-[10px] font-bold py-3.5 rounded-xl transition-all uppercase tracking-[0.1em] text-center"
             >
-                Website
+                Mağaza
             </a>
         </div>
       </div>
@@ -227,7 +248,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         )}
       </div>
 
-      {/* SINGLE POST DETAIL MODAL (CLEAN VERSION) */}
+      {/* SINGLE POST DETAIL MODAL */}
       {selectedPost && (
           <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
               <button onClick={() => setSelectedPost(null)} className="absolute top-6 right-6 text-white/50 hover:text-white p-2 z-[160] transition-colors">
@@ -249,6 +270,51 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
       )}
 
+      {/* FOLLOWERS / FOLLOWING LIST MODAL */}
+      {isFollowModalOpen && (
+          <div className="fixed inset-0 z-[1500] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-white dark:bg-[#121212] w-full max-w-sm rounded-[32px] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 max-h-[70vh]">
+                  <div className="p-5 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center">
+                      <h3 className="font-serif font-bold dark:text-white text-lg uppercase tracking-widest">
+                          {isFollowModalOpen === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}
+                      </h3>
+                      <button onClick={() => setIsFollowModalOpen(null)} className="text-gray-400 hover:text-wedding-500 p-1 transition-colors">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+                      {isFollowListLoading ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-3 opacity-30">
+                              <div className="w-10 h-10 border-2 border-wedding-500 border-t-transparent rounded-full animate-spin"></div>
+                              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Yükleniyor...</span>
+                          </div>
+                      ) : followListUsers.length > 0 ? (
+                          followListUsers.map(listUser => (
+                              <div key={listUser.id} className="flex items-center justify-between animate-fadeIn">
+                                  <div className="flex items-center gap-3">
+                                      <img src={listUser.avatar} className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-zinc-800" alt={listUser.name} />
+                                      <div className="flex flex-col">
+                                          <span className="text-sm font-bold dark:text-white">{listUser.name}</span>
+                                          <span className="text-[10px] text-gray-400 truncate max-w-[120px] italic">{listUser.bio || "Mutlu gelinler topluluğu ✨"}</span>
+                                      </div>
+                                  </div>
+                                  <button 
+                                    onClick={() => onFollowToggle(listUser.id)}
+                                    className={`text-[10px] font-bold px-4 py-2 rounded-full border transition-all uppercase tracking-widest ${isFollowModalOpen === 'following' || followData.following.includes(listUser.id) ? 'bg-gray-50 dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 border-wedding-500 text-white shadow-sm'}`}
+                                  >
+                                      {isFollowModalOpen === 'following' || followData.following.includes(listUser.id) ? 'Bırak' : 'Takip Et'}
+                                  </button>
+                              </div>
+                          ))
+                      ) : (
+                          <div className="py-20 text-center opacity-30 italic font-serif">Henüz bir veri yok.</div>
+                      )}
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* SETTINGS SHEET */}
       {showSettings && (
           <div className="fixed inset-0 bg-black/60 z-[1100] flex items-end animate-in fade-in" onClick={() => setShowSettings(false)}>
@@ -260,7 +326,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
       )}
 
-      {/* EDIT MODAL WITH PHOTO UPLOAD */}
+      {/* EDIT MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/80 z-[2000] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
             <div className="bg-white dark:bg-theme-dark rounded-[32px] w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl">
@@ -272,29 +338,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
                 
                 <div className="space-y-6">
-                    {/* AVATAR UPLOAD AREA */}
                     <div className="flex flex-col items-center gap-3">
                         <div 
                             onClick={() => avatarInputRef.current?.click()}
-                            className="relative w-28 h-28 rounded-full border-2 border-wedding-500/30 p-1 group cursor-pointer overflow-hidden shadow-inner"
+                            className="relative w-24 h-24 rounded-full border-2 border-wedding-500/30 p-1 group cursor-pointer overflow-hidden"
                         >
                             <img src={editAvatar} className="w-full h-full rounded-full object-cover transition-transform group-hover:scale-110" alt="edit-avatar" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
-                            </div>
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] font-bold">DEĞİŞTİR</div>
                         </div>
-                        <span className="text-[10px] font-bold text-wedding-500 uppercase tracking-widest">Fotoğrafı Değiştir</span>
                         <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
                     </div>
 
                     <div className="space-y-4">
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Ad Soyad</label>
-                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-colors shadow-inner" placeholder="Ad Soyad" />
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-colors" placeholder="Ad Soyad" />
                         </div>
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Biyografi</label>
-                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none h-28 border border-gray-100 dark:border-zinc-800 resize-none focus:border-wedding-500 transition-colors font-light italic shadow-inner" placeholder="Hayallerini anlat..." />
+                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none h-24 resize-none focus:border-wedding-500 transition-colors font-light italic" placeholder="Hayallerini anlat..." />
                         </div>
                     </div>
                 </div>
