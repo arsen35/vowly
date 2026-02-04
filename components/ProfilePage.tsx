@@ -1,8 +1,6 @@
 
 import React, { useState, useRef } from 'react';
 import { Post, User } from '../types';
-import { auth } from '../services/firebase';
-import { signOut } from 'firebase/auth';
 import { dbService } from '../services/db';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Button } from './Button';
@@ -28,22 +26,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'grid' | 'saved'>('grid');
   
   const [editName, setEditName] = useState(user?.name || '');
   const [editBio, setEditBio] = useState(user?.bio || '');
-  const [editWeddingDate, setEditWeddingDate] = useState(user?.weddingDate || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [isSaving, setIsSaving] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  const handleLogout = async () => {
-    if (auth && window.confirm("Oturumu kapatmak istediğinize emin misiniz?")) {
-        await signOut(auth);
-        onLogout();
-        window.location.reload();
-    }
-  };
 
   const processAvatar = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -82,7 +70,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         await dbService.updateUser(user.id, {
             name: editName,
             bio: editBio,
-            weddingDate: editWeddingDate,
             avatar: editAvatar
         });
         setIsEditModalOpen(false);
@@ -93,20 +80,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     }
   };
 
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center animate-fadeIn">
-        <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-900 rounded-full mb-4 flex items-center justify-center text-gray-400">
-          <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-10 h-10"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-        </div>
-        <h2 className="text-xl font-serif font-bold dark:text-white">Henüz bir profilin yok</h2>
-        <Button onClick={() => window.location.reload()} className="mt-4">Giriş Yap</Button>
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-4 md:pt-10 pb-20 animate-fadeIn">
+    <div className="max-w-4xl mx-auto px-4 pt-4 md:pt-10 pb-24 animate-fadeIn">
+      {/* HEADER SECTION */}
       <div className="flex flex-col gap-6 mb-8 relative">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -121,50 +99,57 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </button>
         </div>
 
-        <div className="flex items-center gap-8 md:gap-20">
-            <div className="relative group cursor-pointer shrink-0">
-                <div className="w-20 h-20 md:w-36 md:h-36 rounded-full p-[3px] border-2 border-wedding-500 shadow-sm overflow-hidden">
-                    <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
-                </div>
+        <div className="flex items-center gap-6 md:gap-16">
+            <div className="w-24 h-24 md:w-40 md:h-40 rounded-full p-[2px] border border-wedding-500 shadow-sm overflow-hidden shrink-0">
+                <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
             </div>
 
-            <div className="flex-1 flex justify-around md:justify-start md:gap-16 text-center">
-                <div>
-                    <div className="text-sm md:text-lg font-bold dark:text-white">{userPosts.length}</div>
-                    <div className="text-[11px] md:text-sm text-gray-400">gönderi</div>
+            <div className="flex flex-col gap-4 flex-1">
+                <div className="flex justify-around md:justify-start md:gap-12">
+                    <div className="text-center md:text-left">
+                        <div className="text-lg font-bold dark:text-white">{userPosts.length}</div>
+                        <div className="text-[11px] text-gray-400 uppercase tracking-widest font-bold">Gönderi</div>
+                    </div>
+                    <div className="text-center md:text-left">
+                        <div className="text-lg font-bold dark:text-white">Annabel</div>
+                        <div className="text-[11px] text-gray-400 uppercase tracking-widest font-bold">Gelin Tipi</div>
+                    </div>
+                </div>
+                
+                <div className="hidden md:block">
+                    <h3 className="text-sm font-bold dark:text-white mb-1">{user.name}</h3>
+                    <p className="text-sm dark:text-gray-300 leading-snug whitespace-pre-line">{user.bio || "Hayalindeki gelinliği Annabella'da buldu ✨"}</p>
                 </div>
             </div>
         </div>
 
-        <div className="space-y-0.5">
-            <h3 className="text-sm font-bold dark:text-white">{user.name}</h3>
-            <p className="text-sm dark:text-gray-300 leading-snug whitespace-pre-line">{user.bio || "Annabella gelini ✨"}</p>
+        <div className="md:hidden">
+            <h3 className="text-sm font-bold dark:text-white mb-1">{user.name}</h3>
+            <p className="text-sm dark:text-gray-300 leading-snug whitespace-pre-line">{user.bio || "Hayalindeki gelinliği Annabella'da buldu ✨"}</p>
         </div>
 
         <div className="flex gap-2">
-            <button onClick={() => setIsEditModalOpen(true)} className="flex-1 bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-900 dark:text-white text-xs font-bold py-3 rounded-lg transition-colors border border-gray-100 dark:border-zinc-800">Profili Düzenle</button>
-            <button onClick={handleLogout} className="flex-1 bg-red-50 text-red-500 text-xs font-bold py-3 rounded-lg transition-colors border border-red-100 hover:bg-red-500 hover:text-white">Çıkış Yap</button>
+            <button 
+                onClick={() => setIsEditModalOpen(true)} 
+                className="flex-[2] bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-900 dark:text-white text-xs font-bold py-3 rounded-lg transition-colors border border-gray-100 dark:border-zinc-800 uppercase tracking-widest"
+            >
+                Profili Düzenle
+            </button>
+            <a 
+                href="https://annabellabridal.com/collections/all" 
+                target="_blank" 
+                className="flex-[3] bg-wedding-500 text-white text-xs font-bold py-3 rounded-lg transition-all border border-wedding-500 hover:bg-wedding-600 flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg shadow-wedding-500/20"
+            >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
+                Koleksiyonu İncele
+            </a>
         </div>
-
-        {showSettings && (
-            <div className="fixed inset-0 bg-black/60 z-[1100] flex items-end animate-in fade-in duration-300" onClick={() => setShowSettings(false)}>
-                <div className="w-full bg-white dark:bg-theme-dark rounded-t-3xl p-6 space-y-2 animate-in slide-in-from-bottom-5 duration-300" onClick={e => e.stopPropagation()}>
-                    <div className="w-12 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full mx-auto mb-6"></div>
-                    <button onClick={handleLogout} className="w-full text-center py-4 text-sm font-bold text-red-500 border border-red-100 bg-red-50 rounded-2xl">
-                        Oturumu Kapat
-                    </button>
-                    <button onClick={onDeleteAccount} className="w-full text-center py-4 text-sm font-bold text-gray-400">
-                        Hesabı Sil
-                    </button>
-                    <button onClick={() => setShowSettings(false)} className="w-full text-center py-4 text-sm font-bold text-gray-900 dark:text-white mt-4">Kapat</button>
-                </div>
-            </div>
-        )}
       </div>
 
+      {/* GRID SECTION */}
       <div className="flex border-t dark:border-zinc-800 mt-10">
-        <button className={`flex-1 flex items-center justify-center py-4 border-t-2 border-gray-900 dark:border-white text-gray-900 dark:text-white`}>
-            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25v-2.25z" /></svg>
+        <button className="flex-1 flex items-center justify-center py-4 border-t-2 border-gray-900 dark:border-white">
+            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-900 dark:text-white"><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25v-2.25z" /></svg>
         </button>
       </div>
 
@@ -180,8 +165,38 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </button>
           </div>
         ))}
+        {userPosts.length === 0 && (
+            <div className="col-span-3 py-20 text-center opacity-30 italic font-serif">Henüz bir fotoğraf paylaşmadınız.</div>
+        )}
       </div>
 
+      {/* SETTINGS SHEET */}
+      {showSettings && (
+          <div className="fixed inset-0 bg-black/60 z-[1100] flex items-end animate-in fade-in duration-300" onClick={() => setShowSettings(false)}>
+              <div className="w-full bg-white dark:bg-[#121212] rounded-t-3xl p-6 pb-12 space-y-3 animate-in slide-in-from-bottom-5 duration-300" onClick={e => e.stopPropagation()}>
+                  <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full mx-auto mb-6"></div>
+                  
+                  <button onClick={() => { setShowSettings(false); setIsEditModalOpen(true); }} className="w-full text-center py-4 text-sm font-bold text-gray-900 dark:text-white border border-gray-100 dark:border-zinc-800 rounded-2xl bg-gray-50 dark:bg-zinc-900/50 uppercase tracking-widest">
+                      Profili Düzenle
+                  </button>
+                  
+                  <button onClick={onLogout} className="w-full text-center py-4 text-sm font-bold text-wedding-500 border border-wedding-100 dark:border-wedding-900 bg-wedding-50 dark:bg-wedding-900/20 rounded-2xl uppercase tracking-widest">
+                      Oturumu Kapat
+                  </button>
+
+                  <button 
+                      onClick={() => { setShowSettings(false); onDeleteAccount(); }} 
+                      className="w-full text-center py-4 text-sm font-bold text-red-500 border border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-2xl uppercase tracking-widest"
+                  >
+                      Hesabı Sil
+                  </button>
+
+                  <button onClick={() => setShowSettings(false)} className="w-full text-center py-4 text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Vazgeç</button>
+              </div>
+          </div>
+      )}
+
+      {/* EDIT MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[2000] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white dark:bg-theme-dark rounded-3xl w-full max-w-sm shadow-2xl p-8 animate-in zoom-in-95 duration-300 relative">
@@ -191,20 +206,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <div className="text-center mb-8"><h3 className="text-xl font-serif font-bold dark:text-white">Profili Düzenle</h3></div>
                 <div className="space-y-4">
                     <div className="flex justify-center mb-4">
-                        <img src={editAvatar} onClick={() => avatarInputRef.current?.click()} className="w-20 h-20 rounded-full object-cover cursor-pointer border-2 border-wedding-500 p-0.5" />
+                        <img src={editAvatar} onClick={() => avatarInputRef.current?.click()} className="w-24 h-24 rounded-full object-cover cursor-pointer border-2 border-wedding-500 p-0.5 shadow-md" />
                         <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
                     </div>
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white outline-none" placeholder="Ad Soyad" />
-                    <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white outline-none h-24" placeholder="Biyografi" />
+                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white outline-none border border-gray-100 dark:border-zinc-800" placeholder="Ad Soyad" />
+                    <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50 dark:bg-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white outline-none h-24 border border-gray-100 dark:border-zinc-800" placeholder="Biyografi" />
                 </div>
                 <div className="mt-8 flex flex-col gap-2">
-                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full">Kaydet</Button>
+                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-4 rounded-xl">Kaydet</Button>
                     <button onClick={() => setIsEditModalOpen(false)} className="w-full py-3 text-xs text-gray-400 font-bold uppercase tracking-widest">Vazgeç</button>
                 </div>
             </div>
         </div>
       )}
-      <ConfirmationModal isOpen={!!postToDelete} title="Fotoğrafı Sil" message="Emin misin?" onConfirm={async () => { if(postToDelete) { await onDeletePost(postToDelete); setPostToDelete(null); } }} onCancel={() => setPostToDelete(null)} />
+      <ConfirmationModal isOpen={!!postToDelete} title="Fotoğrafı Sil" message="Bu anı kalıcı olarak silmek istediğinize emin misiniz?" onConfirm={async () => { if(postToDelete) { await onDeletePost(postToDelete); setPostToDelete(null); } }} onCancel={() => setPostToDelete(null)} />
     </div>
   );
 };

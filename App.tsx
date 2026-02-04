@@ -14,7 +14,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { BottomNavigation } from './components/BottomNavigation';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from './services/firebase';
 
 const App: React.FC = () => {
@@ -56,7 +56,6 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  // LOGO TIKLAMA TAKIBI (SECRET TRIGGER)
   const handleLogoClick = () => {
     logoClicks.current += 1;
     if (clickTimer.current) clearTimeout(clickTimer.current);
@@ -115,6 +114,42 @@ const App: React.FC = () => {
         unsubscribePosts();
     };
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth!);
+      setCurrentUser(null);
+      setIsAdmin(false);
+      setViewState(ViewState.FEED);
+    } catch (e) {
+      console.error("Logout error", e);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser || !auth?.currentUser) return;
+    const confirm = window.confirm("Hesabınızı ve tüm gönderilerinizi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.");
+    if (!confirm) return;
+
+    try {
+      setIsLoading(true);
+      await dbService.deleteUserAccount(currentUser.id);
+      await auth.currentUser.delete();
+      setCurrentUser(null);
+      setIsAdmin(false);
+      setViewState(ViewState.FEED);
+    } catch (e: any) {
+      console.error("Delete account error", e);
+      if (e.code === 'auth/requires-recent-login') {
+        alert("Bu işlem için yakın zamanda giriş yapmış olmanız gerekiyor. Lütfen tekrar giriş yapıp deneyin.");
+        await signOut(auth!);
+      } else {
+        alert("Hesap silinirken bir hata oluştu.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleUploadClick = () => {
       if (!currentUser) setShowAuthModal(true);
@@ -193,7 +228,6 @@ const App: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            {/* GIZLI YONETICI BUTONU (LOGOYLA AKTIF OLUR) */}
             {showAdminTrigger && !isAdmin && (
                 <button 
                   onClick={() => setShowAdminModal(true)} 
@@ -251,8 +285,8 @@ const App: React.FC = () => {
             <ProfilePage 
                 user={currentUser} posts={posts} 
                 onPostClick={(p) => setViewState(ViewState.FEED)} 
-                onLogout={() => { setCurrentUser(null); setViewState(ViewState.FEED); }}
-                onDeleteAccount={() => {}}
+                onLogout={handleLogout}
+                onDeleteAccount={handleDeleteAccount}
                 onDeletePost={setPostToDelete}
             />
         ) : viewState === ViewState.ADMIN_DASHBOARD ? (
