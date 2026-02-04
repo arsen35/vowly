@@ -69,7 +69,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     }
   }, [user]);
 
-  // Settings menüsü dışına tıklayınca kapatma
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
@@ -174,7 +173,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <p className="text-[11px] text-gray-400 font-bold italic">@{user.username || 'user'}</p>
                     </div>
                     
-                    {/* ÜÇ NOKTA AYARLAR MENÜSÜ */}
                     <div className="relative" ref={settingsRef}>
                         <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90">
                             <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
@@ -263,13 +261,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         )}
       </div>
 
-      {/* READING MODE MODAL */}
+      {/* FULL SCREEN READING MODE (FIX: COVER TOPBAR, NO BLACK BACKDROP) */}
       {selectedPost && (
-          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-              <button onClick={() => setSelectedPost(null)} className="fixed top-6 right-6 text-white/50 hover:text-white p-2 z-[110] transition-colors">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-              <div className="w-full max-w-sm md:max-w-md animate-in zoom-in-95 duration-500">
+          <div className="fixed inset-0 z-[1000] bg-white dark:bg-theme-black overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
+              <div className="sticky top-0 left-0 right-0 h-14 bg-white/90 dark:bg-theme-black/90 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between px-6 z-10">
+                  <button onClick={() => setSelectedPost(null)} className="flex items-center gap-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group">
+                      <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Kapat</span>
+                  </button>
+                  <span className="text-[10px] font-bold dark:text-white uppercase tracking-[0.2em] truncate max-w-[150px]">{selectedPost.user.name}</span>
+                  <div className="w-10"></div>
+              </div>
+              
+              <div className="w-full max-w-lg mx-auto py-8 px-4 pb-20">
                   <PostCard 
                     post={selectedPost} 
                     onLike={onLike} 
@@ -384,7 +388,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       )}
 
-      {/* HESABI SİL ONAY MODALI */}
       <ConfirmationModal 
         isOpen={isDeleteAccConfirmOpen}
         title="Hesabını Sil"
