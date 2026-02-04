@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from './Button';
 
 interface InstallModalProps {
@@ -11,7 +11,6 @@ interface InstallModalProps {
 
 export const InstallModal: React.FC<InstallModalProps> = ({ onClose, onInstall, platform, canTriggerNative }) => {
   const isIOS = platform === 'ios';
-  const [showIOSHint, setShowIOSHint] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black/80 z-[2000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
@@ -22,34 +21,34 @@ export const InstallModal: React.FC<InstallModalProps> = ({ onClose, onInstall, 
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
-        <div className="p-10 flex flex-col items-center text-center">
-            {/* Gerçek Logo - Kare kutu kaldırıldı */}
+        <div className="p-8 flex flex-col items-center text-center">
+            {/* Logo */}
             <img 
                 src="https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550" 
-                className="w-24 h-auto mb-8 animate-in zoom-in-50 duration-500" 
+                className="w-20 h-auto mb-6 animate-in zoom-in-50 duration-500" 
                 alt="Annabella Logo"
             />
 
-            <h2 className="text-xl font-serif font-bold dark:text-white uppercase tracking-[0.2em] mb-3">UYGULAMAYI YÜKLE</h2>
+            <h2 className="text-lg font-bold dark:text-white uppercase tracking-[0.1em] mb-2">UYGULAMAYI YÜKLE</h2>
             
-            {!showIOSHint ? (
+            {!isIOS ? (
                 <>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-10 leading-relaxed">
-                    Uygulamayı ana ekranına ekleyerek <br/> tam ekran deneyimine başla.
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-8 leading-relaxed">
+                    Hemen yükle butonuna basarak <br/> uygulamayı telefonuna indirebilirsin.
                   </p>
                   <Button 
-                      onClick={() => isIOS ? setShowIOSHint(true) : onInstall()} 
+                      onClick={onInstall} 
                       className="w-full py-4 rounded-[5px] text-[11px] uppercase tracking-[0.3em] font-bold shadow-lg shadow-wedding-500/20"
                   >
                       ŞİMDİ YÜKLE
                   </Button>
                 </>
             ) : (
-                <div className="w-full animate-in slide-in-from-bottom-4 duration-500">
+                <div className="w-full animate-in slide-in-from-bottom-2 duration-500">
                     <div className="bg-wedding-50 dark:bg-zinc-900 rounded-[5px] p-5 border border-wedding-100 dark:border-zinc-800">
                         <div className="flex flex-col items-center gap-4">
-                            <p className="text-[12px] text-gray-700 dark:text-gray-300 font-medium leading-snug">
-                                Safari'de alttaki <span className="text-wedding-500 font-bold">Paylaş</span> ikonuna tıklayıp <span className="font-bold underline">"Ana Ekrana Ekle"</span> deyin.
+                            <p className="text-[11px] text-gray-700 dark:text-gray-300 font-medium leading-snug">
+                                iPhone'a yüklemek için alttaki <span className="text-wedding-500 font-bold">Paylaş</span> ikonuna basın ve <span className="font-bold underline">"Ana Ekrana Ekle"</span> seçeneğini seçin.
                             </p>
                             <div className="w-10 h-10 flex items-center justify-center bg-white dark:bg-black rounded-[5px] shadow-sm animate-bounce text-blue-500">
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
