@@ -6,6 +6,7 @@ import { ConfirmationModal } from './ConfirmationModal';
 import { Button } from './Button';
 import { AuthModalContent } from './AuthModal';
 import { PostCard } from './PostCard';
+import { Logo } from './Logo';
 
 interface ProfilePageProps {
   user: User | null;
@@ -145,12 +146,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   if (!user) {
       return (
-          <div className="max-w-md mx-auto px-6 py-20 text-center animate-fadeIn">
-              <div className="w-16 h-16 bg-transparent rounded-2xl flex items-center justify-center mx-auto mb-10 border border-gray-100 dark:border-zinc-900">
-                  <svg className="w-7 h-7 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+          <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-120px)] px-6 animate-fadeIn">
+              <div className="w-full max-w-sm flex flex-col items-center text-center">
+                  <Logo className="h-14 w-auto mb-10" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-8 uppercase tracking-[0.2em]">Topluluğa Katıl</h2>
+                  <AuthModalContent onLoginSuccess={onLoginSuccess} />
               </div>
-              <h2 className="text-xl font-serif font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-[0.2em]">Topluluğa Katıl</h2>
-              <AuthModalContent onLoginSuccess={onLoginSuccess} />
           </div>
       );
   }

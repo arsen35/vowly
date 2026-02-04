@@ -9,6 +9,7 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { dbService } from '../services/db';
+import { Logo } from './Logo';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -71,17 +72,10 @@ export const AuthModalContent: React.FC<{ onLoginSuccess: () => void }> = ({ onL
 
   return (
     <div className="w-full">
-        {/* İkon Bölümü */}
-        <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 border border-gray-100 dark:border-zinc-800 rounded-2xl flex items-center justify-center text-gray-300">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-            </div>
-        </div>
-
         <button 
           onClick={handleGoogleLogin} 
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-3 bg-transparent border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-xl py-3 px-4 text-[11px] font-bold uppercase tracking-widest text-black dark:text-white transition-all mb-6"
+          className="w-full flex items-center justify-center gap-3 bg-transparent border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-xl py-4 px-4 text-[11px] font-bold uppercase tracking-widest text-black dark:text-white transition-all mb-6"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" alt="Google" />
           Google ile Devam Et
@@ -96,13 +90,13 @@ export const AuthModalContent: React.FC<{ onLoginSuccess: () => void }> = ({ onL
             {mode === 'register' && (
                 <input 
                     type="text" required value={name} onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-colors"
+                    className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-4 text-xs dark:text-white outline-none focus:border-wedding-500 transition-colors"
                     placeholder="Adınız Soyadınız"
                 />
             )}
             <input 
                 type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-colors"
+                className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-4 text-xs dark:text-white outline-none focus:border-wedding-500 transition-colors"
                 placeholder="E-Posta Adresi"
             />
             <div className="relative">
@@ -110,7 +104,7 @@ export const AuthModalContent: React.FC<{ onLoginSuccess: () => void }> = ({ onL
                     type={showPassword ? "text" : "password"} 
                     required value={password} 
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-colors pr-12"
+                    className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-4 text-xs dark:text-white outline-none focus:border-wedding-500 transition-colors pr-12"
                     placeholder="Şifre"
                 />
                 <button 
@@ -127,7 +121,7 @@ export const AuthModalContent: React.FC<{ onLoginSuccess: () => void }> = ({ onL
             </div>
             {error && <p className="text-red-400 text-[10px] text-center font-bold tracking-tight py-1">{error}</p>}
             
-            <Button type="submit" className="w-full py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] mt-2 shadow-none border border-wedding-500" isLoading={isLoading}>
+            <Button type="submit" className="w-full py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] mt-4 shadow-none border border-wedding-500 bg-wedding-500 text-white" isLoading={isLoading}>
                 {mode === 'login' ? 'Giriş Yap' : 'Hesap Oluştur'}
             </Button>
         </form>
@@ -135,7 +129,7 @@ export const AuthModalContent: React.FC<{ onLoginSuccess: () => void }> = ({ onL
         <button 
             type="button"
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            className="w-full mt-8 text-[9px] text-gray-400 hover:text-wedding-500 font-bold uppercase tracking-[0.2em] transition-all"
+            className="w-full mt-10 text-[9px] text-gray-400 hover:text-wedding-500 font-bold uppercase tracking-[0.2em] transition-all"
         >
             {mode === 'login' ? 'Hesabın yok mu? Kaydol' : 'Zaten üye misin? Giriş Yap'}
         </button>
@@ -150,6 +144,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
         <button onClick={onClose} className="absolute top-6 right-6 text-gray-300 hover:text-wedding-500 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
+        <div className="flex flex-col items-center mb-6">
+            <Logo className="h-10 w-auto mb-4" />
+        </div>
         <AuthModalContent onLoginSuccess={() => { onLoginSuccess(); onClose(); }} />
       </div>
     </div>
