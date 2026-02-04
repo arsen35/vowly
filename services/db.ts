@@ -16,6 +16,7 @@ import {
   increment,
   getDoc,
   arrayUnion,
+  arrayRemove,
   where,
   writeBatch
 } from "firebase/firestore";
@@ -29,6 +30,7 @@ const POSTS_COLLECTION = 'posts';
 const BLOG_COLLECTION = 'blog_posts';
 const CHAT_COLLECTION = 'chat_messages';
 const USERS_COLLECTION = 'users';
+const FOLLOWS_COLLECTION = 'follows';
 
 const checkDbConnection = () => {
   if (!db || !storage) {
@@ -38,10 +40,8 @@ const checkDbConnection = () => {
   return { dbInstance: db, storageInstance: storage };
 };
 
-// Firestore'un sevmediği undefined değerleri temizleyen yardımcı fonksiyon
 const sanitizeData = (data: any) => {
     const cleanData = JSON.parse(JSON.stringify(data));
-    // JSON parse/stringify döngüsü undefined değerleri otomatik siler
     return cleanData;
 };
 
@@ -158,11 +158,62 @@ export const dbService = {
     await batch.commit();
   },
 
+  // --- FOLLOWS ---
+  followUser: async (followerId: string, targetUserId: string): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    // Takip edenin listesine ekle
+    await setDoc(doc(dbInstance, FOLLOWS_COLLECTION, followerId), { 
+      following: arrayUnion(targetUserId) 
+    }, { merge: true });
+    // Takip edilenin listesine ekle
+    await setDoc(doc(dbInstance, FOLLOWS_COLLECTION, targetUserId), { 
+      followers: arrayUnion(followerId) 
+    }, { merge: true });
+  },
+
+  unfollowUser: async (followerId: string, targetUserId: string): Promise<void> => {
+    const { dbInstance } = checkDbConnection();
+    await updateDoc(doc(dbInstance, FOLLOWS_COLLECTION, followerId), { 
+      following: arrayRemove(targetUserId) 
+    });
+    await updateDoc(doc(dbInstance, FOLLOWS_COLLECTION, targetUserId), { 
+      followers: arrayRemove(followerId) 
+    });
+  },
+
+  getFollowData: async (userId: string): Promise<{ following: string[], followers: string[] }> => {
+    const { dbInstance } = checkDbConnection();
+    const docSnap = await getDoc(doc(dbInstance, FOLLOWS_COLLECTION, userId));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return { 
+        following: data.following || [], 
+        followers: data.followers || [] 
+      };
+    }
+    return { following: [], followers: [] };
+  },
+
+  subscribeToFollowData: (userId: string, callback: (data: { following: string[], followers: string[] }) => void) => {
+    if (!db) return () => {};
+    return onSnapshot(doc(db, FOLLOWS_COLLECTION, userId), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        callback({ 
+          following: data.following || [], 
+          followers: data.followers || [] 
+        });
+      } else {
+        callback({ following: [], followers: [] });
+      }
+    });
+  },
+
   // --- FEED (POSTS) ---
   subscribeToPosts: (callback: (posts: Post[]) => void) => {
     if (!db) return () => {};
     const postsRef = collection(db, POSTS_COLLECTION);
-    const q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
+    const q = query(postsRef, orderBy("timestamp", "desc"), limit(100));
     return onSnapshot(q, (snapshot) => {
         const posts: Post[] = [];
         snapshot.forEach((doc) => {

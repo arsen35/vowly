@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Post, User } from '../types';
 import { dbService } from '../services/db';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -17,6 +17,8 @@ interface ProfilePageProps {
   onLoginSuccess: () => void;
   onLike: (postId: string) => void;
   onAddComment: (postId: string, text: string) => void;
+  followingIds: string[];
+  onFollowToggle: (userId: string) => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ 
@@ -27,19 +29,34 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onDeletePost,
   onLoginSuccess,
   onLike,
-  onAddComment
+  onAddComment,
+  followingIds,
+  onFollowToggle
 }) => {
   const [activeTab, setActiveTab] = useState<'posts' | 'liked'>('posts');
   const [showSettings, setShowSettings] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
   
   const [editName, setEditName] = useState(user?.name || '');
   const [editBio, setEditBio] = useState(user?.bio || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [isSaving, setIsSaving] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = dbService.subscribeToFollowData(user.id, (data) => {
+        setFollowCounts({
+          followers: data.followers.length,
+          following: data.following.length
+        });
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const processAvatar = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -133,8 +150,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Gönderi</span>
                     </div>
                     <div>
-                        <span className="text-sm font-bold dark:text-white">{likedPosts.length}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Beğeni</span>
+                        <span className="text-sm font-bold dark:text-white">{followCounts.followers}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Takipçi</span>
+                    </div>
+                    <div>
+                        <span className="text-sm font-bold dark:text-white">{followCounts.following}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1.5">Takip</span>
                     </div>
                 </div>
                 
@@ -220,6 +241,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     onAddComment={onAddComment} 
                     onDelete={onDeletePost} 
                     isAdmin={user.id === selectedPost.user.id} 
+                    isFollowing={followingIds.includes(selectedPost.user.id)}
+                    onFollow={() => onFollowToggle(selectedPost.user.id)}
+                    currentUserId={user.id}
                   />
               </div>
           </div>

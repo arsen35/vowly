@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PostCard } from './components/PostCard';
 import { UploadModal } from './components/UploadModal';
 import { AuthModal } from './components/AuthModal';
@@ -18,7 +18,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from './services/firebase';
 
 const App: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -26,12 +26,25 @@ const App: React.FC = () => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
   
   const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const logoClicks = useRef(0);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ADMIN_EMAILS = ['jeanbox35@gmail.com', 'swoxagency@gmail.com', 'nossdigital@gmail.com'];
+
+  // Akıllı Sıralama Mantığı
+  const posts = useMemo(() => {
+    if (!followingIds.length) return allPosts;
+    
+    // Takip edilenler ve edilmeyenler olarak ayır
+    const followingPosts = allPosts.filter(p => followingIds.includes(p.user.id));
+    const otherPosts = allPosts.filter(p => !followingIds.includes(p.user.id));
+    
+    // Takip edilenleri en başa koy, her grubu kendi içinde tarihe göre sırala
+    return [...followingPosts, ...otherPosts];
+  }, [allPosts, followingIds]);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -90,9 +103,16 @@ const App: React.FC = () => {
                 setCurrentUser(newUser);
                 await dbService.saveUser(newUser);
             }
+
+            // Takip listesini dinle
+            dbService.subscribeToFollowData(user.uid, (data) => {
+              setFollowingIds(data.following);
+            });
+
         } else {
             setCurrentUser(null);
             setIsAdmin(false);
+            setFollowingIds([]);
         }
         setIsLoading(false);
     });
@@ -105,7 +125,7 @@ const App: React.FC = () => {
             ...p,
             isLikedByCurrentUser: likedPosts.includes(p.id)
         }));
-        setPosts(mergedPosts);
+        setAllPosts(mergedPosts);
     });
 
     return () => {
@@ -120,8 +140,26 @@ const App: React.FC = () => {
       setCurrentUser(null);
       setIsAdmin(false);
       setViewState(ViewState.FEED);
+      setFollowingIds([]);
     } catch (e) {
       console.error("Logout error", e);
+    }
+  };
+
+  const handleFollowToggle = async (targetUserId: string) => {
+    if (!currentUser) {
+      setViewState(ViewState.PROFILE);
+      return;
+    }
+    const isFollowing = followingIds.includes(targetUserId);
+    try {
+      if (isFollowing) {
+        await dbService.unfollowUser(currentUser.id, targetUserId);
+      } else {
+        await dbService.followUser(currentUser.id, targetUserId);
+      }
+    } catch (e) {
+      console.error("Follow error", e);
     }
   };
 
@@ -192,7 +230,7 @@ const App: React.FC = () => {
     if (isAlreadyLiked) likedPosts = likedPosts.filter((id: string) => id !== postId);
     else likedPosts.push(postId);
     localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, isLikedByCurrentUser: !isAlreadyLiked, likes: p.likes + incrementBy } : p));
+    setAllPosts(prev => prev.map(p => p.id === postId ? { ...p, isLikedByCurrentUser: !isAlreadyLiked, likes: p.likes + incrementBy } : p));
     try { await dbService.updateLikeCount(postId, incrementBy); } catch (error) {}
   };
 
@@ -205,7 +243,7 @@ const App: React.FC = () => {
       text: text,
       timestamp: Date.now()
     };
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
+    setAllPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
     try { await dbService.addComment(postId, newComment); } catch(error) {}
   };
 
@@ -266,7 +304,19 @@ const App: React.FC = () => {
         {viewState === ViewState.FEED ? (
             <div className="pt-0 md:pt-4 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
-                {posts.map(post => <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} />)}
+                {posts.map(post => (
+                  <PostCard 
+                    key={post.id} 
+                    post={post} 
+                    onLike={handleLike} 
+                    onAddComment={handleAddComment} 
+                    onDelete={setPostToDelete} 
+                    isAdmin={isAdmin || post.user.id === currentUser?.id}
+                    isFollowing={followingIds.includes(post.user.id)}
+                    onFollow={() => handleFollowToggle(post.user.id)}
+                    currentUserId={currentUser?.id}
+                  />
+                ))}
               </div>
             </div>
         ) : viewState === ViewState.BLOG ? (
@@ -283,6 +333,8 @@ const App: React.FC = () => {
                 onLoginSuccess={() => setViewState(ViewState.PROFILE)}
                 onLike={handleLike}
                 onAddComment={handleAddComment}
+                followingIds={followingIds}
+                onFollowToggle={handleFollowToggle}
             />
         ) : viewState === ViewState.ADMIN_DASHBOARD ? (
             <AdminDashboard posts={posts} onDeletePost={setPostToDelete} onResetData={() => dbService.clearAll()} onClose={() => setViewState(ViewState.FEED)} />

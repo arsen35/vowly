@@ -8,6 +8,9 @@ interface PostCardProps {
   onAddComment: (postId: string, text: string) => void;
   onDelete: (postId: string) => void;
   isAdmin: boolean;
+  isFollowing?: boolean;
+  onFollow?: () => void;
+  currentUserId?: string;
 }
 
 interface Heart {
@@ -17,7 +20,16 @@ interface Heart {
   color: string;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, onDelete, isAdmin }) => {
+export const PostCard: React.FC<PostCardProps> = ({ 
+  post, 
+  onLike, 
+  onAddComment, 
+  onDelete, 
+  isAdmin, 
+  isFollowing, 
+  onFollow,
+  currentUserId 
+}) => {
   const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
@@ -88,6 +100,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
     setCommentText('');
   };
 
+  const isOwnPost = currentUserId === post.user.id;
+
   return (
     <div className="bg-white dark:bg-theme-black sm:rounded-md border-y sm:border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-200">
       {/* HEADER - MINIMAL & FLAT */}
@@ -109,7 +123,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onAddComment, 
         </div>
         
         <div className="flex items-center gap-3">
-          <button className="text-[12px] font-bold text-wedding-500 hover:text-wedding-600 transition-colors">Takip Et</button>
+          {!isOwnPost && (
+            <button 
+              onClick={onFollow}
+              className={`text-[12px] font-bold transition-colors ${isFollowing ? 'text-gray-400' : 'text-wedding-500 hover:text-wedding-600'}`}
+            >
+              {isFollowing ? 'Takibi Bırak' : 'Takip Et'}
+            </button>
+          )}
           
           {isAdmin && (
               <div className="relative" ref={menuRef}>
