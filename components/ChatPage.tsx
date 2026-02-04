@@ -162,7 +162,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                             <div key={msg.id} className={`flex ${msg.userId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`flex gap-3 max-w-[85%] ${msg.userId === currentUser.id ? 'flex-row-reverse' : 'flex-row'}`}>
                                     <img src={msg.avatar} className="w-8 h-8 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
-                                    <div className={`p-3 rounded-2xl text-[13px] shadow-sm ${msg.userId === currentUser.id ? 'bg-wedding-500 text-white rounded-tr-none' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white rounded-tl-none'}`}>
+                                    <div className={`p-3 rounded-[5px] text-[13px] shadow-sm ${msg.userId === currentUser.id ? 'bg-wedding-500 text-white rounded-tr-none' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white rounded-tl-none'}`}>
                                         <p className="text-[10px] font-bold opacity-70 mb-1">{msg.userName}</p>
                                         <p className="leading-snug">{msg.text}</p>
                                     </div>
@@ -171,14 +171,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
-                    {/* GLOBAL CHAT INPUT - MODIFIED */}
+                    {/* GLOBAL CHAT INPUT - RADIUS: 5px */}
                     <form onSubmit={handleSendGlobal} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center">
                         <input 
                             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-2xl px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all"
+                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-[5px] px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all"
                             placeholder="Mesaj yazın..."
                         />
-                        <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-2xl shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
+                        <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-[5px] shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
                         </button>
                     </form>
@@ -192,12 +192,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                     <svg className="w-4 h-4 absolute left-4 text-gray-400 group-focus-within:text-wedding-500 transition-colors pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                     <input 
                                         value={searchTerm} onChange={(e) => handleSearch(e.target.value)}
-                                        className="w-full bg-gray-100/50 dark:bg-zinc-900 rounded-xl pl-11 pr-5 py-2.5 text-xs outline-none border border-transparent focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-sm dark:text-white"
+                                        className="w-full bg-gray-100/50 dark:bg-zinc-900 rounded-[5px] pl-11 pr-5 py-2.5 text-xs outline-none border border-transparent focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-sm dark:text-white"
                                         placeholder="@kullaniciadi ile ara ve yaz..."
                                     />
                                 </div>
                                 {searchResults.length > 0 && (
-                                    <div className="mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xl absolute z-50 w-[calc(100%-2.5rem)] animate-in fade-in slide-in-from-top-1 overflow-hidden">
+                                    <div className="mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[5px] shadow-2xl absolute z-50 w-[calc(100%-2.5rem)] animate-in fade-in slide-in-from-top-1 overflow-hidden">
                                         {searchResults.map(u => (
                                             <div key={u.id} onClick={() => startDM(u)} className="p-4 flex items-center gap-4 hover:bg-wedding-50 dark:hover:bg-wedding-900/10 cursor-pointer border-b last:border-0 border-gray-50 dark:border-zinc-800/50 transition-all">
                                                 <img src={u.avatar} className="w-10 h-10 rounded-lg object-cover" />
@@ -262,7 +262,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                     
                                     return (
                                         <div key={m.id} className={`flex flex-col ${m.senderId === currentUser.id ? 'items-end' : 'items-start'}`}>
-                                            <div className={`px-4 py-2.5 rounded-2xl text-[13px] max-w-[80%] shadow-sm leading-snug ${m.senderId === currentUser.id ? 'bg-wedding-500 text-white rounded-tr-none' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white rounded-tl-none'}`}>
+                                            <div className={`px-4 py-2.5 rounded-[5px] text-[13px] max-w-[80%] shadow-sm leading-snug ${m.senderId === currentUser.id ? 'bg-wedding-500 text-white rounded-tr-none' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white rounded-tl-none'}`}>
                                                 {m.text}
                                                 <span className={`block text-[8px] text-right mt-1.5 opacity-60 font-bold`}>{new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                             </div>
@@ -281,14 +281,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            {/* DM INPUT - MODIFIED FOR BETTER MOBILE VIEW */}
+                            {/* DM INPUT - RADIUS: 5px */}
                             <form onSubmit={handleSendDM} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center">
                                 <input 
                                     value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-2xl px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-inner"
+                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-[5px] px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-inner"
                                     placeholder="Mesaj yazın..."
                                 />
-                                <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-2xl shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
+                                <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-[5px] shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
                                 </button>
                             </form>
