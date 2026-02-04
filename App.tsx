@@ -38,7 +38,6 @@ const App: React.FC = () => {
 
   const ADMIN_EMAILS = ['jeanbox35@gmail.com', 'swoxagency@gmail.com', 'nossdigital@gmail.com'];
 
-  // Posts with current user like status re-applied on every update
   const posts = useMemo(() => {
     const LIKED_STORAGE_KEY = 'vowly_liked_posts';
     const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
@@ -197,18 +196,13 @@ const App: React.FC = () => {
     }
     localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
     
-    // Update local state immediately for responsiveness
     setAllPosts(prev => prev.map(p => p.id === postId ? { 
       ...p, 
       isLikedByCurrentUser: !isAlreadyLiked, 
       likes: Math.max(0, p.likes + incrementBy) 
     } : p));
 
-    try { 
-      await dbService.updateLikeCount(postId, incrementBy); 
-    } catch (error) {
-      console.error("Like error", error);
-    }
+    try { await dbService.updateLikeCount(postId, incrementBy); } catch (error) {}
   };
 
   const handleAddComment = async (postId: string, text: string) => {
@@ -226,75 +220,61 @@ const App: React.FC = () => {
 
   if (isLoading) return <LoadingScreen />;
 
-  const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 'android';
-
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
-      <header className="sticky top-0 z-40 bg-white/40 dark:bg-theme-black/40 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
+      <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900">
         <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
-            <Logo className="h-8 w-auto" />
+            <Logo className="h-7 w-auto" />
           </div>
           
           <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
-               <button onClick={() => setViewState(ViewState.FEED)} className={`text-[11px] font-bold tracking-widest transition-colors ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600 hover:text-wedding-500'}`}>AKIŞ</button>
-               <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[11px] font-bold tracking-widest transition-colors ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600 hover:text-wedding-500'}`}>BLOG</button>
-               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[11px] font-bold tracking-widest flex items-center gap-1 transition-colors ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600 hover:text-wedding-500'}`}>SOHBET</button>
-               <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[11px] font-bold tracking-widest transition-colors ${viewState === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-400 dark:text-zinc-600 hover:text-wedding-500'}`}>PROFİLİM</button>
+               <button onClick={() => setViewState(ViewState.FEED)} className={`text-[10px] font-bold tracking-widest transition-colors ${viewState === ViewState.FEED ? 'text-wedding-500' : 'text-gray-400 hover:text-wedding-500'}`}>AKIŞ</button>
+               <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[10px] font-bold tracking-widest transition-colors ${viewState === ViewState.BLOG ? 'text-wedding-500' : 'text-gray-400 hover:text-wedding-500'}`}>BLOG</button>
+               <button onClick={() => setViewState(ViewState.CHAT)} className={`text-[10px] font-bold tracking-widest flex items-center gap-1 transition-colors ${viewState === ViewState.CHAT ? 'text-wedding-500' : 'text-gray-400 hover:text-wedding-500'}`}>SOHBET</button>
+               <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[10px] font-bold tracking-widest transition-colors ${viewState === ViewState.PROFILE ? 'text-wedding-500' : 'text-gray-400 hover:text-wedding-500'}`}>PROFİLİM</button>
           </nav>
 
           <div className="flex items-center gap-4">
-            <button onClick={toggleTheme} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+            <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-wedding-500 transition-all">
                 {isDarkMode ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>}
             </button>
-            {currentUser && <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer overflow-hidden rounded-full ring-2 ring-wedding-500/10"><img src={currentUser.avatar} className="w-8 h-8 object-cover" alt="P" /></div>}
+            {currentUser && <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer rounded-md overflow-hidden border border-gray-100"><img src={currentUser.avatar} className="w-8 h-8 object-cover" alt="P" /></div>}
           </div>
         </div>
       </header>
       
       <main className="w-full">
-        {viewState === ViewState.FEED ? (
-            <div className="pt-0 md:pt-6 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-8">
+        <div className="pt-0 md:pt-6 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
+          {viewState === ViewState.FEED ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
                 {posts.map(post => (
-                  <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    onLike={handleLike} 
-                    onAddComment={handleAddComment} 
-                    onDelete={setPostToDelete} 
-                    isAdmin={isAdmin || post.user.id === currentUser?.id}
-                    isFollowing={followingIds.includes(post.user.id)}
-                    onFollow={() => handleFollowToggle(post.user.id)}
-                    currentUserId={currentUser?.id}
-                  />
+                  <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} currentUserId={currentUser?.id} />
                 ))}
-              </div>
             </div>
-        ) : viewState === ViewState.BLOG ? (
-            <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
-        ) : viewState === ViewState.CHAT ? (
-            <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
-        ) : viewState === ViewState.PROFILE ? (
-            <ProfilePage 
-                user={currentUser} posts={posts} 
-                onPostClick={(p) => setViewState(ViewState.FEED)} 
-                onLogout={handleLogout}
-                onDeleteAccount={() => {}}
-                onDeletePost={setPostToDelete}
-                onLoginSuccess={() => setViewState(ViewState.PROFILE)}
-                onLike={handleLike}
-                onAddComment={handleAddComment}
-                followingIds={followingIds}
-                onFollowToggle={handleFollowToggle}
-                onInstallApp={handleInstallApp}
-            />
-        ) : null}
+          ) : viewState === ViewState.BLOG ? (
+              <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
+          ) : viewState === ViewState.CHAT ? (
+              <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
+          ) : viewState === ViewState.PROFILE ? (
+              <ProfilePage user={currentUser} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.PROFILE)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} />
+          ) : null}
+        </div>
       </main>
+
+      {/* DESKTOP FLOATING BUTTONS */}
+      <div className="hidden md:flex fixed bottom-8 right-8 flex-col gap-3 z-50">
+        <a href="https://annabellabridal.com" target="_blank" className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-xl border border-gray-100 dark:border-zinc-800 text-wedding-500 hover:scale-105 transition-all group" title="Websiteye Dön">
+           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+        </a>
+        <button onClick={handleUploadClick} className="bg-wedding-500 p-3 rounded-lg shadow-xl text-white hover:bg-wedding-900 hover:scale-105 transition-all group" title="Paylaşım Yap">
+           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        </button>
+      </div>
 
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
-      {showInstallModal && <InstallModal platform={platform} canTriggerNative={!!deferredPrompt} onClose={() => setShowInstallModal(false)} onInstall={handleInstallApp} />}
+      {showInstallModal && <InstallModal platform="ios" canTriggerNative={false} onClose={() => setShowInstallModal(false)} onInstall={() => {}} />}
       <ConfirmationModal isOpen={!!postToDelete} title="Sil" message="Bu içeriği silmek istediğine emin misin?" onConfirm={async () => { if(postToDelete) await dbService.deletePost(postToDelete); setPostToDelete(null); }} onCancel={() => setPostToDelete(null)} />
     </div>
   );
