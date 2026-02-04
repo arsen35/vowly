@@ -128,7 +128,6 @@ export const dbService = {
     const convId = dbService.getConversationId(sender.id, receiverId);
     const batch = writeBatch(dbInstance);
     
-    // 1. Yeni mesajı ekle
     const msgRef = doc(collection(dbInstance, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION));
     batch.set(msgRef, { 
       senderId: sender.id, 
@@ -136,7 +135,6 @@ export const dbService = {
       timestamp: Date.now() 
     });
 
-    // 2. Sohbet başlığını güncelle/oluştur ve alıcıyı "okunmamış" olarak işaretle
     const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
     batch.set(convRef, { 
       id: convId, 
@@ -152,20 +150,18 @@ export const dbService = {
   markConversationAsRead: async (convId: string, userId: string) => {
     const { dbInstance } = checkDbConnection();
     const convRef = doc(dbInstance, CONVERSATIONS_COLLECTION, convId);
-    const docSnap = await getDoc(convRef);
-    if (docSnap.exists()) {
-      await updateDoc(convRef, {
-        unreadBy: arrayRemove(userId)
-      });
-    }
+    await updateDoc(convRef, {
+      unreadBy: arrayRemove(userId)
+    });
   },
 
   subscribeToConversations: (uid: string, callback: (convs: Conversation[]) => void) => {
     if (!db) return () => {};
+    // NOT: orderBy kaldırıldı çünkü composite index gerektiriyor. 
+    // Sıralama ChatPage içinde manuel yapılacak.
     const q = query(
       collection(db, CONVERSATIONS_COLLECTION), 
-      where("participants", "array-contains", uid), 
-      orderBy("lastMessageTimestamp", "desc")
+      where("participants", "array-contains", uid)
     );
     return onSnapshot(q, (snap) => {
         const convs: Conversation[] = [];

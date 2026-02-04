@@ -10,7 +10,7 @@ interface ChatPageProps {
 }
 
 export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
-  const [activeTab, setActiveTab] = useState<'global' | 'direct'>('global');
+  const [activeTab, setActiveTab] = useState<'global' | 'direct'>('direct');
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -32,7 +32,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
     } else if (currentUser) {
         // Tüm konuşmaları dinle
         const unsubscribe = dbService.subscribeToConversations(currentUser.id, async (convs) => {
-            const enriched = await Promise.all(convs.map(async (c) => {
+            // Manuel sıralama (Firestore index hatasını önlemek için)
+            const sortedConvs = [...convs].sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+            
+            const enriched = await Promise.all(sortedConvs.map(async (c) => {
                 const otherUid = c.participants.find(p => p !== currentUser.id);
                 const otherUser = otherUid ? await dbService.getUser(otherUid) : null;
                 return { ...c, otherUser: otherUser || undefined };
@@ -114,11 +117,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
     try {
         await dbService.sendDirectMessage(currentUser!, activeConv.otherUser!.id, msgText);
     } catch (err) {
-        setNewMessage(msgText); // Hata olursa mesajı geri koy
+        setNewMessage(msgText);
     } finally { setIsSending(false); }
   };
 
-  // Görüldü durumunu kontrol et
   const isMessageSeen = (conv: Conversation | null) => {
     if (!conv || !currentUser) return false;
     const otherUid = conv.participants.find(p => p !== currentUser.id);
@@ -135,21 +137,23 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] bg-white dark:bg-theme-black relative">
+    <div className="flex flex-col h-[calc(100dvh-64px)] bg-white dark:bg-theme-black relative transition-colors">
         {/* Tab Switcher */}
         <div className="flex border-b border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-zinc-900/50">
             <button 
                 onClick={() => { setActiveTab('global'); setActiveConv(null); }}
-                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all ${activeTab === 'global' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
+                className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${activeTab === 'global' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
             >
                 Genel Sohbet
             </button>
             <button 
                 onClick={() => setActiveTab('direct')}
-                className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all ${activeTab === 'direct' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
+                className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === 'direct' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
             >
                 Mesajlarım
-                {conversations.some(c => c.unreadBy?.includes(currentUser.id)) && <span className="ml-2 inline-block w-1.5 h-1.5 bg-red-500 rounded-full"></span>}
+                {conversations.some(c => c.unreadBy?.includes(currentUser.id)) && (
+                    <span className="absolute top-1/2 -translate-y-1/2 right-4 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-sm shadow-red-500/50"></span>
+                )}
             </button>
         </div>
 
@@ -159,9 +163,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                     <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                         {globalMessages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.userId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`flex gap-2 max-w-[80%] ${msg.userId === currentUser.id ? 'flex-row-reverse' : 'flex-row'}`}>
-                                    <img src={msg.avatar} className="w-7 h-7 rounded-md object-cover" />
-                                    <div className={`p-2.5 rounded-lg text-sm ${msg.userId === currentUser.id ? 'bg-wedding-500 text-white' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white'}`}>
+                                <div className={`flex gap-3 max-w-[85%] ${msg.userId === currentUser.id ? 'flex-row-reverse' : 'flex-row'}`}>
+                                    <img src={msg.avatar} className="w-8 h-8 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
+                                    <div className={`p-3 rounded-2xl text-[13px] shadow-sm ${msg.userId === currentUser.id ? 'bg-wedding-500 text-white rounded-tr-none' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white rounded-tl-none'}`}>
                                         <p className="text-[10px] font-bold opacity-70 mb-1">{msg.userName}</p>
                                         <p className="leading-snug">{msg.text}</p>
                                     </div>
@@ -170,109 +174,120 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
-                    <form onSubmit={handleSendGlobal} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2">
+                    <form onSubmit={handleSendGlobal} className="p-4 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
                         <input 
                             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-md px-4 py-2.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500"
+                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-xl px-5 py-3 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:ring-1 focus:ring-wedding-500/20 transition-all"
                             placeholder="Bir şeyler yaz..."
                         />
-                        <button className="bg-wedding-500 text-white p-2.5 rounded-md transition-transform active:scale-90"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
+                        <button className="bg-wedding-500 text-white p-3 rounded-xl transition-all active:scale-90 hover:bg-wedding-600"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
                     </form>
                 </>
             ) : (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full bg-white dark:bg-theme-black">
                     {!activeConv ? (
                         <>
-                            <div className="p-4 border-b border-gray-100 dark:border-zinc-900">
-                                <div className="relative">
+                            <div className="p-5">
+                                <div className="relative group">
                                     <input 
                                         value={searchTerm} onChange={(e) => handleSearch(e.target.value)}
-                                        className="w-full bg-gray-50 dark:bg-zinc-900 rounded-md pl-10 pr-4 py-2 text-xs outline-none border border-gray-100 dark:border-zinc-800"
-                                        placeholder="@kullaniciadi ile ara..."
+                                        className="w-full bg-gray-50 dark:bg-zinc-900 rounded-xl pl-11 pr-5 py-3.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all shadow-sm"
+                                        placeholder="@kullaniciadi ile ara ve yaz..."
                                     />
-                                    <svg className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    <svg className="w-4.5 h-4.5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-wedding-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 </div>
                                 {searchResults.length > 0 && (
-                                    <div className="mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-md shadow-xl absolute z-50 w-[calc(100%-2rem)]">
+                                    <div className="mt-3 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xl absolute z-50 w-[calc(100%-2.5rem)] animate-in fade-in slide-in-from-top-2 overflow-hidden">
                                         {searchResults.map(u => (
-                                            <div key={u.id} onClick={() => startDM(u)} className="p-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer border-b last:border-0 border-gray-50 dark:border-zinc-800">
-                                                <img src={u.avatar} className="w-8 h-8 rounded-md" />
+                                            <div key={u.id} onClick={() => startDM(u)} className="p-4 flex items-center gap-4 hover:bg-wedding-50 dark:hover:bg-wedding-900/10 cursor-pointer border-b last:border-0 border-gray-50 dark:border-zinc-800/50 transition-all">
+                                                <img src={u.avatar} className="w-10 h-10 rounded-lg object-cover" />
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold dark:text-white">{u.name}</span>
-                                                    <span className="text-[10px] text-wedding-500 italic">@{u.username || u.id.slice(0,5)}</span>
+                                                    <span className="text-[10px] text-wedding-500 italic">@{u.username || 'üye'}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            <div className="flex-1 overflow-y-auto">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {conversations.map(c => {
                                     const isUnread = c.unreadBy?.includes(currentUser.id);
                                     return (
-                                        <div key={c.id} onClick={() => setActiveConv(c)} className={`p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-900 cursor-pointer border-b border-gray-50 dark:border-zinc-900/50 transition-colors ${isUnread ? 'bg-wedding-50/10 dark:bg-wedding-500/5' : ''}`}>
+                                        <div key={c.id} onClick={() => setActiveConv(c)} className={`px-5 py-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-900/30 cursor-pointer border-b border-gray-50 dark:border-zinc-900/30 transition-all ${isUnread ? 'bg-wedding-50/20 dark:bg-wedding-500/5' : ''}`}>
                                             <div className="relative">
-                                                <img src={c.otherUser?.avatar} className="w-12 h-12 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
-                                                {isUnread && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white dark:border-black animate-pulse"></span>}
+                                                <img src={c.otherUser?.avatar} className="w-14 h-14 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 shadow-sm" />
+                                                {isUnread && (
+                                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-black animate-pulse flex items-center justify-center text-[8px] text-white font-bold">!</span>
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-center mb-0.5">
+                                                <div className="flex justify-between items-center mb-1">
                                                     <span className={`text-sm dark:text-white truncate ${isUnread ? 'font-bold' : 'font-medium'}`}>{c.otherUser?.name}</span>
                                                     <span className="text-[9px] text-gray-400 whitespace-nowrap ml-2">{c.lastMessageTimestamp ? new Date(c.lastMessageTimestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
                                                 </div>
-                                                <p className={`text-[11px] truncate ${isUnread ? 'font-bold text-gray-900 dark:text-gray-200' : 'text-gray-400'}`}>{c.lastMessage || 'Henüz mesaj yok'}</p>
+                                                <p className={`text-[12px] truncate ${isUnread ? 'font-bold text-gray-900 dark:text-gray-200' : 'text-gray-400'}`}>{c.lastMessage || 'Mesajlaşmaya başlayın...'}</p>
                                             </div>
                                         </div>
                                     );
                                 })}
                                 {conversations.length === 0 && (
-                                    <div className="py-20 text-center flex flex-col items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-300">
-                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                                    <div className="py-24 text-center flex flex-col items-center gap-6 animate-fadeIn">
+                                        <div className="w-20 h-20 rounded-full bg-wedding-50 dark:bg-zinc-900/50 flex items-center justify-center text-wedding-200">
+                                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                                         </div>
-                                        <p className="opacity-30 italic text-[11px] uppercase tracking-widest font-bold">Mesaj kutun boş</p>
+                                        <div className="space-y-1">
+                                            <p className="text-gray-900 dark:text-white font-serif italic text-lg">Henüz sohbetin yok</p>
+                                            <p className="text-gray-400 text-[10px] uppercase tracking-[0.2em] font-bold">Arama çubuğundan birini bulup yazabilirsin</p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </>
                     ) : (
-                        <div className="flex flex-col h-full animate-in slide-in-from-right-5">
-                            <div className="p-3 border-b border-gray-100 dark:border-zinc-900 flex items-center gap-3 bg-gray-50/30 dark:bg-zinc-900/30">
-                                <button onClick={() => setActiveConv(null)} className="p-1 text-gray-400 hover:text-wedding-500 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" /></svg></button>
-                                <img src={activeConv.otherUser?.avatar} className="w-8 h-8 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
+                        <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-300">
+                            <div className="p-4 border-b border-gray-100 dark:border-zinc-900 flex items-center gap-4 bg-white/80 dark:bg-theme-black/80 backdrop-blur-md sticky top-0 z-20">
+                                <button onClick={() => setActiveConv(null)} className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg></button>
+                                <img src={activeConv.otherUser?.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 shadow-sm" />
                                 <div className="min-w-0">
-                                    <p className="text-xs font-bold dark:text-white leading-none truncate">{activeConv.otherUser?.name}</p>
-                                    <p className="text-[9px] text-wedding-500 font-medium italic mt-0.5">@{activeConv.otherUser?.username}</p>
+                                    <p className="text-sm font-bold dark:text-white leading-none truncate">{activeConv.otherUser?.name}</p>
+                                    <p className="text-[10px] text-wedding-500 font-bold italic mt-1.5 uppercase tracking-widest">@{activeConv.otherUser?.username || 'üye'}</p>
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar bg-white dark:bg-theme-black">
+                            <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-white dark:bg-theme-black">
                                 {dmMessages.map((m, idx) => {
                                     const isLastMessage = idx === dmMessages.length - 1;
-                                    const isSeen = isMessageSeen(conversations.find(c => c.id === activeConv.id) || null);
+                                    const currentC = conversations.find(c => c.id === activeConv.id);
+                                    const isSeen = isMessageSeen(currentC || null);
                                     
                                     return (
                                         <div key={m.id} className={`flex flex-col ${m.senderId === currentUser.id ? 'items-end' : 'items-start'}`}>
-                                            <div className={`px-3 py-2 rounded-lg text-sm max-w-[75%] shadow-sm ${m.senderId === currentUser.id ? 'bg-wedding-500 text-white' : 'bg-gray-100 dark:bg-zinc-800 dark:text-white'}`}>
+                                            <div className={`px-4 py-2.5 rounded-2xl text-[13px] max-w-[80%] shadow-sm leading-snug ${m.senderId === currentUser.id ? 'bg-wedding-500 text-white rounded-tr-none' : 'bg-gray-100 dark:bg-zinc-900 dark:text-white rounded-tl-none'}`}>
                                                 {m.text}
-                                                <span className={`block text-[8px] text-right mt-1 opacity-60`}>{new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                                <span className={`block text-[8px] text-right mt-1.5 opacity-60 font-bold`}>{new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                             </div>
                                             {m.senderId === currentUser.id && isLastMessage && (
-                                                <span className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">
-                                                    {isSeen ? 'Görüldü ✓✓' : 'İletildi ✓'}
-                                                </span>
+                                                <div className="mt-1.5 flex items-center gap-1.5">
+                                                    <span className={`text-[8px] font-bold uppercase tracking-widest ${isSeen ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                        {isSeen ? 'Görüldü' : 'İletildi'}
+                                                    </span>
+                                                    <span className={`text-[10px] ${isSeen ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                        {isSeen ? '✓✓' : '✓'}
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
                                     );
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <form onSubmit={handleSendDM} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
+                            <form onSubmit={handleSendDM} className="p-4 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black">
                                 <input 
                                     value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-md px-4 py-2.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all"
-                                    placeholder="Mesaj yaz..."
+                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-xl px-5 py-3.5 text-sm outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 transition-all"
+                                    placeholder="Mesaj gönder..."
                                 />
-                                <button type="submit" className="bg-wedding-500 text-white p-2.5 rounded-md transition-transform active:scale-90"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
+                                <button type="submit" className="bg-wedding-500 text-white p-3.5 rounded-xl transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg></button>
                             </form>
                         </div>
                     )}
