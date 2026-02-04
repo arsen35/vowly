@@ -23,8 +23,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewState, setViewState] = useState<ViewState>(ViewState.FEED);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false); // AdminDashboard için
+  const [showAdminTrigger, setShowAdminTrigger] = useState(false); // Login için
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -32,7 +32,6 @@ const App: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   
-  const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const logoClicks = useRef(0);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,7 +47,6 @@ const App: React.FC = () => {
       isLikedByCurrentUser: likedPosts.includes(p.id)
     }));
 
-    // Talebe istinaden: Yeni paylaşımlar HER ZAMAN üstte. (Strict chronological sorting)
     return [...processed].sort((a, b) => b.timestamp - a.timestamp);
   }, [allPosts]);
 
@@ -78,6 +76,7 @@ const App: React.FC = () => {
     logoClicks.current += 1;
     if (clickTimer.current) clearTimeout(clickTimer.current);
     clickTimer.current = setTimeout(() => { logoClicks.current = 0; }, 3000);
+    
     if (logoClicks.current >= 5) {
         setShowAdminTrigger(true);
         logoClicks.current = 0;
@@ -119,9 +118,9 @@ const App: React.FC = () => {
                 } else {
                     const newUser: User = {
                         id: user.uid,
-                        name: user.displayName || 'İsimsiz Gelin',
+                        name: user.displayName || 'Yeni Üye',
                         username: `user_${user.uid.slice(0,5)}`,
-                        avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'G')}&background=A66D60&color=fff&bold=true`
+                        avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=A66D60&color=fff&bold=true`
                     };
                     setCurrentUser(newUser);
                     dbService.saveUser(newUser);
@@ -186,12 +185,10 @@ const App: React.FC = () => {
 
   const handleNewPost = async (data: any) => {
     if (!currentUser) return;
-    setViewState(ViewState.FEED); // Optimizm için hemen dönüyoruz
+    setViewState(ViewState.FEED);
     
     try {
       const mediaWithUrls: MediaItem[] = [];
-      
-      // Her bir medyayı Firebase Storage'a yükle
       for (const item of data.media) {
           if (item.file) {
               const url = await dbService.uploadMedia(item.file, 'posts');
@@ -217,7 +214,7 @@ const App: React.FC = () => {
       await dbService.savePost(newPost);
     } catch (e) { 
       console.error("Paylaşım Hatası:", e); 
-      alert("Paylaşım yapılırken bir hata oluştu. Lütfen tekrar deneyin.");
+      alert("Paylaşım yapılırken bir hata oluştu.");
     }
   };
 
@@ -261,8 +258,8 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-theme-black/90 backdrop-blur-sm border-b border-gray-100 dark:border-zinc-900">
-        <div className="w-full h-14 flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-theme-black/90 backdrop-blur-sm border-b border-gray-100 dark:border-zinc-900 h-14">
+        <div className="w-full h-full flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
             <Logo className="h-7 w-auto" />
           </div>
@@ -275,6 +272,11 @@ const App: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-4">
+            {isAdmin && (
+                <button onClick={() => setShowAdminModal(true)} className="hidden md:flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-all">
+                    PANEL
+                </button>
+            )}
             <button onClick={toggleTheme} className="p-2 text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all">
                 {isDarkMode ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>}
             </button>
@@ -283,8 +285,8 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <main className="w-full">
-        <div className="pt-0 md:pt-6 px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
+      <main className="w-full pt-14"> {/* FIX: Padding top added to offset the fixed header */}
+        <div className="px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px] pt-4">
           {viewState === ViewState.FEED ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
                 {posts.map(post => (
@@ -301,7 +303,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* DESKTOP FLOATING BUTTONS - MINIMALIST */}
+      {/* DESKTOP FLOATING BUTTONS */}
       <div className="hidden md:flex fixed bottom-8 right-8 flex-col gap-3 z-50">
         <a href="https://annabellabridal.com" target="_blank" className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-95" title="Anasayfa">
            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
@@ -312,6 +314,25 @@ const App: React.FC = () => {
       </div>
 
       <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} />
+      
+      {/* Modals & Triggers */}
+      {showAdminTrigger && (
+          <AdminLoginModal 
+            onClose={() => setShowAdminTrigger(false)} 
+            onLoginSuccess={() => {
+                setShowAdminTrigger(false);
+                setIsAdmin(true);
+                setViewState(ViewState.FEED);
+            }} 
+          />
+      )}
+      
+      {showAdminModal && (
+          <div className="fixed inset-0 z-[2000] bg-white dark:bg-theme-black overflow-y-auto pt-20 animate-in slide-in-from-bottom-5">
+              <AdminDashboard posts={allPosts} onDeletePost={async (id) => await dbService.deletePost(id)} onResetData={() => {}} onClose={() => setShowAdminModal(false)} />
+          </div>
+      )}
+
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
       {showInstallModal && <InstallModal platform="ios" canTriggerNative={false} onClose={() => setShowInstallModal(false)} onInstall={() => {}} />}
       <ConfirmationModal isOpen={!!postToDelete} title="Sil" message="Bu içeriği silmek istediğine emin misin?" onConfirm={async () => { if(postToDelete) await dbService.deletePost(postToDelete); setPostToDelete(null); }} onCancel={() => setPostToDelete(null)} />
