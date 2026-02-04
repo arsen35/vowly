@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { auth } from '../services/firebase';
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
 interface AdminLoginModalProps {
   onClose: () => void;
@@ -26,13 +26,14 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
 
     if (!cleanEmail || !cleanPassword) return;
     
+    // 1. Manuel yetki kontrolü
     if (!ADMIN_EMAILS.includes(cleanEmail)) {
-        setError('Yetkisiz e-posta adresi.');
+        setError('Bu e-posta adresi yönetici listesinde bulunamadı.');
         return;
     }
 
     if (cleanPassword !== ADMIN_PASS) {
-        setError('Hatalı güvenlik şifresi.');
+        setError('Hatalı güvenlik şifresi. Lütfen tekrar deneyin.');
         return;
     }
 
@@ -40,11 +41,25 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
     setError('');
 
     try {
+        // 2. Firebase ile giriş dene
         await signInWithEmailAndPassword(auth!, cleanEmail, cleanPassword);
         onLoginSuccess();
         onClose();
     } catch (err: any) {
-        setError('Oturum açılamadı. Lütfen kontrol edin.');
+        // 3. Eğer kullanıcı yoksa (auth/user-not-found), otomatik olarak oluştur
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+            try {
+                await createUserWithEmailAndPassword(auth!, cleanEmail, cleanPassword);
+                onLoginSuccess();
+                onClose();
+            } catch (createErr: any) {
+                console.error("Kayıt hatası:", createErr);
+                setError('Oturum açma yetkilendirme hatası (E02).');
+            }
+        } else {
+            console.error("Login hatası:", err.code);
+            setError('Sistem şu an meşgul, lütfen az sonra tekrar deneyin.');
+        }
     } finally {
         setIsLoading(false);
     }
@@ -70,7 +85,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
                     type="email" 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
-                    className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-all"
+                    className="w-full bg-gray-50/50 dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-all"
                     placeholder="Admin E-Posta"
                 />
             </div>
@@ -79,7 +94,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
                     type={showPassword ? "text" : "password"} 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)} 
-                    className="w-full bg-transparent border-gray-100 dark:border-zinc-900 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-all pr-12"
+                    className="w-full bg-gray-50/50 dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 border rounded-xl px-4 py-3.5 text-xs dark:text-white outline-none focus:border-wedding-500 transition-all pr-12"
                     placeholder="Güvenlik Şifresi"
                 />
                 <button 
