@@ -52,42 +52,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       case 'auth/email-already-in-use':
         return 'Bu e-posta adresi zaten kullanımda.';
       case 'auth/invalid-email':
-        return 'Geçersiz bir e-posta adresi girdiniz.';
-      case 'auth/operation-not-allowed':
-        return 'E-posta/şifre girişi şu an kapalı.';
+        return 'Geçersiz bir e-posta adresi.';
       case 'auth/weak-password':
-        return 'Şifre çok zayıf (en az 6 karakter olmalı).';
-      case 'auth/user-disabled':
-        return 'Bu kullanıcı hesabı devre dışı bırakılmış.';
+        return 'Şifre çok zayıf (en az 6 karakter).';
       case 'auth/user-not-found':
-        return 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.';
+        return 'Kullanıcı bulunamadı.';
       case 'auth/wrong-password':
-        return 'Hatalı şifre girdiniz.';
+        return 'Hatalı şifre.';
       case 'auth/invalid-credential':
         return 'E-posta veya şifre hatalı.';
+      case 'auth/operation-not-allowed':
+        return 'E-posta girişi şu an pasif. Lütfen yöneticiyle iletişime geçin.';
       default:
-        return mode === 'register' ? 'Kayıt işlemi sırasında bir hata oluştu.' : 'Giriş yapılamadı.';
+        return 'İşlem sırasında bir hata oluştu.';
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || (mode === 'register' && !name)) return;
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword || (mode === 'register' && !name)) return;
     
     setIsLoading(true);
     setError('');
 
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-
     try {
       if (mode === 'register') {
-        if (trimmedPassword.length < 6) {
-          setError('Şifre en az 6 karakter olmalıdır.');
-          setIsLoading(false);
-          return;
-        }
-
         const userCredential = await createUserWithEmailAndPassword(auth!, trimmedEmail, trimmedPassword);
         const user = userCredential.user;
         
@@ -103,7 +95,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       onLoginSuccess();
       onClose();
     } catch (err: any) {
-      console.error("Auth Error:", err.code);
+      console.error("Auth Error Code:", err.code);
       setError(getFirebaseErrorMessage(err.code));
     } finally {
       setIsLoading(false);
@@ -184,7 +176,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
             className="w-full mt-6 text-[11px] text-gray-500 hover:text-wedding-500 font-bold uppercase tracking-widest transition-all"
         >
-            {mode === 'login' ? 'Zaten üye misin? Giriş Yap' : 'Hesabın yok mu? Kayıt Ol'}
+            {mode === 'login' ? 'Hesabın yok mu? Kayıt Ol' : 'Zaten üye misin? Giriş Yap'}
         </button>
       </div>
     </div>
