@@ -66,58 +66,73 @@ export const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUploa
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[1100] flex items-end md:items-center justify-center p-0 md:p-4 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white dark:bg-theme-dark rounded-t-3xl md:rounded-3xl w-full max-w-lg h-[90vh] md:h-auto overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom-5">
-        <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-theme-dark shrink-0">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white">Anını Paylaş</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition-colors p-1.5 bg-gray-200 dark:bg-gray-700 rounded-full">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 18L18 6M6 6l12 12" /></svg>
+    <div className="fixed inset-0 bg-black/80 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-zinc-950 rounded-t-[3rem] md:rounded-[3rem] w-full max-w-xl h-[92vh] md:h-auto overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom-10 border-t border-gray-100 dark:border-zinc-900">
+        <div className="p-6 border-b dark:border-zinc-900 flex justify-between items-center bg-white dark:bg-zinc-950 shrink-0">
+          <div>
+            <h2 className="text-xl font-serif font-bold text-gray-900 dark:text-white uppercase tracking-widest">Anını Ölümsüzleştir</h2>
+            <p className="text-[10px] text-gray-400 mt-0.5 tracking-widest font-bold">MUTLU ANLARINI TOPLULUKLA PAYLAŞ</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-all p-2 bg-gray-100 dark:bg-zinc-900 rounded-2xl active:scale-90">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             {selectedMedia.length > 0 ? (
-                <div className="aspect-square w-full rounded-2xl overflow-hidden relative bg-black">
-                    <img src={selectedMedia[currentPreviewIndex].url} alt="Preview" className="w-full h-full object-contain" />
+                <div className="aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden relative bg-black shadow-2xl">
+                    <img src={selectedMedia[currentPreviewIndex].url} alt="Preview" className="w-full h-full object-cover" />
+                    <button onClick={() => setSelectedMedia([])} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-xl backdrop-blur-md">Değiştir</button>
                 </div>
             ) : (
-                <div onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-wedding-50 dark:hover:bg-gray-800 transition-all">
-                    <svg className="w-12 h-12 text-wedding-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    <span className="text-sm font-bold text-gray-400">Fotoğraf Seç</span>
+                <div onClick={() => fileInputRef.current?.click()} className="aspect-[4/5] border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-[3rem] flex flex-col items-center justify-center cursor-pointer hover:bg-wedding-50 dark:hover:bg-wedding-900/10 hover:border-wedding-500/50 transition-all group">
+                    <div className="w-20 h-20 bg-wedding-50 dark:bg-wedding-900/10 rounded-[2rem] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg className="w-10 h-10 text-wedding-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    </div>
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Fotoğrafını Sürükle veya Seç</span>
+                    <span className="text-[10px] text-gray-300 mt-2 italic font-serif">En güzel anın burada başlasın ✨</span>
                 </div>
             )}
             
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
-            <div className="space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
-                    <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-1">Paylaşan</label>
-                    <div className="text-sm font-bold dark:text-white flex items-center gap-2">
-                        <img src={user?.avatar} className="w-6 h-6 rounded-full" alt="me" />
-                        {user?.name}
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
+                        <label className="text-[10px] font-bold text-wedding-500 uppercase tracking-widest block mb-2">Konum Bilgisi</label>
+                        <div className="relative">
+                            <svg className="w-4 h-4 absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-transparent pl-6 py-1 text-sm dark:text-white outline-none font-medium" placeholder="İstanbul, Türkiye" />
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
+                        <label className="text-[10px] font-bold text-wedding-500 uppercase tracking-widest block mb-2">Ürün Linki</label>
+                        <div className="relative">
+                            <svg className="w-4 h-4 absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                            <input type="url" value={productUrl} onChange={(e) => setProductUrl(e.target.value)} className="w-full bg-transparent pl-6 py-1 text-sm dark:text-white outline-none font-medium" placeholder="shopify.com/ürün-linki" />
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-2">Konum / Şehir</label>
-                    <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border-0 rounded-xl px-4 py-3 text-sm dark:text-white outline-none ring-1 ring-gray-100 dark:ring-gray-700 focus:ring-wedding-500 transition-all" placeholder="Örn: İstanbul, Türkiye" />
-                </div>
-
-                <div>
-                    <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-2">Ürün Linki (Shopify)</label>
-                    <input type="url" value={productUrl} onChange={(e) => setProductUrl(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border-0 rounded-xl px-4 py-3 text-sm dark:text-white outline-none ring-1 ring-gray-100 dark:ring-gray-700 focus:ring-wedding-500 transition-all" placeholder="https://annabellabridal.com/products/..." />
-                </div>
-
-                <div>
-                    <label className="text-[9px] font-bold text-wedding-500 uppercase tracking-widest block mb-2">Açıklama</label>
-                    <textarea value={caption} onChange={(e) => setCaption(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border-0 rounded-xl px-4 py-3 text-sm dark:text-white outline-none h-24 resize-none ring-1 ring-gray-100 dark:ring-gray-700 focus:ring-wedding-500 transition-all" placeholder="Neler hissediyorsun?" />
+                <div className="bg-gray-50 dark:bg-zinc-900 p-5 rounded-[2rem] border border-gray-100 dark:border-zinc-800">
+                    <label className="text-[10px] font-bold text-wedding-500 uppercase tracking-widest block mb-3">Paylaşım Açıklaması</label>
+                    <div className="relative">
+                        {isGeneratingAI && <div className="absolute top-0 right-0 animate-pulse text-[9px] text-wedding-500 font-bold">AI YAZIYOR...</div>}
+                        <textarea value={caption} onChange={(e) => setCaption(e.target.value)} className="w-full bg-transparent text-sm dark:text-white outline-none h-32 resize-none font-serif leading-relaxed italic" placeholder="Bu özel anı birkaç kelimeyle anlat..." />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {hashtags.map((tag, i) => (
+                            <span key={i} className="text-[10px] font-bold text-wedding-500 bg-wedding-100 dark:bg-wedding-900/30 px-3 py-1 rounded-xl">#{tag}</span>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-theme-dark border-t dark:border-gray-800 flex gap-3">
-            <Button variant="secondary" onClick={onClose} className="flex-1">İptal</Button>
-            <Button onClick={handleSubmit} isLoading={isProcessing} className="flex-1">Paylaş</Button>
+        <div className="p-6 bg-white dark:bg-zinc-950 border-t dark:border-zinc-900 flex gap-4">
+            <button onClick={onClose} className="flex-1 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-zinc-900 rounded-3xl hover:bg-gray-100 transition-all">Vazgeç</button>
+            <Button onClick={handleSubmit} isLoading={isProcessing} className="flex-[2] py-4 rounded-3xl shadow-xl text-xs uppercase tracking-[0.2em]">Hemen Paylaş</Button>
         </div>
       </div>
     </div>
