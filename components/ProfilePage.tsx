@@ -148,8 +148,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       return (
           <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-120px)] px-6 animate-fadeIn">
               <div className="w-full max-w-sm flex flex-col items-center text-center">
-                  <Logo className="h-14 w-auto mb-10" />
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-8 uppercase tracking-[0.2em]">Topluluğa Katıl</h2>
+                  <Logo className="h-20 w-auto mb-12" />
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-10 uppercase tracking-[0.2em]">Topluluğa Katıl</h2>
                   <AuthModalContent onLoginSuccess={onLoginSuccess} />
               </div>
           </div>
@@ -173,8 +173,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="font-serif text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
-                        <p className="text-[11px] text-gray-400 font-bold italic">@{user.username || 'user'}</p>
+                        <h2 className="text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
+                        <p className="text-[11px] text-gray-400 font-bold">@{user.username || 'user'}</p>
                     </div>
                     
                     <div className="relative" ref={settingsRef}>
@@ -211,7 +211,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takip</span>
                     </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Hikayesini paylaşıyor ✨"}</p>
+                <p className="text-xs text-gray-500 mt-3 font-normal line-clamp-2 leading-relaxed">{user.bio || "Hikayesini paylaşıyor ✨"}</p>
             </div>
         </div>
 
@@ -261,7 +261,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         ))}
         {displayPosts.length === 0 && (
             <div className="col-span-3 py-24 text-center">
-                <p className="text-gray-400 italic font-serif text-sm">Burada henüz bir içerik yok ✨</p>
+                <p className="text-gray-400 font-normal text-sm">Burada henüz bir içerik yok ✨</p>
             </div>
         )}
       </div>
@@ -315,7 +315,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                           <img src={listUser.avatar} className="w-9 h-9 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
                                           <div className="flex flex-col">
                                               <span className="text-xs font-bold dark:text-white leading-tight">{listUser.name}</span>
-                                              <span className="text-[9px] text-gray-400 font-medium italic">@{listUser.username}</span>
+                                              <span className="text-[9px] text-gray-400 font-medium">@{listUser.username}</span>
                                           </div>
                                       </div>
                                       {listUser.id !== user.id && (
@@ -329,7 +329,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                   </div>
                               ))}
                               {followListUsers.length === 0 && (
-                                  <div className="py-12 text-center text-[10px] text-gray-400 italic font-serif">Henüz kimse yok ✨</div>
+                                  <div className="py-12 text-center text-[10px] text-gray-400 font-normal">Henüz kimse yok ✨</div>
                               )}
                           </div>
                       )}
@@ -345,7 +345,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 
-                <h3 className="text-lg font-serif font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profili Güncelle</h3>
+                <h3 className="text-lg font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profili Güncelle</h3>
                 
                 <div className="space-y-5">
                     <div className="flex flex-col items-center mb-4">
@@ -376,7 +376,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         </div>
                         <div>
                             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Biyografi / Hakkımda</label>
-                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all h-20 resize-none font-serif italic" placeholder="Kendinden bahset..." />
+                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all h-20 resize-none font-normal" placeholder="Kendinden bahset..." />
                         </div>
                         {usernameError && <p className="text-[9px] text-red-500 font-bold px-1">{usernameError}</p>}
                     </div>

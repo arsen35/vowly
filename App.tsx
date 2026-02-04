@@ -9,6 +9,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { BlogPage } from './components/BlogPage';
 import { ChatPage } from './components/ChatPage';
 import { ProfilePage } from './components/ProfilePage';
+import { SearchModal } from './components/SearchModal';
 import { Logo } from './components/Logo';
 import { LoadingScreen } from './components/LoadingScreen'; 
 import { BottomNavigation } from './components/BottomNavigation';
@@ -29,6 +30,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [unreadDMCount, setUnreadDMCount] = useState(0);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -100,7 +102,6 @@ const App: React.FC = () => {
       setIsLoading(false);
     }, 5000);
 
-    // PWA Prompt Catching - Android için kritik
     const handleBeforeInstall = (e: any) => {
         e.preventDefault();
         setDeferredPrompt(e);
@@ -189,7 +190,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // Android/Desktop için tarayıcı yükleme penceresini aç
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -198,7 +198,6 @@ const App: React.FC = () => {
         setShowInstallModal(false);
       }
     } else {
-      // Prompt henüz gelmediyse veya desteklenmiyorsa bilgilendir
       setShowInstallModal(true);
     }
   };
@@ -318,12 +317,17 @@ const App: React.FC = () => {
                <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.PROFILE ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>PROFİLİM</button>
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             {isAdmin && (
                 <button onClick={() => setShowAdminModal(true)} className="flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-all shadow-sm">
                     PANEL
                 </button>
             )}
+            
+            <button onClick={() => setShowSearchModal(true)} className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90" title="Arama">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </button>
+
             <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
                 {isDarkMode ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>}
             </button>
@@ -381,6 +385,15 @@ const App: React.FC = () => {
           <div className="fixed inset-0 z-[2000] bg-white dark:bg-theme-black overflow-y-auto pt-20 animate-in slide-in-from-bottom-5">
               <AdminDashboard posts={allPosts} onDeletePost={async (id) => await dbService.deletePost(id)} onResetData={() => {}} onClose={() => setShowAdminModal(false)} />
           </div>
+      )}
+
+      {showSearchModal && (
+          <SearchModal 
+            onClose={() => setShowSearchModal(false)} 
+            followingIds={followingIds} 
+            onFollowToggle={handleFollowToggle} 
+            currentUserId={currentUser?.id} 
+          />
       )}
 
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}

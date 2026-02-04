@@ -108,7 +108,6 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   return (
     <div className="bg-white dark:bg-theme-black border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-sm rounded-lg">
-      {/* HEADER */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-gray-50 dark:border-zinc-900">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-md overflow-hidden border border-gray-100 dark:border-zinc-800">
@@ -144,7 +143,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       </div>
 
-      {/* MEDIA */}
       <div 
         className="relative w-full aspect-[4/5] bg-gray-50 dark:bg-zinc-950 group overflow-hidden select-none"
         onDoubleClick={handleDoubleClick}
@@ -168,7 +166,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         )}
       </div>
       
-      {/* SHOP BUTTON - FULL WIDTH, RADIUS 0, SOFT GREY HOVER */}
       {post.productUrl && (
           <a 
             href={post.productUrl} 
@@ -183,7 +180,6 @@ export const PostCard: React.FC<PostCardProps> = ({
           </a>
       )}
 
-      {/* INTERACTIONS */}
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -228,7 +224,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <span className="text-gray-600 dark:text-gray-400">{comment.text}</span>
                  </div>
                ))}
-               {post.comments.length === 0 && <p className="text-[10px] text-gray-400 italic text-center py-2">Henüz yorum yapılmamış ✨</p>}
+               {post.comments.length === 0 && <p className="text-[10px] text-gray-400 font-normal text-center py-2">Henüz yorum yapılmamış ✨</p>}
             </div>
             <div className="flex gap-2 items-center bg-white dark:bg-theme-black rounded-md px-2 py-2 ring-1 ring-gray-100 dark:ring-zinc-800">
               <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()} placeholder="Düşünceni paylaş..." className="flex-1 bg-transparent px-1 text-xs outline-none dark:text-white" />
