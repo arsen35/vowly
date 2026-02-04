@@ -168,13 +168,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         <span className="text-sm font-bold leading-none dark:text-white">{userPosts.length}</span>
                         <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Paylaşım</span>
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-1.5 cursor-pointer" onClick={() => setIsFollowModalOpen('followers')}>
-                        <span className="text-sm font-bold leading-none dark:text-white">{followData.followers.length}</span>
-                        <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Takipçi</span>
+                    <div className="flex flex-col md:flex-row md:items-center gap-1.5 cursor-pointer group" onClick={() => setIsFollowModalOpen('followers')}>
+                        <span className="text-sm font-bold leading-none dark:text-white group-hover:text-wedding-500 transition-colors">{followData.followers.length}</span>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takipçi</span>
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-1.5 cursor-pointer" onClick={() => setIsFollowModalOpen('following')}>
-                        <span className="text-sm font-bold leading-none dark:text-white">{followData.following.length}</span>
-                        <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Takip</span>
+                    <div className="flex flex-col md:flex-row md:items-center gap-1.5 cursor-pointer group" onClick={() => setIsFollowModalOpen('following')}>
+                        <span className="text-sm font-bold leading-none dark:text-white group-hover:text-wedding-500 transition-colors">{followData.following.length}</span>
+                        <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takip</span>
                     </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-3 font-serif italic line-clamp-2 leading-relaxed">{user.bio || "Mutlu anlarını Annabella'da paylaşıyor ✨"}</p>
@@ -251,6 +251,53 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     onFollow={() => onFollowToggle(selectedPost.user.id)}
                     currentUserId={user.id}
                   />
+              </div>
+          </div>
+      )}
+
+      {/* FOLLOWERS / FOLLOWING MODAL */}
+      {isFollowModalOpen && (
+          <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-xs md:max-w-sm max-h-[70vh] flex flex-col shadow-2xl border border-gray-100 dark:border-zinc-900 overflow-hidden">
+                  <div className="p-4 border-b dark:border-zinc-900 flex justify-between items-center bg-white dark:bg-zinc-950">
+                      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          {isFollowModalOpen === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}
+                      </h3>
+                      <button onClick={() => setIsFollowModalOpen(null)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                      {isFollowListLoading ? (
+                          <div className="py-10 flex justify-center"><div className="w-6 h-6 border-2 border-wedding-500 border-t-transparent rounded-full animate-spin"></div></div>
+                      ) : (
+                          <div className="space-y-1">
+                              {followListUsers.map(listUser => (
+                                  <div key={listUser.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
+                                      <div className="flex items-center gap-3">
+                                          <img src={listUser.avatar} className="w-9 h-9 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
+                                          <div className="flex flex-col">
+                                              <span className="text-xs font-bold dark:text-white leading-tight">{listUser.name}</span>
+                                              <span className="text-[9px] text-gray-400 font-medium italic">@{listUser.username}</span>
+                                          </div>
+                                      </div>
+                                      {listUser.id !== user.id && (
+                                          <button 
+                                              onClick={() => onFollowToggle(listUser.id)}
+                                              className={`text-[8px] font-bold px-3 py-1.5 rounded-md border transition-all uppercase tracking-wider ${followingIds.includes(listUser.id) ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}
+                                          >
+                                              {followingIds.includes(listUser.id) ? 'Takip' : 'Takip Et'}
+                                          </button>
+                                      )}
+                                  </div>
+                              ))}
+                              {followListUsers.length === 0 && (
+                                  <div className="py-12 text-center text-[10px] text-gray-400 italic font-serif">Henüz kimse yok ✨</div>
+                              )}
+                          </div>
+                      )}
+                  </div>
               </div>
           </div>
       )}
