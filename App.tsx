@@ -100,11 +100,10 @@ const App: React.FC = () => {
       setIsLoading(false);
     }, 5000);
 
-    // PWA Yükleme mekanizması - Android/Chrome için event yakalama
+    // PWA Prompt Catching
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      console.log('✅ Yükleme istemi hazır.');
     });
 
     let unsubUser: (() => void) | undefined;
@@ -181,13 +180,13 @@ const App: React.FC = () => {
   const handleInstallApp = async () => {
     const platform = getPlatform();
     
-    // Eğer iOS ise her zaman modalı aç (talimatlar için)
+    // Eğer iOS ise modalı talimat görseli için açıyoruz
     if (platform === 'ios') {
       setShowInstallModal(true);
       return;
     }
 
-    // Android/Desktop için native prompt kontrolü
+    // Android/Desktop için direkt prompt tetikleme
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -196,7 +195,7 @@ const App: React.FC = () => {
         setShowInstallModal(false);
       }
     } else {
-      // Prompt yakalanamadıysa yine de modalı açıp bilgi verebiliriz
+      // Prompt henüz yakalanmadıysa bilgi modalını aç
       setShowInstallModal(true);
     }
   };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from './Button';
 
 interface InstallModalProps {
@@ -11,68 +11,53 @@ interface InstallModalProps {
 
 export const InstallModal: React.FC<InstallModalProps> = ({ onClose, onInstall, platform, canTriggerNative }) => {
   const isIOS = platform === 'ios';
+  const [showIOSHint, setShowIOSHint] = useState(false);
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[2000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-950 rounded-[5px] w-full max-w-sm shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-900">
+    <div className="fixed inset-0 bg-black/80 z-[2000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-zinc-950 rounded-[5px] w-full max-w-[320px] shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-900 relative">
         
-        {/* Header - 5px radius harmony */}
-        <div className="bg-wedding-500 p-8 text-center text-white relative">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-[5px] mx-auto mb-4 flex items-center justify-center shadow-inner">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                </svg>
+        {/* Close Button */}
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white z-10">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        <div className="p-8 flex flex-col items-center text-center">
+            {/* App Icon */}
+            <div className="w-20 h-20 bg-wedding-500 rounded-[5px] flex items-center justify-center mb-6 shadow-lg shadow-wedding-500/20">
+                <img 
+                    src="https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550" 
+                    className="w-12 h-12 brightness-0 invert" 
+                    alt="Logo"
+                />
             </div>
-            <h2 className="text-xl font-serif font-bold tracking-tight uppercase">Uygulamayı Yükle</h2>
-            <p className="text-wedding-100 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Daha hızlı erişim ve tam ekran deneyimi için</p>
-        </div>
 
-        {/* Content Section */}
-        <div className="p-6 bg-white dark:bg-zinc-950">
-            {isIOS ? (
-                <div className="space-y-4">
-                    <p className="text-gray-500 dark:text-gray-400 text-[11px] font-medium text-center mb-6 leading-relaxed">
-                        Annabella'yı iPhone cihazına yüklemek için şu adımları izle:
-                    </p>
-                    
-                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-zinc-900/50 p-4 rounded-[5px] border border-gray-100 dark:border-zinc-800 transition-all">
-                        <div className="bg-wedding-500 text-white w-6 h-6 rounded-[5px] flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
-                        <div className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
-                            Tarayıcının altındaki <span className="font-bold text-wedding-500">Paylaş (Kutu ve ok)</span> simgesine tıkla.
-                        </div>
-                    </div>
+            <h2 className="text-lg font-serif font-bold dark:text-white uppercase tracking-widest mb-2">Annabella'yı Yükle</h2>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-8">Daha hızlı ve tam ekran deneyimi</p>
 
-                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-zinc-900/50 p-4 rounded-[5px] border border-gray-100 dark:border-zinc-800 transition-all">
-                        <div className="bg-wedding-500 text-white w-6 h-6 rounded-[5px] flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
-                        <div className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
-                            Listeyi kaydır ve <span className="font-bold">Ana Ekrana Ekle</span> seçeneğini seç.
-                        </div>
-                    </div>
-                </div>
+            {!showIOSHint ? (
+                <Button 
+                    onClick={() => isIOS ? setShowIOSHint(true) : onInstall()} 
+                    className="w-full py-4 rounded-[5px] text-[10px] uppercase tracking-[0.3em] font-bold"
+                >
+                    Şimdi Yükle
+                </Button>
             ) : (
-                <div className="text-center py-6">
-                     <p className="text-gray-500 dark:text-gray-400 text-[11px] font-medium leading-relaxed mb-6">
-                        {canTriggerNative 
-                            ? "Uygulamayı ana ekranına hemen ekleyerek dilediğin zaman hızlıca erişebilirsin." 
-                            : "Tarayıcı ayarlarından 'Uygulamayı Yükle' seçeneğini kullanarak uygulamayı hemen indirebilirsin."}
-                     </p>
-                     {canTriggerNative && (
-                         <Button onClick={onInstall} className="w-full py-4 rounded-[5px] text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-wedding-500/20">
-                             Hemen Yükle
-                         </Button>
-                     )}
+                <div className="w-full animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="bg-gray-50 dark:bg-zinc-900 rounded-[5px] p-4 border border-gray-100 dark:border-zinc-800">
+                        <div className="flex flex-col items-center gap-4">
+                            <p className="text-[11px] text-gray-600 dark:text-gray-300 font-medium">
+                                Safari'de aşağıdaki <span className="text-wedding-500 font-bold">Paylaş</span> simgesine tıklayıp <span className="font-bold">"Ana Ekrana Ekle"</span> demeniz yeterli.
+                            </p>
+                            <div className="flex items-center justify-center p-3 bg-white dark:bg-black rounded-[5px] shadow-sm animate-bounce">
+                                <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="p-4 bg-gray-50 dark:bg-zinc-900/30 border-t border-gray-100 dark:border-zinc-900 flex gap-3">
-            <button 
-                onClick={onClose} 
-                className="flex-1 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-wedding-500 transition-colors"
-            >
-                Kapat
-            </button>
         </div>
       </div>
     </div>
