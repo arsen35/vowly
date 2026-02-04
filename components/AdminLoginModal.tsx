@@ -26,7 +26,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
 
     if (!cleanEmail || !cleanPassword) return;
     
-    // 1. Manuel yetki kontrolü
     if (!ADMIN_EMAILS.includes(cleanEmail)) {
         setError('Bu e-posta adresi yönetici listesinde bulunamadı.');
         return;
@@ -41,24 +40,28 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
     setError('');
 
     try {
-        // 2. Firebase ile giriş dene
         await signInWithEmailAndPassword(auth!, cleanEmail, cleanPassword);
         onLoginSuccess();
         onClose();
     } catch (err: any) {
-        // 3. Eğer kullanıcı yoksa (auth/user-not-found), otomatik olarak oluştur
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        // Eğer hesap zaten Google ile kayıtlıysa (veya başka bir sağlayıcı)
+        if (err.code === 'auth/email-already-in-use' || err.code === 'auth/account-exists-with-different-credential') {
+            setError('Bu hesap Google ile kayıtlı. Lütfen Profil sayfasından Google ile giriş yapın.');
+        } else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
             try {
+                // Sadece yönetici e-postaları için otomatik kayıt
                 await createUserWithEmailAndPassword(auth!, cleanEmail, cleanPassword);
                 onLoginSuccess();
                 onClose();
             } catch (createErr: any) {
-                console.error("Kayıt hatası:", createErr);
-                setError('Oturum açma yetkilendirme hatası (E02).');
+                if (createErr.code === 'auth/email-already-in-use') {
+                    setError('Bu hesap Google ile kayıtlı. Lütfen Profil sayfasından Google ile giriş yapın.');
+                } else {
+                    setError('Bağlantı hatası. Lütfen profilinden Google ile giriş yapmayı dene.');
+                }
             }
         } else {
-            console.error("Login hatası:", err.code);
-            setError('Sistem şu an meşgul, lütfen az sonra tekrar deneyin.');
+            setError('Bir hata oluştu. Lütfen profilinden Google ile giriş yapmayı dene.');
         }
     } finally {
         setIsLoading(false);

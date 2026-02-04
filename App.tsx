@@ -79,7 +79,12 @@ const App: React.FC = () => {
     clickTimer.current = setTimeout(() => { logoClicks.current = 0; }, 3000);
     
     if (logoClicks.current >= 5) {
-        setShowAdminTrigger(true);
+        // Eğer zaten admin olarak giriş yapmışsa direkt paneli aç
+        if (isAdmin) {
+            setShowAdminModal(true);
+        } else {
+            setShowAdminTrigger(true);
+        }
         logoClicks.current = 0;
     }
     if (viewState !== ViewState.FEED) setViewState(ViewState.FEED);
@@ -268,7 +273,6 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
-      {/* ÜST BAR TASARIMI - ALT BAR İLE EŞLENDİ */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white/60 dark:bg-black/40 backdrop-blur-xl border-b border-white/20 dark:border-white/10 h-14">
         <div className="w-full h-full flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
@@ -287,7 +291,7 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-4">
             {isAdmin && (
-                <button onClick={() => setShowAdminModal(true)} className="hidden md:flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-all">
+                <button onClick={() => setShowAdminModal(true)} className="flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-all shadow-sm">
                     PANEL
                 </button>
             )}
@@ -312,12 +316,11 @@ const App: React.FC = () => {
           ) : viewState === ViewState.CHAT ? (
               <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
           ) : viewState === ViewState.PROFILE ? (
-              <ProfilePage user={currentUser} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} />
+              <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} />
           ) : null}
         </div>
       </main>
 
-      {/* DESKTOP FLOATING BUTTONS */}
       <div className="hidden md:flex fixed bottom-8 right-8 flex-col gap-3 z-50">
         <a href="https://annabellabridal.com" target="_blank" className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-95" title="Anasayfa">
            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
@@ -334,14 +337,13 @@ const App: React.FC = () => {
         unreadDMCount={unreadDMCount}
       />
       
-      {/* Modals & Triggers */}
       {showAdminTrigger && (
           <AdminLoginModal 
             onClose={() => setShowAdminTrigger(false)} 
             onLoginSuccess={() => {
                 setShowAdminTrigger(false);
                 setIsAdmin(true);
-                setViewState(ViewState.FEED);
+                setShowAdminModal(true);
             }} 
           />
       )}

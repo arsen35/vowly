@@ -9,6 +9,8 @@ import { PostCard } from './PostCard';
 
 interface ProfilePageProps {
   user: User | null;
+  isAdmin?: boolean;
+  onOpenAdmin?: () => void;
   posts: Post[];
   onPostClick: (post: Post) => void;
   onLogout: () => void;
@@ -24,6 +26,8 @@ interface ProfilePageProps {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ 
   user, 
+  isAdmin,
+  onOpenAdmin,
   posts, 
   onLogout, 
   onDeleteAccount,
@@ -157,7 +161,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-14 pb-32 animate-fadeIn relative">
-      {/* PROFILE HEADER */}
       <div className="flex flex-col gap-6 mb-12">
         <div className="flex items-center gap-6 md:gap-12 relative">
             <div className="shrink-0">
@@ -180,6 +183,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         
                         {showSettings && (
                             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                {isAdmin && (
+                                    <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Yönetici Paneli</button>
+                                )}
                                 <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
                                 <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
                                 <div className="h-px bg-gray-100 dark:bg-zinc-900 mx-2"></div>
@@ -208,7 +214,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
         </div>
 
-        {/* PROFILE BUTTONS */}
         <div className="grid grid-cols-3 gap-2">
             <button 
                 onClick={() => setIsEditModalOpen(true)} 
@@ -231,7 +236,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       </div>
 
-      {/* GRID VIEW */}
       <div className="grid grid-cols-3 gap-1 md:gap-2">
         {displayPosts.map((post) => (
           <div 
@@ -261,7 +265,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         )}
       </div>
 
-      {/* FULL SCREEN READING MODE (FIX: COVER TOPBAR, NO BLACK BACKDROP) */}
       {selectedPost && (
           <div className="fixed inset-0 z-[1000] bg-white dark:bg-theme-black overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
               <div className="sticky top-0 left-0 right-0 h-14 bg-white/90 dark:bg-theme-black/90 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between px-6 z-10">
@@ -288,7 +291,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
       )}
 
-      {/* FOLLOWERS / FOLLOWING MODAL */}
       {isFollowModalOpen && (
           <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
               <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-xs md:max-w-sm max-h-[70vh] flex flex-col shadow-2xl border border-gray-100 dark:border-zinc-900 overflow-hidden">
@@ -335,7 +337,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
       )}
 
-      {/* EDIT PROFILE MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
             <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100 dark:border-zinc-900">
