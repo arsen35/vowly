@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [unreadDMCount, setUnreadDMCount] = useState(0);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [chatTargetUser, setChatTargetUser] = useState<User | null>(null);
   
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -254,6 +255,11 @@ const App: React.FC = () => {
     setShowSearchModal(false);
   };
 
+  const handleSendMessageClick = (user: User) => {
+    setChatTargetUser(user);
+    setViewState(ViewState.CHAT);
+  };
+
   const handleNewPost = async (data: any) => {
     if (!currentUser) return;
     setViewState(ViewState.FEED);
@@ -375,11 +381,11 @@ const App: React.FC = () => {
           ) : viewState === ViewState.BLOG ? (
               <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
           ) : viewState === ViewState.CHAT ? (
-              <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
+              <ChatPage isAdmin={isAdmin} currentUser={currentUser} initialUser={chatTargetUser} onLoaded={() => setChatTargetUser(null)} />
           ) : viewState === ViewState.PROFILE ? (
               <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
           ) : viewState === ViewState.USER_PROFILE && viewedUser ? (
-              <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} />
+              <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} onMessageClick={handleSendMessageClick} />
           ) : null}
         </div>
       </main>

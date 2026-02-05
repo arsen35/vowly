@@ -26,6 +26,7 @@ interface ProfilePageProps {
   onFollowToggle: (userId: string) => void;
   onInstallApp: () => void;
   onUserClick?: (user: User) => void;
+  onMessageClick?: (user: User) => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ 
@@ -44,7 +45,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   followingIds,
   onFollowToggle,
   onInstallApp,
-  onUserClick
+  onUserClick,
+  onMessageClick
 }) => {
   const [activeTab, setActiveTab] = useState<'posts' | 'liked'>('posts');
   const [showSettings, setShowSettings] = useState(false);
@@ -198,7 +200,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                     {isFollowing ? 'Takiptesin' : 'Takip Et'}
                                 </button>
                                 <button 
-                                    onClick={() => onUserClick?.(user)}
+                                    onClick={() => onMessageClick?.(user)}
                                     className="text-[10px] font-bold px-4 py-1.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-400 hover:text-wedding-500 hover:border-wedding-500 transition-all uppercase tracking-widest"
                                 >
                                     MESAJ

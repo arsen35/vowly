@@ -7,9 +7,11 @@ import { Button } from './Button';
 interface ChatPageProps {
   isAdmin: boolean;
   currentUser: User | null;
+  initialUser?: User | null;
+  onLoaded?: () => void;
 }
 
-export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
+export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initialUser, onLoaded }) => {
   const [activeTab, setActiveTab] = useState<'global' | 'direct'>('direct');
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -54,22 +56,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
     }
   }, [activeConv, currentUser]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [globalMessages, dmMessages, activeConv]);
-
-  const handleSearch = async (val: string) => {
-    setSearchTerm(val);
-    if (val.length > 1) {
-        setIsSearching(true);
-        const users = await dbService.searchUsers(val);
-        setSearchResults(users.filter(u => u.id !== currentUser?.id));
-        setIsSearching(false);
-    } else {
-        setSearchResults([]);
-    }
-  };
-
   const startDM = (targetUser: User) => {
     const convId = dbService.getConversationId(currentUser!.id, targetUser.id);
     const existing = conversations.find(c => c.id === convId);
@@ -86,6 +72,29 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
     }
     setSearchTerm('');
     setSearchResults([]);
+  };
+
+  useEffect(() => {
+    if (initialUser && currentUser && conversations.length >= 0) {
+        startDM(initialUser);
+        onLoaded?.();
+    }
+  }, [initialUser, conversations.length]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [globalMessages, dmMessages, activeConv]);
+
+  const handleSearch = async (val: string) => {
+    setSearchTerm(val);
+    if (val.length > 1) {
+        setIsSearching(true);
+        const users = await dbService.searchUsers(val);
+        setSearchResults(users.filter(u => u.id !== currentUser?.id));
+        setIsSearching(false);
+    } else {
+        setSearchResults([]);
+    }
   };
 
   const handleSendGlobal = async (e: React.FormEvent) => {
@@ -144,7 +153,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser }) => {
                 Genel Sohbet
             </button>
             <button 
-                onClick={() => setActiveTab('direct')}
+                onClick={() => { setActiveTab('direct'); }}
                 className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === 'direct' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
             >
                 Mesajlarım
