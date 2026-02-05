@@ -16,7 +16,7 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { InstallModal } from './components/InstallModal';
 import { Post, User, ViewState, Comment, MediaItem } from './types';
 import { dbService } from './services/db';
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, deleteUser } from "firebase/auth";
 import { auth } from './services/firebase';
 
 const App: React.FC = () => {
@@ -212,6 +212,24 @@ const App: React.FC = () => {
     } catch (e) { console.error(e); }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!auth || !auth.currentUser) return;
+    try {
+        const user = auth.currentUser;
+        // Firebase kullanıcıyı siler
+        await deleteUser(user);
+        // DB'den de siliyoruz (mock)
+        // await dbService.deleteUserData(user.uid); 
+        setCurrentUser(null);
+        setIsAdmin(false);
+        setViewState(ViewState.FEED);
+        alert("Hesabınız başarıyla silindi.");
+    } catch (e) {
+        console.error(e);
+        alert("Hesap silinirken bir hata oluştu. Lütfen tekrar giriş yapıp deneyin.");
+    }
+  };
+
   const handleFollowToggle = async (targetUserId: string) => {
     if (!currentUser) { setViewState(ViewState.PROFILE); return; }
     const isFollowing = followingIds.includes(targetUserId);
@@ -359,7 +377,7 @@ const App: React.FC = () => {
           ) : viewState === ViewState.CHAT ? (
               <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
           ) : viewState === ViewState.PROFILE ? (
-              <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
+              <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
           ) : viewState === ViewState.USER_PROFILE && viewedUser ? (
               <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} />
           ) : null}

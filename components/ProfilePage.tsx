@@ -198,16 +198,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         )}
                     </div>
                     
-                    {/* Ayarlar veya Mesaj İkonu */}
+                    {/* Ayarlar (Kendi Profilimiz) veya Mesaj İkonu (Başkası) */}
                     <div className="relative" ref={settingsRef}>
                         {isOwnProfile || !isPublicProfile ? (
-                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90">
-                                <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900">
+                                <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
                             </button>
                         ) : (
                             <button 
                                 onClick={() => onUserClick?.(user)}
-                                className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90"
+                                className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900 rounded-full"
                                 title="Mesaj Gönder"
                             >
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025 4.479 4.479 0 00-.585-1.647A8.25 8.25 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
@@ -215,15 +215,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         )}
                         
                         {showSettings && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                 {isAdmin && (
-                                    <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Yönetici Paneli</button>
+                                    <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-b dark:border-zinc-900">Yönetici Paneli</button>
                                 )}
-                                <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
-                                <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
-                                <div className="h-px bg-gray-100 dark:bg-zinc-900 mx-2"></div>
-                                <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Çıkış Yap</button>
-                                <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Hesabı Sil</button>
+                                <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
+                                <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
+                                <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors border-t dark:border-zinc-900">Çıkış Yap</button>
+                                <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t dark:border-zinc-900">Hesabı Sil</button>
                             </div>
                         )}
                     </div>
@@ -253,15 +252,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         <div className="grid grid-cols-2 gap-2">
             <button 
                 onClick={() => setActiveTab('posts')} 
-                className={`py-3.5 rounded-md text-[10px] font-bold uppercase tracking-[0.15em] transition-all border ${activeTab === 'posts' ? 'bg-[#121826] border-[#121826] text-white' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-500'}`}
+                className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'posts' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}
             >
                 Paylaşımlar
             </button>
             <button 
                 onClick={() => setActiveTab('liked')} 
-                className={`py-3.5 rounded-md text-[10px] font-bold uppercase tracking-[0.15em] transition-all border ${activeTab === 'liked' ? 'bg-[#121826] border-[#121826] text-white' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-500'}`}
+                className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'liked' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}
             >
-                {isPublicProfile ? 'Beğeniler' : 'Beğeniler'}
+                Beğeniler
             </button>
         </div>
       </div>
@@ -291,7 +290,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         ))}
         {displayPosts.length === 0 && (
             <div className="col-span-3 py-24 text-center">
-                <p className="text-gray-400 font-normal text-sm">
+                <p className="text-gray-400 font-normal text-sm italic">
                     {activeTab === 'liked' && isPublicProfile ? "Beğendiği içerikler gizli ✨" : "Burada henüz bir içerik yok ✨"}
                 </p>
             </div>
@@ -329,28 +328,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       {/* Takipçi/Takip Listesi Modalı */}
       {isFollowModalOpen && (
           <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-              <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-xs md:max-w-sm max-h-[70vh] flex flex-col shadow-2xl border border-gray-100 dark:border-zinc-900 overflow-hidden">
-                  <div className="p-4 border-b dark:border-zinc-900 flex justify-between items-center bg-white dark:bg-zinc-950">
+              <div className="bg-white dark:bg-zinc-950 rounded-2xl w-full max-w-xs md:max-w-sm max-h-[70vh] flex flex-col shadow-2xl border border-gray-100 dark:border-zinc-900 overflow-hidden">
+                  <div className="p-5 border-b dark:border-zinc-900 flex justify-between items-center bg-white dark:bg-zinc-950">
                       <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           {isFollowModalOpen === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}
                       </h3>
                       <button onClick={() => setIsFollowModalOpen(null)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                       {isFollowListLoading ? (
                           <div className="py-10 flex justify-center"><div className="w-6 h-6 border-2 border-wedding-500 border-t-transparent rounded-full animate-spin"></div></div>
                       ) : (
                           <div className="space-y-1">
                               {followListUsers.map(listUser => (
-                                  <div key={listUser.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
+                                  <div key={listUser.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
                                       <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { onUserClick?.(listUser); setIsFollowModalOpen(null); }}>
-                                          <img src={listUser.avatar} className="w-9 h-9 rounded-md object-cover border border-gray-100 dark:border-zinc-800 group-hover:scale-105 transition-transform" />
+                                          <img src={listUser.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 group-hover:scale-105 transition-transform" />
                                           <div className="flex flex-col">
                                               <span className="text-xs font-bold dark:text-white leading-tight group-hover:text-wedding-500 transition-colors">{listUser.name}</span>
-                                              <span className="text-[9px] text-gray-400 font-medium">@{listUser.username}</span>
+                                              <span className="text-[9px] text-gray-400 font-medium mt-0.5">@{listUser.username}</span>
                                           </div>
                                       </div>
                                       {listUser.id !== currentUser?.id && (
@@ -364,7 +363,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                   </div>
                               ))}
                               {followListUsers.length === 0 && (
-                                  <div className="py-12 text-center text-[10px] text-gray-400 font-normal">Henüz kimse yok ✨</div>
+                                  <div className="py-12 text-center text-[10px] text-gray-400 font-normal italic">Henüz kimse yok ✨</div>
                               )}
                           </div>
                       )}
@@ -376,21 +375,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       {/* Profil Düzenleme Modalı */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100 dark:border-zinc-900">
-                <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 transition-all">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+            <div className="bg-white dark:bg-zinc-950 rounded-[32px] w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100 dark:border-zinc-900">
+                <button onClick={() => setIsEditModalOpen(false)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 transition-all">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 
-                <h3 className="text-lg font-bold dark:text-white uppercase tracking-widest mb-8 text-center">Profili Güncelle</h3>
+                <h3 className="text-lg font-bold dark:text-white uppercase tracking-widest mb-10 text-center">Profilini Güncelle</h3>
                 
-                <div className="space-y-5">
-                    <div className="flex flex-col items-center mb-4">
+                <div className="space-y-6">
+                    <div className="flex flex-col items-center mb-6">
                         <div 
                             onClick={() => avatarInputRef.current?.click()}
-                            className="relative w-24 h-24 rounded-lg border border-gray-100 dark:border-zinc-800 p-1 group cursor-pointer overflow-hidden shadow-sm"
+                            className="relative w-28 h-28 rounded-2xl border border-gray-100 dark:border-zinc-800 p-1 group cursor-pointer overflow-hidden shadow-sm bg-white dark:bg-zinc-900"
                         >
-                            <img src={editAvatar} className="w-full h-full rounded-md object-cover" alt="avatar" />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[9px] font-bold tracking-widest">DEĞİŞTİR</div>
+                            <img src={editAvatar} className="w-full h-full rounded-xl object-cover" alt="avatar" />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[9px] font-bold tracking-[0.2em]">DEĞİŞTİR</div>
                         </div>
                         <input type="file" ref={avatarInputRef} onChange={async (e) => {
                            if (e.target.files?.[0]) {
@@ -403,24 +402,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
                     <div className="space-y-4">
                         <div>
-                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Görünen İsim</label>
-                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all" />
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">İsim Soyisim</label>
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-gray-50/50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all shadow-inner" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Kullanıcı Adı (@)</label>
-                            <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all" placeholder="kullanici_adi" />
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Kullanıcı Adı (@)</label>
+                            <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full bg-gray-50/50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all shadow-inner" placeholder="kullanici_adi" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Biyografi / Hakkımda</label>
-                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-transparent border border-gray-100 dark:border-zinc-900 rounded-md px-3 py-2.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all h-20 resize-none font-normal" placeholder="Kendinden bahset..." />
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Kısa Biyografi</label>
+                            <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full bg-gray-50/50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm dark:text-white outline-none focus:border-wedding-500 transition-all h-24 resize-none font-normal shadow-inner leading-relaxed" placeholder="Gelinlik yolculuğundan bahset..." />
                         </div>
-                        {usernameError && <p className="text-[9px] text-red-500 font-bold px-1">{usernameError}</p>}
+                        {usernameError && <p className="text-[9px] text-red-500 font-bold px-1 animate-fadeIn">{usernameError}</p>}
                     </div>
                 </div>
 
-                <div className="mt-8 flex flex-col gap-2">
-                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-3.5 rounded-md text-[10px] uppercase tracking-widest border border-wedding-500 shadow-none">Değişiklikleri Kaydet</Button>
-                    <button onClick={() => setIsEditModalOpen(false)} className="w-full py-2.5 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center hover:text-gray-600 transition-all">İptal</button>
+                <div className="mt-10 flex flex-col gap-2">
+                    <Button onClick={handleSaveProfile} isLoading={isSaving} className="w-full py-4 rounded-xl text-[11px] uppercase tracking-[0.2em] bg-wedding-500 text-white shadow-lg shadow-wedding-500/20">Kaydet</Button>
+                    <button onClick={() => setIsEditModalOpen(false)} className="w-full py-3 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center hover:text-gray-900 transition-all mt-2">Vazgeç</button>
                 </div>
             </div>
         </div>
