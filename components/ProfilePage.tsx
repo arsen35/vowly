@@ -198,34 +198,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         )}
                     </div>
                     
-                    {/* Ayarlar (Kendi Profilimiz) veya Mesaj İkonu (Başkası) */}
-                    <div className="relative" ref={settingsRef}>
-                        {isOwnProfile || !isPublicProfile ? (
+                    {/* Ayarlar Menüsü (Sadece Kendi Profilimizde Görünür) */}
+                    {(isOwnProfile || !isPublicProfile) && (
+                        <div className="relative" ref={settingsRef}>
                             <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900">
                                 <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
                             </button>
-                        ) : (
-                            <button 
-                                onClick={() => onUserClick?.(user)}
-                                className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900 rounded-full"
-                                title="Mesaj Gönder"
-                            >
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025 4.479 4.479 0 00-.585-1.647A8.25 8.25 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
-                            </button>
-                        )}
-                        
-                        {showSettings && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                {isAdmin && (
-                                    <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-b dark:border-zinc-900">Yönetici Paneli</button>
-                                )}
-                                <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
-                                <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
-                                <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors border-t dark:border-zinc-900">Çıkış Yap</button>
-                                <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t dark:border-zinc-900">Hesabı Sil</button>
-                            </div>
-                        )}
-                    </div>
+                            
+                            {showSettings && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {isAdmin && (
+                                        <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-b dark:border-zinc-900">Yönetici Paneli</button>
+                                    )}
+                                    <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
+                                    <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
+                                    <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors border-t dark:border-zinc-900">Çıkış Yap</button>
+                                    <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t dark:border-zinc-900">Hesabı Sil</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <p className="text-[11px] text-gray-400 font-bold mb-3">@{user.username || 'user'}</p>
@@ -248,7 +240,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
         </div>
 
-        {/* Sekmeler (Ekran görüntüsündeki gibi dikdörtgen yapı) */}
+        {/* Sekmeler */}
         <div className="grid grid-cols-2 gap-2">
             <button 
                 onClick={() => setActiveTab('posts')} 
