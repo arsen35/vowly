@@ -201,7 +201,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                     onClick={() => onUserClick?.(user)}
                                     className="text-[10px] font-bold px-4 py-1.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-400 hover:text-wedding-500 hover:border-wedding-500 transition-all uppercase tracking-widest"
                                 >
-                                    MESAJ GÖNDER
+                                    MESAJ
                                 </button>
                             </div>
                         )}
@@ -350,7 +350,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                           <img src={listUser.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 group-hover:scale-105 transition-transform" />
                                           <div className="flex flex-col">
                                               <span className="text-xs font-bold dark:text-white leading-tight group-hover:text-wedding-500 transition-colors">{listUser.name}</span>
-                                              <span className="text-[9px] text-gray-400 font-medium mt-0.5">@{listUser.username}</span>
+                                              <span className="text-[9px] text-wedding-500 font-bold">@{listUser.username}</span>
                                           </div>
                                       </div>
                                       {listUser.id !== currentUser?.id && (
