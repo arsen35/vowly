@@ -187,14 +187,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 min-w-0">
                         <h2 className="text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
-                        {/* Takip Et Butonu (Sadece başkasının profili ise) */}
+                        
+                        {/* Başkasının Profilinde Eylem Butonları */}
                         {!isOwnProfile && isPublicProfile && (
-                            <button 
-                                onClick={() => onFollowToggle(user.id)}
-                                className={`text-[10px] font-bold px-4 py-1.5 rounded-md border transition-all uppercase tracking-widest shrink-0 ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}
-                            >
-                                {isFollowing ? 'Takiptesin' : 'Takip Et'}
-                            </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button 
+                                    onClick={() => onFollowToggle(user.id)}
+                                    className={`text-[10px] font-bold px-4 py-1.5 rounded-md border transition-all uppercase tracking-widest ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}
+                                >
+                                    {isFollowing ? 'Takiptesin' : 'Takip Et'}
+                                </button>
+                                <button 
+                                    onClick={() => onUserClick?.(user)}
+                                    className="text-[10px] font-bold px-4 py-1.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-400 hover:text-wedding-500 hover:border-wedding-500 transition-all uppercase tracking-widest"
+                                >
+                                    MESAJ GÖNDER
+                                </button>
+                            </div>
                         )}
                     </div>
                     
