@@ -11,6 +11,8 @@ import { Logo } from './Logo';
 interface ProfilePageProps {
   user: User | null;
   isAdmin?: boolean;
+  isPublicProfile?: boolean;
+  currentUser?: User | null;
   onOpenAdmin?: () => void;
   posts: Post[];
   onPostClick: (post: Post) => void;
@@ -23,11 +25,14 @@ interface ProfilePageProps {
   followingIds: string[];
   onFollowToggle: (userId: string) => void;
   onInstallApp: () => void;
+  onUserClick?: (user: User) => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ 
   user, 
   isAdmin,
+  isPublicProfile = false,
+  currentUser,
   onOpenAdmin,
   posts, 
   onLogout, 
@@ -38,7 +43,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onAddComment,
   followingIds,
   onFollowToggle,
-  onInstallApp
+  onInstallApp,
+  onUserClick
 }) => {
   const [activeTab, setActiveTab] = useState<'posts' | 'liked'>('posts');
   const [showSettings, setShowSettings] = useState(false);
@@ -156,45 +162,71 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       );
   }
 
+  // Not: Diğer kullanıcıların "beğendiği postlar" normalde DB'den çekilmeli. 
+  // Mevcut yapıda "likes" Firestore'da post bazlı tutuluyor, kullanıcı bazlı liste yok. 
+  // Bu yüzden şimdilik paylaşılanları gösteriyoruz. Beğeniler sekmesi boş kalabilir veya "Beğendiği içerikler gizli" diyebiliriz.
+  // Ancak isteğe uygun olarak sekmeyi açık bırakıyorum.
   const userPosts = posts.filter(p => p.user.id === user?.id);
-  const likedPosts = posts.filter(p => p.isLikedByCurrentUser);
+  const likedPosts = isPublicProfile ? [] : posts.filter(p => p.isLikedByCurrentUser);
   const displayPosts = activeTab === 'posts' ? userPosts : likedPosts;
+
+  const isFollowing = user ? followingIds.includes(user.id) : false;
 
   return (
     <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-14 pb-32 animate-fadeIn relative">
       <div className="flex flex-col gap-6 mb-12">
         <div className="flex items-center gap-6 md:gap-12 relative">
             <div className="shrink-0">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-lg p-1 border border-gray-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-lg p-1 border border-gray-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm transition-transform hover:scale-105 duration-300">
                     <img src={user.avatar} className="w-full h-full rounded-md object-cover" alt={user.name} />
                 </div>
             </div>
 
             <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
+                            {isPublicProfile && user.id !== currentUser?.id && (
+                                <button 
+                                    onClick={() => onFollowToggle(user.id)}
+                                    className={`text-[9px] font-bold px-4 py-1.5 rounded-md border transition-all uppercase tracking-widest shrink-0 ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}
+                                >
+                                    {isFollowing ? 'Takiptesin' : 'Takip Et'}
+                                </button>
+                            )}
+                        </div>
                         <p className="text-[11px] text-gray-400 font-bold">@{user.username || 'user'}</p>
                     </div>
                     
-                    <div className="relative" ref={settingsRef}>
-                        <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90">
-                            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                    {!isPublicProfile ? (
+                        <div className="relative" ref={settingsRef}>
+                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90">
+                                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                            </button>
+                            
+                            {showSettings && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {isAdmin && (
+                                        <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Yönetici Paneli</button>
+                                    )}
+                                    <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
+                                    <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
+                                    <div className="h-px bg-gray-100 dark:bg-zinc-900 mx-2"></div>
+                                    <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Çıkış Yap</button>
+                                    <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Hesabı Sil</button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={() => dbService.getUser(user.id).then(u => u && onLogout?.())}
+                            className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90"
+                            title="Mesaj Gönder"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025 4.479 4.479 0 00-.585-1.647A8.25 8.25 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
                         </button>
-                        
-                        {showSettings && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                {isAdmin && (
-                                    <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Yönetici Paneli</button>
-                                )}
-                                <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
-                                <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
-                                <div className="h-px bg-gray-100 dark:bg-zinc-900 mx-2"></div>
-                                <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Çıkış Yap</button>
-                                <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Hesabı Sil</button>
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
 
                 <div className="flex gap-6 items-center mt-3">
@@ -215,13 +247,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-            <button 
-                onClick={() => setIsEditModalOpen(true)} 
-                className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 text-[9px] font-bold py-3 rounded-md uppercase tracking-widest transition-all hover:bg-gray-50 dark:hover:bg-zinc-800 active:scale-95"
-            >
-                Düzenle
-            </button>
+        <div className="grid grid-cols-2 gap-2">
             <button 
                 onClick={() => setActiveTab('posts')} 
                 className={`border transition-all text-[9px] font-bold py-3 rounded-md uppercase tracking-widest active:scale-95 ${activeTab === 'posts' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
@@ -232,7 +258,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 onClick={() => setActiveTab('liked')} 
                 className={`border transition-all text-[9px] font-bold py-3 rounded-md uppercase tracking-widest active:scale-95 ${activeTab === 'liked' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
             >
-                Beğeniler
+                {isPublicProfile ? 'Beğeniler' : 'Beğenilerim'}
             </button>
         </div>
       </div>
@@ -261,7 +287,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         ))}
         {displayPosts.length === 0 && (
             <div className="col-span-3 py-24 text-center">
-                <p className="text-gray-400 font-normal text-sm">Burada henüz bir içerik yok ✨</p>
+                <p className="text-gray-400 font-normal text-sm">
+                    {activeTab === 'liked' && isPublicProfile ? "Beğendiği içerikler gizli ✨" : "Burada henüz bir içerik yok ✨"}
+                </p>
             </div>
         )}
       </div>
@@ -269,7 +297,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       {selectedPost && (
           <div className="fixed inset-0 z-[1000] bg-white dark:bg-theme-black overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
               <div className="sticky top-0 left-0 right-0 h-14 bg-white/90 dark:bg-theme-black/90 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between px-6 z-10">
-                  <button onClick={() => setSelectedPost(null)} className="flex items-center gap-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group">
+                  <button onClick={() => setSelectedPost(null)} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors group">
                       <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg>
                       <span className="text-[10px] font-bold uppercase tracking-widest">Kapat</span>
                   </button>
@@ -283,10 +311,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     onLike={onLike} 
                     onAddComment={onAddComment} 
                     onDelete={onDeletePost} 
-                    isAdmin={user.id === selectedPost.user.id} 
+                    isAdmin={isAdmin || currentUser?.id === selectedPost.user.id} 
                     isFollowing={followingIds.includes(selectedPost.user.id)}
                     onFollow={() => onFollowToggle(selectedPost.user.id)}
-                    currentUserId={user.id}
+                    onUserClick={onUserClick}
+                    currentUserId={currentUser?.id}
                   />
               </div>
           </div>
@@ -311,14 +340,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                           <div className="space-y-1">
                               {followListUsers.map(listUser => (
                                   <div key={listUser.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
-                                      <div className="flex items-center gap-3">
-                                          <img src={listUser.avatar} className="w-9 h-9 rounded-md object-cover border border-gray-100 dark:border-zinc-800" />
+                                      <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onUserClick?.(listUser)}>
+                                          <img src={listUser.avatar} className="w-9 h-9 rounded-md object-cover border border-gray-100 dark:border-zinc-800 group-hover:scale-105 transition-transform" />
                                           <div className="flex flex-col">
-                                              <span className="text-xs font-bold dark:text-white leading-tight">{listUser.name}</span>
+                                              <span className="text-xs font-bold dark:text-white leading-tight group-hover:text-wedding-500 transition-colors">{listUser.name}</span>
                                               <span className="text-[9px] text-gray-400 font-medium">@{listUser.username}</span>
                                           </div>
                                       </div>
-                                      {listUser.id !== user.id && (
+                                      {listUser.id !== currentUser?.id && (
                                           <button 
                                               onClick={() => onFollowToggle(listUser.id)}
                                               className={`text-[8px] font-bold px-3 py-1.5 rounded-md border transition-all uppercase tracking-wider ${followingIds.includes(listUser.id) ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}
@@ -338,7 +367,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
       )}
 
-      {isEditModalOpen && (
+      {!isPublicProfile && isEditModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
             <div className="bg-white dark:bg-zinc-950 rounded-lg w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100 dark:border-zinc-900">
                 <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 transition-all">
@@ -390,13 +419,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       )}
 
-      <ConfirmationModal 
-        isOpen={isDeleteAccConfirmOpen}
-        title="Hesabını Sil"
-        message="Hesabını ve tüm paylaşımlarını kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz."
-        onConfirm={() => { onDeleteAccount(); setIsDeleteAccConfirmOpen(false); }}
-        onCancel={() => setIsDeleteAccConfirmOpen(false)}
-      />
+      {!isPublicProfile && (
+        <ConfirmationModal 
+            isOpen={isDeleteAccConfirmOpen}
+            title="Hesabını Sil"
+            message="Hesabını ve tüm paylaşımlarını kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz."
+            onConfirm={() => { onDeleteAccount(); setIsDeleteAccConfirmOpen(false); }}
+            onCancel={() => setIsDeleteAccConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 };

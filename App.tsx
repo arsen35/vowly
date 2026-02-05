@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [showAdminTrigger, setShowAdminTrigger] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [viewedUser, setViewedUser] = useState<User | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [unreadDMCount, setUnreadDMCount] = useState(0);
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -105,7 +106,6 @@ const App: React.FC = () => {
     const handleBeforeInstall = (e: any) => {
         e.preventDefault();
         setDeferredPrompt(e);
-        console.log('✅ Android yükleme sistemi hazır.');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -226,6 +226,16 @@ const App: React.FC = () => {
       else setViewState(ViewState.UPLOAD);
   };
 
+  const handleUserClick = (user: User) => {
+    if (currentUser && user.id === currentUser.id) {
+        setViewState(ViewState.PROFILE);
+    } else {
+        setViewedUser(user);
+        setViewState(ViewState.USER_PROFILE);
+    }
+    setShowSearchModal(false);
+  };
+
   const handleNewPost = async (data: any) => {
     if (!currentUser) return;
     setViewState(ViewState.FEED);
@@ -341,7 +351,7 @@ const App: React.FC = () => {
           {viewState === ViewState.FEED ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
                 {posts.map(post => (
-                  <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} currentUserId={currentUser?.id} />
+                  <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} onUserClick={handleUserClick} currentUserId={currentUser?.id} />
                 ))}
             </div>
           ) : viewState === ViewState.BLOG ? (
@@ -349,7 +359,9 @@ const App: React.FC = () => {
           ) : viewState === ViewState.CHAT ? (
               <ChatPage isAdmin={isAdmin} currentUser={currentUser} />
           ) : viewState === ViewState.PROFILE ? (
-              <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} />
+              <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
+          ) : viewState === ViewState.USER_PROFILE && viewedUser ? (
+              <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} />
           ) : null}
         </div>
       </main>
@@ -392,6 +404,7 @@ const App: React.FC = () => {
             onClose={() => setShowSearchModal(false)} 
             followingIds={followingIds} 
             onFollowToggle={handleFollowToggle} 
+            onUserClick={handleUserClick}
             currentUserId={currentUser?.id} 
           />
       )}

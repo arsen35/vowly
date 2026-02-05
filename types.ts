@@ -76,5 +76,6 @@ export enum ViewState {
   BLOG = 'BLOG',
   CHAT = 'CHAT',
   PROFILE = 'PROFILE',
-  DM_CHAT = 'DM_CHAT'
+  DM_CHAT = 'DM_CHAT',
+  USER_PROFILE = 'USER_PROFILE'
 }

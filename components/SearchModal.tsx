@@ -7,10 +7,11 @@ interface SearchModalProps {
   onClose: () => void;
   followingIds: string[];
   onFollowToggle: (userId: string) => void;
+  onUserClick: (user: User) => void;
   currentUserId?: string;
 }
 
-export const SearchModal: React.FC<SearchModalProps> = ({ onClose, followingIds, onFollowToggle, currentUserId }) => {
+export const SearchModal: React.FC<SearchModalProps> = ({ onClose, followingIds, onFollowToggle, onUserClick, currentUserId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,17 +61,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({ onClose, followingIds,
             ) : (
                 <>
                     {results.map(u => (
-                        <div key={u.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
+                        <div key={u.id} onClick={() => onUserClick(u)} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group">
                             <div className="flex items-center gap-3">
-                                <img src={u.avatar} className="w-10 h-10 rounded-lg object-cover border border-gray-100 dark:border-zinc-800" />
+                                <img src={u.avatar} className="w-10 h-10 rounded-lg object-cover border border-gray-100 dark:border-zinc-800 group-hover:scale-105 transition-transform" />
                                 <div className="flex flex-col">
-                                    <span className="text-xs font-bold dark:text-white leading-tight">{u.name}</span>
+                                    <span className="text-xs font-bold dark:text-white leading-tight group-hover:text-wedding-500 transition-colors">{u.name}</span>
                                     <span className="text-[10px] text-wedding-500 font-bold">@{u.username || 'uye'}</span>
                                 </div>
                             </div>
                             {u.id !== currentUserId && (
                                 <button 
-                                    onClick={() => onFollowToggle(u.id)}
+                                    onClick={(e) => { e.stopPropagation(); onFollowToggle(u.id); }}
                                     className={`text-[9px] font-bold px-4 py-2 rounded-lg border transition-all uppercase tracking-widest ${followingIds.includes(u.id) ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}
                                 >
                                     {followingIds.includes(u.id) ? 'Takip' : 'Takip Et'}

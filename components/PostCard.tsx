@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Post } from '../types';
+import { Post, User } from '../types';
+// Fix: Added import for dbService to resolve the undefined variable error in comments section
+import { dbService } from '../services/db';
 
 interface PostCardProps {
   post: Post;
@@ -10,6 +12,7 @@ interface PostCardProps {
   isAdmin: boolean;
   isFollowing?: boolean;
   onFollow?: () => void;
+  onUserClick?: (user: User) => void;
   currentUserId?: string;
 }
 
@@ -28,6 +31,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   isAdmin, 
   isFollowing, 
   onFollow,
+  onUserClick,
   currentUserId 
 }) => {
   const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser);
@@ -109,19 +113,22 @@ export const PostCard: React.FC<PostCardProps> = ({
   return (
     <div className="bg-white dark:bg-theme-black border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-sm rounded-lg">
       <div className="px-4 py-3 flex items-center justify-between border-b border-gray-50 dark:border-zinc-900">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-md overflow-hidden border border-gray-100 dark:border-zinc-800">
+        <div 
+            className="flex items-center gap-3 cursor-pointer group" 
+            onClick={() => onUserClick?.(post.user)}
+        >
+          <div className="w-9 h-9 rounded-md overflow-hidden border border-gray-100 dark:border-zinc-800 transition-transform group-hover:scale-105">
             <img src={post.user.avatar} alt={post.user.name} className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <h3 className="font-bold text-gray-900 dark:text-white text-[13px] tracking-tight leading-none">{post.user.name}</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white text-[13px] tracking-tight leading-none group-hover:text-wedding-500 transition-colors">{post.user.name}</h3>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
           {!isOwnPost && (
             <button 
-              onClick={onFollow}
+              onClick={(e) => { e.stopPropagation(); onFollow?.(); }}
               className={`text-[9px] font-bold px-3 py-1.5 rounded-md border transition-all ${isFollowing ? 'text-gray-400 bg-transparent border-gray-100 dark:border-zinc-800' : 'text-gray-900 bg-transparent border-gray-200 hover:border-wedding-500 hover:text-wedding-500 dark:text-white dark:border-zinc-800'}`}
             >
               {isFollowing ? 'Takiptesin' : 'Takip Et'}
@@ -207,7 +214,12 @@ export const PostCard: React.FC<PostCardProps> = ({
           </div>
         </div>
         <div className="text-[13px] mb-3 leading-relaxed">
-          <span className="font-bold mr-2 text-gray-900 dark:text-white">{post.user.name}</span>
+          <span 
+            className="font-bold mr-2 text-gray-900 dark:text-white cursor-pointer hover:text-wedding-500 transition-colors"
+            onClick={() => onUserClick?.(post.user)}
+          >
+            {post.user.name}
+          </span>
           <span className="text-gray-600 dark:text-gray-400 font-normal">{post.caption}</span>
         </div>
         <div className="flex flex-wrap gap-1.5 mt-auto">
@@ -220,7 +232,12 @@ export const PostCard: React.FC<PostCardProps> = ({
             <div className="space-y-2 mb-3 max-h-32 overflow-y-auto custom-scrollbar">
                {post.comments.map((comment) => (
                  <div key={comment.id} className="text-[11px] pb-1.5 border-b border-gray-200/20 dark:border-zinc-800/20 last:border-0">
-                    <span className="font-bold mr-2 text-gray-900 dark:text-white">{comment.userName}</span>
+                    <span 
+                        className="font-bold mr-2 text-gray-900 dark:text-white cursor-pointer hover:text-wedding-500 transition-colors"
+                        onClick={() => dbService.getUser(comment.userId).then(u => u && onUserClick?.(u))}
+                    >
+                        {comment.userName}
+                    </span>
                     <span className="text-gray-600 dark:text-gray-400">{comment.text}</span>
                  </div>
                ))}
