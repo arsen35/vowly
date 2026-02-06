@@ -34,7 +34,6 @@ export const PostCard: React.FC<PostCardProps> = ({
   onUserClick,
   currentUserId 
 }) => {
-  // İlk durumu belirlerken hem isLikedByCurrentUser'a hem de likedBy array'ine bakıyoruz
   const initialLiked = post.isLikedByCurrentUser || (currentUserId ? (post.likedBy || []).includes(currentUserId) : false);
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [likesCount, setLikesCount] = useState(post.likes);
@@ -45,6 +44,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [particles, setParticles] = useState<HeartParticle[]>([]);
   const [showBigHeart, setShowBigHeart] = useState(false);
   const [isIconPulsing, setIsIconPulsing] = useState(false);
+  
+  // Slider State
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   useEffect(() => {
     setLikesCount(post.likes);
@@ -93,8 +95,6 @@ export const PostCard: React.FC<PostCardProps> = ({
       setIsIconPulsing(true);
       setTimeout(() => setIsIconPulsing(false), 400);
     }
-    
-    // Üst bileşene yeni durumu da gönderiyoruz
     onLike(post.id, newLikedState);
   };
 
@@ -106,6 +106,20 @@ export const PostCard: React.FC<PostCardProps> = ({
       handleLike();
     } else {
       triggerParticles();
+    }
+  };
+
+  const handleNextMedia = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentMediaIndex < post.media.length - 1) {
+      setCurrentMediaIndex(currentMediaIndex + 1);
+    }
+  };
+
+  const handlePrevMedia = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentMediaIndex > 0) {
+      setCurrentMediaIndex(currentMediaIndex - 1);
     }
   };
 
@@ -167,6 +181,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         className="relative w-full aspect-[4/5] bg-gray-50 dark:bg-zinc-950 group overflow-hidden select-none"
         onDoubleClick={handleDoubleClick}
       >
+        {/* BIG HEART ANIMATION */}
         {showBigHeart && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-like-pop">
                 <div className="relative">
@@ -177,7 +192,50 @@ export const PostCard: React.FC<PostCardProps> = ({
                 </div>
             </div>
         )}
-        <img src={post.media[0].url} alt="Post" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" loading="lazy" />
+
+        {/* IMAGE SLIDER */}
+        <div 
+          className="flex h-full transition-transform duration-500 ease-in-out" 
+          style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+        >
+          {post.media.map((item, idx) => (
+            <div key={idx} className="min-w-full h-full relative">
+              <img src={item.url} alt={`Post ${idx}`} className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
+
+        {/* SLIDER NAVIGATION */}
+        {post.media.length > 1 && (
+          <>
+            {currentMediaIndex > 0 && (
+              <button 
+                onClick={handlePrevMedia} 
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md p-2 rounded-full text-white/80 hover:bg-black/40 transition-all z-20"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+              </button>
+            )}
+            {currentMediaIndex < post.media.length - 1 && (
+              <button 
+                onClick={handleNextMedia} 
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md p-2 rounded-full text-white/80 hover:bg-black/40 transition-all z-20"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+              </button>
+            )}
+            
+            {/* PAGINATION DOTS */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+              {post.media.map((_, idx) => (
+                <div 
+                  key={idx} 
+                  className={`h-1 rounded-full transition-all duration-300 ${idx === currentMediaIndex ? 'w-4 bg-white shadow-sm' : 'w-1 bg-white/40'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
         
         {post.location && (
             <div className="absolute top-4 left-4 z-10 bg-black/20 backdrop-blur-sm px-2 py-1 rounded-md border border-white/10">
