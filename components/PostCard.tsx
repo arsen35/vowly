@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Post, User } from '../types';
-// Fix: Added import for dbService to resolve the undefined variable error in comments section
 import { dbService } from '../services/db';
 
 interface PostCardProps {
@@ -16,10 +15,11 @@ interface PostCardProps {
   currentUserId?: string;
 }
 
-interface Heart {
+interface HeartParticle {
   id: number;
   x: number; 
-  delay: number;
+  y: number;
+  size: number;
   color: string;
 }
 
@@ -40,8 +40,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [commentText, setCommentText] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [hearts, setHearts] = useState<Heart[]>([]);
+  const [particles, setParticles] = useState<HeartParticle[]>([]);
   const [showBigHeart, setShowBigHeart] = useState(false);
+  const [isIconPulsing, setIsIconPulsing] = useState(false);
 
   useEffect(() => {
     setLikesCount(post.likes);
@@ -60,19 +61,21 @@ export const PostCard: React.FC<PostCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
 
-  const triggerHearts = () => {
-    const newHearts: Heart[] = [];
-    for (let i = 0; i < 6; i++) {
-      newHearts.push({
-        id: Date.now() + i,
-        x: (Math.random() - 0.5) * 40,
-        delay: Math.random() * 0.3,
-        color: '#A66D60'
+  const triggerParticles = () => {
+    const colors = ['#A66D60', '#D0B2A8', '#E4D2CC', '#F1E8E5'];
+    const newParticles: HeartParticle[] = [];
+    for (let i = 0; i < 8; i++) {
+      newParticles.push({
+        id: Math.random(),
+        x: (Math.random() - 0.5) * 60,
+        y: -(Math.random() * 40 + 20),
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)]
       });
     }
-    setHearts(prev => [...prev, ...newHearts]);
+    setParticles(prev => [...prev, ...newParticles]);
     setTimeout(() => {
-      setHearts(prev => prev.filter(h => !newHearts.find(nh => nh.id === h.id)));
+      setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
     }, 1200);
   };
 
@@ -81,18 +84,24 @@ export const PostCard: React.FC<PostCardProps> = ({
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
     setLikesCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
-    if (newLikedState) triggerHearts();
+    
+    if (newLikedState) {
+      triggerParticles();
+      setIsIconPulsing(true);
+      setTimeout(() => setIsIconPulsing(false), 400);
+    }
+    
     onLike(post.id);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowBigHeart(true);
-    setTimeout(() => setShowBigHeart(false), 1000);
+    setTimeout(() => setShowBigHeart(false), 800);
     if (!isLiked) {
       handleLike();
     } else {
-      triggerHearts();
+      triggerParticles();
     }
   };
 
@@ -155,8 +164,8 @@ export const PostCard: React.FC<PostCardProps> = ({
         onDoubleClick={handleDoubleClick}
       >
         {showBigHeart && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-like-bounce">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-20 h-20 text-white drop-shadow-lg opacity-90">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-like-pop">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-32 h-32 text-white/90 drop-shadow-[0_10px_30px_rgba(166,109,96,0.6)]">
                     <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                 </svg>
             </div>
@@ -190,8 +199,24 @@ export const PostCard: React.FC<PostCardProps> = ({
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-                <button onClick={handleLike} className={`transition-all duration-300 active:scale-75 ${isLiked ? 'text-wedding-500' : 'text-gray-900 dark:text-white hover:text-wedding-500'}`}>
+            <div className="flex items-center gap-1.5 relative">
+                {/* Partiküller */}
+                {particles.map(p => (
+                  <div 
+                    key={p.id}
+                    className="absolute pointer-events-none animate-float-up z-20"
+                    style={{ left: `calc(50% + ${p.x}px)`, top: '0px' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill={p.color} style={{ width: p.size, height: p.size }}>
+                      <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                    </svg>
+                  </div>
+                ))}
+
+                <button 
+                  onClick={handleLike} 
+                  className={`transition-all duration-300 active:scale-75 ${isLiked ? 'text-wedding-500' : 'text-gray-900 dark:text-white hover:text-wedding-500'} ${isIconPulsing ? 'animate-icon-pulse' : ''}`}
+                >
                   <svg fill={isLiked ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-7 h-7">
                     <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                   </svg>
