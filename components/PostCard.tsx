@@ -5,7 +5,7 @@ import { dbService } from '../services/db';
 
 interface PostCardProps {
   post: Post;
-  onLike: (postId: string) => void;
+  onLike: (postId: string, isLikedNow: boolean) => void;
   onAddComment: (postId: string, text: string) => void;
   onDelete: (postId: string) => void;
   isAdmin: boolean;
@@ -34,7 +34,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   onUserClick,
   currentUserId 
 }) => {
-  const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser);
+  // İlk durumu belirlerken hem isLikedByCurrentUser'a hem de likedBy array'ine bakıyoruz
+  const initialLiked = post.isLikedByCurrentUser || (currentUserId ? (post.likedBy || []).includes(currentUserId) : false);
+  const [isLiked, setIsLiked] = useState(initialLiked);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -46,8 +48,9 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   useEffect(() => {
     setLikesCount(post.likes);
-    setIsLiked(post.isLikedByCurrentUser);
-  }, [post.likes, post.isLikedByCurrentUser]);
+    const currentlyLiked = post.isLikedByCurrentUser || (currentUserId ? (post.likedBy || []).includes(currentUserId) : false);
+    setIsLiked(currentlyLiked);
+  }, [post.likes, post.isLikedByCurrentUser, post.likedBy, currentUserId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -91,7 +94,8 @@ export const PostCard: React.FC<PostCardProps> = ({
       setTimeout(() => setIsIconPulsing(false), 400);
     }
     
-    onLike(post.id);
+    // Üst bileşene yeni durumu da gönderiyoruz
+    onLike(post.id, newLikedState);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -144,7 +148,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             </button>
           )}
           
-          {isAdmin && (
+          {(isAdmin || isOwnPost) && (
               <div className="relative" ref={menuRef}>
                   <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-400 hover:text-gray-600 p-1">
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
@@ -166,7 +170,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         {showBigHeart && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-like-pop">
                 <div className="relative">
-                    {/* Arka plan ışıltısı */}
                     <div className="absolute inset-0 blur-2xl bg-wedding-500/30 scale-150 rounded-full"></div>
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-32 h-32 text-wedding-500/90 drop-shadow-[0_10px_40px_rgba(166,109,96,0.8)] relative z-10">
                         <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
@@ -204,7 +207,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 relative">
-                {/* Partiküller */}
                 {particles.map(p => (
                   <div 
                     key={p.id}

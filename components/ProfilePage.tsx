@@ -20,7 +20,7 @@ interface ProfilePageProps {
   onDeleteAccount: () => void;
   onDeletePost: (postId: string) => void;
   onLoginSuccess: () => void;
-  onLike: (postId: string) => void;
+  onLike: (postId: string, isLiked: boolean) => void;
   onAddComment: (postId: string, text: string) => void;
   followingIds: string[];
   onFollowToggle: (userId: string) => void;
@@ -58,7 +58,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [followListUsers, setFollowListUsers] = useState<User[]>([]);
   const [isFollowListLoading, setIsFollowListLoading] = useState(false);
   
-  // State for liked posts (the main one)
   const [likedPostsState, setLikedPostsState] = useState<Post[]>([]);
   const [isLikedLoading, setIsLikedLoading] = useState(false);
   
@@ -88,14 +87,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     }
   }, [user]);
 
-  // Tab change handler to fetch likes
+  // Sekme değiştiğinde beğenileri çek ve o anki kullanıcıya (viewer) göre işaretle
   useEffect(() => {
     if (activeTab === 'liked' && user) {
         const fetchLikes = async () => {
             setIsLikedLoading(true);
             try {
                 const results = await dbService.getPostsLikedByUser(user.id);
-                setLikedPostsState(results);
+                // Viewer (izleyen) kişiye göre isLikedByCurrentUser alanını doldur
+                const enrichedResults = results.map(p => ({
+                    ...p,
+                    isLikedByCurrentUser: currentUser ? (p.likedBy || []).includes(currentUser.id) : false
+                }));
+                setLikedPostsState(enrichedResults);
             } catch (e) {
                 console.error("Likes fetch error:", e);
                 setLikedPostsState([]);
@@ -105,7 +109,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         };
         fetchLikes();
     }
-  }, [activeTab, user?.id]);
+  }, [activeTab, user?.id, currentUser?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,7 +165,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   }
 
   const userPosts = posts.filter(p => p.user.id === user?.id);
-  // Important Fix: Use the state variable correctly
   const displayPosts = activeTab === 'posts' ? userPosts : likedPostsState;
 
   const isFollowing = user ? followingIds.includes(user.id) : false;
@@ -267,7 +270,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                       {listUser.id !== currentUser?.id && ( <button onClick={() => onFollowToggle(listUser.id)} className={`text-[8px] font-bold px-3 py-1.5 rounded-md border transition-all uppercase tracking-wider ${followingIds.includes(listUser.id) ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}>{followingIds.includes(listUser.id) ? 'Takip' : 'Takip Et'}</button> )}
                                   </div>
                               ))}
-                              {followListUsers.length === 0 && ( <div className="py-12 text-center text-[10px] text-gray-400 font-normal italic">Henüz kimse yok ✨</div> )}
+                              {followListUsers.length === 0 && ( <div className="py-12 text-center text-[10px] text-gray-400 font-bold italic">Henüz kimse yok ✨</div> )}
                           </div>
                       )}
                   </div>

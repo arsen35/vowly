@@ -265,12 +265,13 @@ const App: React.FC = () => {
     } catch (e) { console.error("Paylaşım Hatası:", e); alert("Paylaşım yapılırken bir hata oluştu."); }
   };
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (postId: string, isLikedNow: boolean) => {
     if (!currentUser) { setViewState(ViewState.PROFILE); return; }
-    const post = allPosts.find(p => p.id === postId);
-    if (!post) return;
-    const isLiked = (post.likedBy || []).includes(currentUser.id);
-    try { await dbService.toggleLike(postId, currentUser.id, !isLiked); } catch (error) {}
+    try { 
+        await dbService.toggleLike(postId, currentUser.id, isLikedNow); 
+    } catch (error) {
+        console.error("Like error:", error);
+    }
   };
 
   const handleAddComment = async (postId: string, text: string) => {
