@@ -43,17 +43,11 @@ const App: React.FC = () => {
   const ADMIN_EMAILS = ['jeanbox35@gmail.com', 'swoxagency@gmail.com', 'nossdigital@gmail.com'];
 
   const posts = useMemo(() => {
-    const LIKED_STORAGE_KEY = 'vowly_liked_posts';
-    const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
-    const likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
-    
-    const processed = allPosts.map(p => ({
+    return allPosts.map(p => ({
       ...p,
-      isLikedByCurrentUser: likedPosts.includes(p.id)
-    }));
-
-    return [...processed].sort((a, b) => b.timestamp - a.timestamp);
-  }, [allPosts]);
+      isLikedByCurrentUser: currentUser ? (p.likedBy || []).includes(currentUser.id) : false
+    })).sort((a, b) => b.timestamp - a.timestamp);
+  }, [allPosts, currentUser]);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -185,22 +179,12 @@ const App: React.FC = () => {
 
   const handleInstallApp = async () => {
     const platform = getPlatform();
-    
-    if (platform === 'ios') {
-      setShowInstallModal(true);
-      return;
-    }
-
+    if (platform === 'ios') { setShowInstallModal(true); return; }
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-        setShowInstallModal(false);
-      }
-    } else {
-      setShowInstallModal(true);
-    }
+      if (outcome === 'accepted') { setDeferredPrompt(null); setShowInstallModal(false); }
+    } else { setShowInstallModal(true); }
   };
 
   const handleLogout = async () => {
@@ -217,10 +201,7 @@ const App: React.FC = () => {
     if (!auth || !auth.currentUser) return;
     try {
         const user = auth.currentUser;
-        // Firebase kullanıcıyı siler
         await deleteUser(user);
-        // DB'den de siliyoruz (mock)
-        // await dbService.deleteUserData(user.uid); 
         setCurrentUser(null);
         setIsAdmin(false);
         setViewState(ViewState.FEED);
@@ -246,12 +227,8 @@ const App: React.FC = () => {
   };
 
   const handleUserClick = (user: User) => {
-    if (currentUser && user.id === currentUser.id) {
-        setViewState(ViewState.PROFILE);
-    } else {
-        setViewedUser(user);
-        setViewState(ViewState.USER_PROFILE);
-    }
+    if (currentUser && user.id === currentUser.id) { setViewState(ViewState.PROFILE); } 
+    else { setViewedUser(user); setViewState(ViewState.USER_PROFILE); }
     setShowSearchModal(false);
   };
 
@@ -263,18 +240,14 @@ const App: React.FC = () => {
   const handleNewPost = async (data: any) => {
     if (!currentUser) return;
     setViewState(ViewState.FEED);
-    
     try {
       const mediaWithUrls: MediaItem[] = [];
       for (const item of data.media) {
           if (item.file) {
               const url = await dbService.uploadMedia(item.file, 'posts');
               mediaWithUrls.push({ url, type: item.type });
-          } else {
-              mediaWithUrls.push(item);
-          }
+          } else { mediaWithUrls.push(item); }
       }
-
       const newPost: Post = {
         id: Date.now().toString(),
         user: currentUser,
@@ -282,40 +255,22 @@ const App: React.FC = () => {
         caption: data.caption,
         hashtags: data.hashtags,
         likes: 0,
+        likedBy: [],
         comments: [],
         timestamp: Date.now(),
         productUrl: data.productUrl,
         location: data.location
       };
-
       await dbService.savePost(newPost);
-    } catch (e) { 
-      console.error("Paylaşım Hatası:", e); 
-      alert("Paylaşım yapılırken bir hata oluştu.");
-    }
+    } catch (e) { console.error("Paylaşım Hatası:", e); alert("Paylaşım yapılırken bir hata oluştu."); }
   };
 
   const handleLike = async (postId: string) => {
-    const LIKED_STORAGE_KEY = 'vowly_liked_posts';
-    const likedPostsStr = localStorage.getItem(LIKED_STORAGE_KEY);
-    let likedPosts = likedPostsStr ? JSON.parse(likedPostsStr) : [];
-    const isAlreadyLiked = likedPosts.includes(postId);
-    
-    const incrementBy = isAlreadyLiked ? -1 : 1;
-    if (isAlreadyLiked) {
-      likedPosts = likedPosts.filter((id: string) => id !== postId);
-    } else {
-      likedPosts.push(postId);
-    }
-    localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedPosts));
-    
-    setAllPosts(prev => prev.map(p => p.id === postId ? { 
-      ...p, 
-      isLikedByCurrentUser: !isAlreadyLiked, 
-      likes: Math.max(0, p.likes + incrementBy) 
-    } : p));
-
-    try { await dbService.updateLikeCount(postId, incrementBy); } catch (error) {}
+    if (!currentUser) { setViewState(ViewState.PROFILE); return; }
+    const post = allPosts.find(p => p.id === postId);
+    if (!post) return;
+    const isLiked = (post.likedBy || []).includes(currentUser.id);
+    try { await dbService.toggleLike(postId, currentUser.id, !isLiked); } catch (error) {}
   };
 
   const handleAddComment = async (postId: string, text: string) => {
@@ -327,7 +282,6 @@ const App: React.FC = () => {
       text: text,
       timestamp: Date.now()
     };
-    setAllPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
     try { await dbService.addComment(postId, newComment); } catch(error) {}
   };
 
@@ -340,7 +294,6 @@ const App: React.FC = () => {
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
             <Logo className="h-7 w-auto" />
           </div>
-          
           <nav className="hidden md:flex items-center gap-10 absolute left-1/2 transform -translate-x-1/2">
                <button onClick={() => setViewState(ViewState.FEED)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.FEED ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>AKIŞ</button>
                <button onClick={() => setViewState(ViewState.BLOG)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.BLOG ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>BLOG</button>
@@ -350,100 +303,39 @@ const App: React.FC = () => {
                </button>
                <button onClick={() => setViewState(ViewState.PROFILE)} className={`text-[10px] font-bold tracking-[0.2em] transition-all uppercase ${viewState === ViewState.PROFILE ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-900 dark:hover:text-white'}`}>PROFİLİM</button>
           </nav>
-
           <div className="flex items-center gap-2 md:gap-4">
             {isAdmin && (
-                <button onClick={() => setShowAdminModal(true)} className="flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-all shadow-sm">
-                    PANEL
-                </button>
+                <button onClick={() => setShowAdminModal(true)} className="flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-all shadow-sm">PANEL</button>
             )}
-            
-            <button onClick={() => setShowSearchModal(true)} className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90" title="Arama">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </button>
-
-            <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
-                {isDarkMode ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>}
-            </button>
+            <button onClick={() => setShowSearchModal(true)} className="p-2 text-gray-400 hover:text-wedding-500 transition-all active:scale-90" title="Arama"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+            <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">{isDarkMode ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>}</button>
             {currentUser && <div onClick={() => setViewState(ViewState.PROFILE)} className="cursor-pointer rounded-md overflow-hidden border border-gray-100 dark:border-zinc-800"><img src={currentUser.avatar} className="w-8 h-8 object-cover" alt="Avatar" /></div>}
           </div>
         </div>
       </header>
-      
       <main className="w-full pt-14">
         <div className={`px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px] ${viewState === ViewState.FEED ? 'pt-0' : 'pt-4'}`}>
           {viewState === ViewState.FEED ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
-                {posts.map(post => (
-                  <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} onUserClick={handleUserClick} currentUserId={currentUser?.id} />
-                ))}
+                {posts.map(post => ( <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} onUserClick={handleUserClick} currentUserId={currentUser?.id} /> ))}
             </div>
-          ) : viewState === ViewState.BLOG ? (
-              <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
-          ) : viewState === ViewState.CHAT ? (
-              <ChatPage isAdmin={isAdmin} currentUser={currentUser} initialUser={chatTargetUser} onLoaded={() => setChatTargetUser(null)} />
-          ) : viewState === ViewState.PROFILE ? (
-              <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
-          ) : viewState === ViewState.USER_PROFILE && viewedUser ? (
-              <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} onMessageClick={handleSendMessageClick} />
+          ) : viewState === ViewState.BLOG ? ( <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
+          ) : viewState === ViewState.CHAT ? ( <ChatPage isAdmin={isAdmin} currentUser={currentUser} initialUser={chatTargetUser} onLoaded={() => setChatTargetUser(null)} />
+          ) : viewState === ViewState.PROFILE ? ( <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
+          ) : viewState === ViewState.USER_PROFILE && viewedUser ? ( <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} onMessageClick={handleSendMessageClick} />
           ) : null}
         </div>
       </main>
-
       <div className="hidden md:flex fixed bottom-8 right-8 flex-col gap-3 z-50">
-        <a href="https://annabellabridal.com" target="_blank" className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-95" title="Anasayfa">
-           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-        </a>
-        <button onClick={handleUploadClick} className="bg-gray-900 dark:bg-white p-3 rounded-lg shadow-xl text-white dark:text-gray-900 hover:scale-105 transition-all active:scale-95" title="Paylaşım Yap">
-           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-        </button>
+        <a href="https://annabellabridal.com" target="_blank" className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-95" title="Anasayfa"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg></a>
+        <button onClick={handleUploadClick} className="bg-gray-900 dark:bg-white p-3 rounded-lg shadow-xl text-white dark:text-gray-900 hover:scale-105 transition-all active:scale-95" title="Paylaşım Yap"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
       </div>
-
-      <BottomNavigation 
-        currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} 
-        onNavigate={setViewState} 
-        onUploadClick={handleUploadClick} 
-        unreadDMCount={unreadDMCount}
-      />
-      
-      {showAdminTrigger && (
-          <AdminLoginModal 
-            onClose={() => setShowAdminTrigger(false)} 
-            onLoginSuccess={() => {
-                setShowAdminTrigger(false);
-                setIsAdmin(true);
-                setShowAdminModal(true);
-            }} 
-          />
-      )}
-      
-      {showAdminModal && (
-          <div className="fixed inset-0 z-[2000] bg-white dark:bg-theme-black overflow-y-auto pt-20 animate-in slide-in-from-bottom-5">
-              <AdminDashboard posts={allPosts} onDeletePost={async (id) => await dbService.deletePost(id)} onResetData={() => {}} onClose={() => setShowAdminModal(false)} />
-          </div>
-      )}
-
-      {showSearchModal && (
-          <SearchModal 
-            onClose={() => setShowSearchModal(false)} 
-            followingIds={followingIds} 
-            onFollowToggle={handleFollowToggle} 
-            onUserClick={handleUserClick}
-            currentUserId={currentUser?.id} 
-          />
-      )}
-
+      <BottomNavigation currentView={viewState === ViewState.UPLOAD ? ViewState.FEED : viewState} onNavigate={setViewState} onUploadClick={handleUploadClick} unreadDMCount={unreadDMCount} />
+      {showAdminTrigger && ( <AdminLoginModal onClose={() => setShowAdminTrigger(false)} onLoginSuccess={() => { setShowAdminTrigger(false); setIsAdmin(true); setShowAdminModal(true); }} /> )}
+      {showAdminModal && ( <div className="fixed inset-0 z-[2000] bg-white dark:bg-theme-black overflow-y-auto pt-20 animate-in slide-in-from-bottom-5"><AdminDashboard posts={allPosts} onDeletePost={async (id) => await dbService.deletePost(id)} onResetData={() => {}} onClose={() => setShowAdminModal(false)} /></div> )}
+      {showSearchModal && ( <SearchModal onClose={() => setShowSearchModal(false)} followingIds={followingIds} onFollowToggle={handleFollowToggle} onUserClick={handleUserClick} currentUserId={currentUser?.id} /> )}
       {viewState === ViewState.UPLOAD && <UploadModal user={currentUser} onClose={() => setViewState(ViewState.FEED)} onUpload={handleNewPost} />}
-      
-      {showInstallModal && (
-        <InstallModal 
-          platform={getPlatform()} 
-          canTriggerNative={!!deferredPrompt} 
-          onClose={() => setShowInstallModal(false)} 
-          onInstall={handleInstallApp} 
-        />
-      )}
-
+      {showInstallModal && ( <InstallModal platform={getPlatform()} canTriggerNative={!!deferredPrompt} onClose={() => setShowInstallModal(false)} onInstall={handleInstallApp} /> )}
       <ConfirmationModal isOpen={!!postToDelete} title="Sil" message="Bu içeriği silmek istediğine emin misin?" onConfirm={async () => { if(postToDelete) await dbService.deletePost(postToDelete); setPostToDelete(null); }} onCancel={() => setPostToDelete(null)} />
     </div>
   );

@@ -52,32 +52,26 @@ export const dbService = {
     const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
     
     try {
-      // 1. Son temizlik zamanını kontrol et
       const maintRef = doc(dbInstance, MAINTENANCE_COLLECTION, 'last_cleanup');
       const maintSnap = await getDoc(maintRef);
       
       if (maintSnap.exists()) {
         const lastCleanup = maintSnap.data().timestamp;
-        // Eğer son temizlik üzerinden 24 saat geçmemişse işlemi durdur
         if (now - lastCleanup < (24 * 60 * 60 * 1000)) return;
       }
 
-      console.log("🧹 24 saatlik temizlik işlemi başlatılıyor...");
       const batch = writeBatch(dbInstance);
 
-      // 2. Genel Sohbeti Temizle (Eski mesajlar)
       const globalChatQ = query(collection(dbInstance, CHAT_COLLECTION), where("timestamp", "<", twentyFourHoursAgo));
       const globalChatSnap = await getDocs(globalChatQ);
       globalChatSnap.forEach(d => batch.delete(d.ref));
 
-      // 3. Özel Mesajları Temizle
       const convsSnap = await getDocs(collection(dbInstance, CONVERSATIONS_COLLECTION));
       for (const convDoc of convsSnap.docs) {
         const dmQ = query(collection(dbInstance, CONVERSATIONS_COLLECTION, convDoc.id, DIRECT_MESSAGES_COLLECTION), where("timestamp", "<", twentyFourHoursAgo));
         const dmSnap = await getDocs(dmQ);
         dmSnap.forEach(d => batch.delete(d.ref));
         
-        // Eğer konuşmadaki tüm mesajlar eskiyse, konuşma özetini de güncelle veya sil
         if (!dmSnap.empty) {
             batch.update(convDoc.ref, {
                 lastMessage: "Sohbet geçmişi temizlendi.",
@@ -86,17 +80,13 @@ export const dbService = {
         }
       }
 
-      // 4. Temizlik zamanını güncelle
       batch.set(maintRef, { timestamp: now });
-      
       await batch.commit();
-      console.log("✅ Temizlik başarıyla tamamlandı.");
     } catch (error) {
       console.error("Cleanup Error:", error);
     }
   },
 
-  // --- MEDIA UPLOAD ---
   uploadMedia: async (file: File, path: string): Promise<string> => {
     const { storageInstance } = checkDbConnection();
     const fileRef = ref(storageInstance, `${path}/${Date.now()}_${file.name}`);
@@ -104,7 +94,6 @@ export const dbService = {
     return await getDownloadURL(snapshot.ref);
   },
 
-  // --- USERS ---
   subscribeToUser: (userId: string, callback: (user: User | null) => void) => {
     if (!db) return () => {};
     return onSnapshot(doc(db, USERS_COLLECTION, userId), (docSnap) => {
@@ -172,7 +161,6 @@ export const dbService = {
     return users;
   },
 
-  // --- DM & FOLLOWS ---
   getConversationId: (uid1: string, uid2: string) => [uid1, uid2].sort().join('_'),
 
   sendDirectMessage: async (sender: User, receiverId: string, text: string) => {
@@ -271,9 +259,12 @@ export const dbService = {
     });
   },
 
-  updateLikeCount: async (postId: string, incrementBy: number): Promise<void> => {
+  toggleLike: async (postId: string, userId: string, isLiked: boolean): Promise<void> => {
     const { dbInstance } = checkDbConnection();
-    await updateDoc(doc(dbInstance, POSTS_COLLECTION, postId), { likes: increment(incrementBy) });
+    await updateDoc(doc(dbInstance, POSTS_COLLECTION, postId), { 
+        likes: increment(isLiked ? 1 : -1),
+        likedBy: isLiked ? arrayUnion(userId) : arrayRemove(userId)
+    });
   },
 
   addComment: async (postId: string, comment: any): Promise<void> => {
@@ -284,7 +275,10 @@ export const dbService = {
   savePost: async (post: Post): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     const { isLikedByCurrentUser, ...postToSave } = post;
-    await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), sanitizeData(postToSave));
+    await setDoc(doc(dbInstance, POSTS_COLLECTION, post.id), sanitizeData({
+        ...postToSave,
+        likedBy: post.likedBy || []
+    }));
   },
 
   deletePost: async (id: string): Promise<void> => {

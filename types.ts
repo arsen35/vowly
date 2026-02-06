@@ -30,6 +30,7 @@ export interface Post {
   caption: string;
   hashtags: string[];
   likes: number;
+  likedBy?: string[]; // Beğenen kullanıcıların ID listesi
   comments: Comment[];
   timestamp: number;
   isLikedByCurrentUser?: boolean;
