@@ -97,7 +97,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowBigHeart(true);
-    setTimeout(() => setShowBigHeart(false), 800);
+    setTimeout(() => setShowBigHeart(false), 1000);
     if (!isLiked) {
       handleLike();
     } else {
@@ -165,9 +165,13 @@ export const PostCard: React.FC<PostCardProps> = ({
       >
         {showBigHeart && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-like-pop">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-32 h-32 text-white/90 drop-shadow-[0_10px_30px_rgba(166,109,96,0.6)]">
-                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                </svg>
+                <div className="relative">
+                    {/* Arka plan ışıltısı */}
+                    <div className="absolute inset-0 blur-2xl bg-wedding-500/30 scale-150 rounded-full"></div>
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-32 h-32 text-wedding-500/90 drop-shadow-[0_10px_40px_rgba(166,109,96,0.8)] relative z-10">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                    </svg>
+                </div>
             </div>
         )}
         <img src={post.media[0].url} alt="Post" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" loading="lazy" />
