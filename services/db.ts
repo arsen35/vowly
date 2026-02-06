@@ -261,16 +261,16 @@ export const dbService = {
 
   getPostsLikedByUser: async (userId: string): Promise<Post[]> => {
     const { dbInstance } = checkDbConnection();
+    // Sıralamayı (orderBy) siliyoruz çünkü index hatası verebiliyor. Manuel sıralayacağız.
     const q = query(
         collection(dbInstance, POSTS_COLLECTION),
         where("likedBy", "array-contains", userId),
-        orderBy("timestamp", "desc"),
         limit(50)
     );
     const snap = await getDocs(q);
     const posts: Post[] = [];
     snap.forEach(d => posts.push({ ...d.data(), id: d.id } as Post));
-    return posts;
+    return posts.sort((a, b) => b.timestamp - a.timestamp);
   },
 
   toggleLike: async (postId: string, userId: string, isLiked: boolean): Promise<void> => {

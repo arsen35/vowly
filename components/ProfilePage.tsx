@@ -58,8 +58,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [followListUsers, setFollowListUsers] = useState<User[]>([]);
   const [isFollowListLoading, setIsFollowListLoading] = useState(false);
   
-  // Beğeni listesi için özel state'ler
-  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+  // State for liked posts (the main one)
+  const [likedPostsState, setLikedPostsState] = useState<Post[]>([]);
   const [isLikedLoading, setIsLikedLoading] = useState(false);
   
   const [editName, setEditName] = useState(user?.name || '');
@@ -88,23 +88,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     }
   }, [user]);
 
-  // Sekme değiştiğinde beğenileri çek
+  // Tab change handler to fetch likes
   useEffect(() => {
     if (activeTab === 'liked' && user) {
         const fetchLikes = async () => {
             setIsLikedLoading(true);
             try {
                 const results = await dbService.getPostsLikedByUser(user.id);
-                setLikedPosts(results);
+                setLikedPostsState(results);
             } catch (e) {
                 console.error("Likes fetch error:", e);
+                setLikedPostsState([]);
             } finally {
                 setIsLikedLoading(false);
             }
         };
         fetchLikes();
     }
-  }, [activeTab, user]);
+  }, [activeTab, user?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -160,7 +161,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   }
 
   const userPosts = posts.filter(p => p.user.id === user?.id);
-  const displayPosts = activeTab === 'posts' ? userPosts : likedPosts;
+  // Important Fix: Use the state variable correctly
+  const displayPosts = activeTab === 'posts' ? userPosts : likedPostsState;
 
   const isFollowing = user ? followingIds.includes(user.id) : false;
 
@@ -235,7 +237,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 ))}
                 {displayPosts.length === 0 && (
                     <div className="col-span-3 py-24 text-center">
-                        <p className="text-gray-400 font-normal text-sm italic">Burada henüz bir içerik yok ✨</p>
+                        <p className="text-gray-400 font-normal text-sm italic">Henüz bir içerik yok ✨</p>
                     </div>
                 )}
             </>
