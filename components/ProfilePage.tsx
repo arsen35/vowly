@@ -58,6 +58,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [followListUsers, setFollowListUsers] = useState<User[]>([]);
   const [isFollowListLoading, setIsFollowListLoading] = useState(false);
   
+  // Beğeni listesi için özel state'ler
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+  const [isLikedLoading, setIsLikedLoading] = useState(false);
+  
   const [editName, setEditName] = useState(user?.name || '');
   const [editUsername, setEditUsername] = useState(user?.username || '');
   const [editBio, setEditBio] = useState(user?.bio || '');
@@ -68,7 +72,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
-  // Kendi profilimiz mi?
   const isOwnProfile = currentUser && user && currentUser.id === user.id;
 
   useEffect(() => {
@@ -84,6 +87,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       return () => unsubscribe();
     }
   }, [user]);
+
+  // Sekme değiştiğinde beğenileri çek
+  useEffect(() => {
+    if (activeTab === 'liked' && user) {
+        const fetchLikes = async () => {
+            setIsLikedLoading(true);
+            try {
+                const results = await dbService.getPostsLikedByUser(user.id);
+                setLikedPosts(results);
+            } catch (e) {
+                console.error("Likes fetch error:", e);
+            } finally {
+                setIsLikedLoading(false);
+            }
+        };
+        fetchLikes();
+    }
+  }, [activeTab, user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -139,8 +160,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   }
 
   const userPosts = posts.filter(p => p.user.id === user?.id);
-  // Beğeniler artık Post nesnesinin içindeki likedBy array'inden geliyor
-  const likedPosts = posts.filter(p => (p.likedBy || []).includes(user.id));
   const displayPosts = activeTab === 'posts' ? userPosts : likedPosts;
 
   const isFollowing = user ? followingIds.includes(user.id) : false;
@@ -194,24 +213,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <button onClick={() => setActiveTab('liked')} className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'liked' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}>Beğeniler</button>
         </div>
       </div>
+      
       <div className="grid grid-cols-3 gap-1 md:gap-2">
-        {displayPosts.map((post) => (
-          <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-50 dark:bg-zinc-900 rounded-md shadow-sm border border-gray-100 dark:border-zinc-800">
-            <img src={post.media[0].url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="post" />
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <div className="flex items-center gap-3 text-white">
-                    <div className="flex items-center gap-1 text-[10px] font-bold"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>{post.likes}</div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>{post.comments.length}</div>
-                </div>
+        {isLikedLoading && activeTab === 'liked' ? (
+            <div className="col-span-3 py-24 flex flex-col items-center justify-center gap-4 animate-fadeIn">
+                <div className="w-8 h-8 border-2 border-wedding-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Beğeniler Getiriliyor...</p>
             </div>
-          </div>
-        ))}
-        {displayPosts.length === 0 && (
-            <div className="col-span-3 py-24 text-center">
-                <p className="text-gray-400 font-normal text-sm italic">Burada henüz bir içerik yok ✨</p>
-            </div>
+        ) : (
+            <>
+                {displayPosts.map((post) => (
+                  <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-50 dark:bg-zinc-900 rounded-md shadow-sm border border-gray-100 dark:border-zinc-800">
+                    <img src={post.media[0].url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="post" />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <div className="flex items-center gap-3 text-white">
+                            <div className="flex items-center gap-1 text-[10px] font-bold"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>{post.likes}</div>
+                            <div className="flex items-center gap-1 text-[10px] font-bold"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>{post.comments.length}</div>
+                        </div>
+                    </div>
+                  </div>
+                ))}
+                {displayPosts.length === 0 && (
+                    <div className="col-span-3 py-24 text-center">
+                        <p className="text-gray-400 font-normal text-sm italic">Burada henüz bir içerik yok ✨</p>
+                    </div>
+                )}
+            </>
         )}
       </div>
+
       {selectedPost && (
           <div className="fixed inset-0 z-[1000] bg-white dark:bg-theme-black overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
               <div className="sticky top-0 left-0 right-0 h-14 bg-white/90 dark:bg-theme-black/90 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between px-6 z-10">

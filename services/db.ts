@@ -259,6 +259,20 @@ export const dbService = {
     });
   },
 
+  getPostsLikedByUser: async (userId: string): Promise<Post[]> => {
+    const { dbInstance } = checkDbConnection();
+    const q = query(
+        collection(dbInstance, POSTS_COLLECTION),
+        where("likedBy", "array-contains", userId),
+        orderBy("timestamp", "desc"),
+        limit(50)
+    );
+    const snap = await getDocs(q);
+    const posts: Post[] = [];
+    snap.forEach(d => posts.push({ ...d.data(), id: d.id } as Post));
+    return posts;
+  },
+
   toggleLike: async (postId: string, userId: string, isLiked: boolean): Promise<void> => {
     const { dbInstance } = checkDbConnection();
     await updateDoc(doc(dbInstance, POSTS_COLLECTION, postId), { 
