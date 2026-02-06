@@ -41,13 +41,14 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [commentText, setCommentText] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [particles, setParticles] = useState<HeartParticle[]>([]);
   const [showBigHeart, setShowBigHeart] = useState(false);
   const [isIconPulsing, setIsIconPulsing] = useState(false);
   
   // Slider State
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-  const [hasNudged, setHasNudged] = useState(false);
+  const [isNudging, setIsNudging] = useState(false);
 
   useEffect(() => {
     setLikesCount(post.likes);
@@ -67,13 +68,33 @@ export const PostCard: React.FC<PostCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
 
-  // Peek Effect: Trigger a small nudge animation on mount if multiple photos
+  // intersection observer to trigger nudge only when visible in viewport
   useEffect(() => {
-    if (post.media.length > 1 && !hasNudged) {
-        const timer = setTimeout(() => setHasNudged(true), 1500);
-        return () => clearTimeout(timer);
+    if (post.media.length <= 1) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        // Trigger nudge with a slight delay after becoming visible
+        const nudgeTimer = setTimeout(() => {
+          setIsNudging(true);
+          // Remove class after animation finishes (1.2s)
+          setTimeout(() => setIsNudging(false), 1200);
+        }, 600);
+        
+        // Unobserve after triggering once to avoid repeat annoyance
+        observer.disconnect();
+        return () => clearTimeout(nudgeTimer);
+      }
+    }, { 
+      threshold: 0.6 // Trigger when at least 60% of the card is visible
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
     }
-  }, [post.media.length, hasNudged]);
+
+    return () => observer.disconnect();
+  }, [post.id, post.media.length]);
 
   const triggerParticles = () => {
     const colors = ['#A66D60', '#D0B2A8', '#E4D2CC', '#F1E8E5'];
@@ -118,7 +139,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  // Improved Slider Handling with Swipe Support (Basic)
   const handleTouchStart = (e: React.TouchStartEvent) => {
     const touch = e.touches[0];
     (e.currentTarget as any).touchStartX = touch.clientX;
@@ -153,7 +173,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const isOwnPost = currentUserId === post.user.id;
 
   return (
-    <div className="bg-white dark:bg-theme-black border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-sm rounded-lg">
+    <div ref={containerRef} className="bg-white dark:bg-theme-black border border-gray-100 dark:border-zinc-900 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-sm rounded-lg">
       <div className="px-4 py-3 flex items-center justify-between border-b border-gray-50 dark:border-zinc-900">
         <div 
             className="flex items-center gap-3 cursor-pointer group" 
@@ -198,7 +218,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* BIG HEART ANIMATION */}
         {showBigHeart && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-like-pop">
                 <div className="relative">
@@ -210,9 +229,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             </div>
         )}
 
-        {/* IMAGE SLIDER WITH PEEK ANIMATION */}
         <div 
-          className={`flex h-full transition-transform duration-500 ease-in-out ${!hasNudged && post.media.length > 1 ? 'animate-slider-peek' : ''}`} 
+          className={`flex h-full transition-transform duration-500 ease-in-out ${isNudging ? 'animate-slider-peek' : ''}`} 
           style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
         >
           {post.media.map((item, idx) => (
@@ -222,7 +240,6 @@ export const PostCard: React.FC<PostCardProps> = ({
           ))}
         </div>
 
-        {/* PAGINATION DOTS (AESTHETIC & OVERLAID) */}
         {post.media.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 px-2 py-1 bg-black/5 backdrop-blur-[2px] rounded-full">
               {post.media.map((_, idx) => (
