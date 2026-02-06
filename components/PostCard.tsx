@@ -47,6 +47,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   
   // Slider State
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [hasNudged, setHasNudged] = useState(false);
 
   useEffect(() => {
     setLikesCount(post.likes);
@@ -65,6 +66,14 @@ export const PostCard: React.FC<PostCardProps> = ({
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
+
+  // Peek Effect: Trigger a small nudge animation on mount if multiple photos
+  useEffect(() => {
+    if (post.media.length > 1 && !hasNudged) {
+        const timer = setTimeout(() => setHasNudged(true), 1500);
+        return () => clearTimeout(timer);
+    }
+  }, [post.media.length, hasNudged]);
 
   const triggerParticles = () => {
     const colors = ['#A66D60', '#D0B2A8', '#E4D2CC', '#F1E8E5'];
@@ -109,17 +118,23 @@ export const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  const handleNextMedia = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (currentMediaIndex < post.media.length - 1) {
-      setCurrentMediaIndex(currentMediaIndex + 1);
-    }
+  // Improved Slider Handling with Swipe Support (Basic)
+  const handleTouchStart = (e: React.TouchStartEvent) => {
+    const touch = e.touches[0];
+    (e.currentTarget as any).touchStartX = touch.clientX;
   };
 
-  const handlePrevMedia = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (currentMediaIndex > 0) {
-      setCurrentMediaIndex(currentMediaIndex - 1);
+  const handleTouchEnd = (e: React.TouchEndEvent) => {
+    const touchStartX = (e.currentTarget as any).touchStartX;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+
+    if (Math.abs(diff) > 50) { // Threshold for swipe
+      if (diff > 0 && currentMediaIndex < post.media.length - 1) {
+        setCurrentMediaIndex(prev => prev + 1);
+      } else if (diff < 0 && currentMediaIndex > 0) {
+        setCurrentMediaIndex(prev => prev - 1);
+      }
     }
   };
 
@@ -180,6 +195,8 @@ export const PostCard: React.FC<PostCardProps> = ({
       <div 
         className="relative w-full aspect-[4/5] bg-gray-50 dark:bg-zinc-950 group overflow-hidden select-none"
         onDoubleClick={handleDoubleClick}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* BIG HEART ANIMATION */}
         {showBigHeart && (
@@ -193,9 +210,9 @@ export const PostCard: React.FC<PostCardProps> = ({
             </div>
         )}
 
-        {/* IMAGE SLIDER */}
+        {/* IMAGE SLIDER WITH PEEK ANIMATION */}
         <div 
-          className="flex h-full transition-transform duration-500 ease-in-out" 
+          className={`flex h-full transition-transform duration-500 ease-in-out ${!hasNudged && post.media.length > 1 ? 'animate-slider-peek' : ''}`} 
           style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
         >
           {post.media.map((item, idx) => (
@@ -205,36 +222,16 @@ export const PostCard: React.FC<PostCardProps> = ({
           ))}
         </div>
 
-        {/* SLIDER NAVIGATION */}
+        {/* PAGINATION DOTS (AESTHETIC & OVERLAID) */}
         {post.media.length > 1 && (
-          <>
-            {currentMediaIndex > 0 && (
-              <button 
-                onClick={handlePrevMedia} 
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md p-2 rounded-full text-white/80 hover:bg-black/40 transition-all z-20"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-              </button>
-            )}
-            {currentMediaIndex < post.media.length - 1 && (
-              <button 
-                onClick={handleNextMedia} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md p-2 rounded-full text-white/80 hover:bg-black/40 transition-all z-20"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-              </button>
-            )}
-            
-            {/* PAGINATION DOTS */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 px-2 py-1 bg-black/5 backdrop-blur-[2px] rounded-full">
               {post.media.map((_, idx) => (
                 <div 
                   key={idx} 
-                  className={`h-1 rounded-full transition-all duration-300 ${idx === currentMediaIndex ? 'w-4 bg-white shadow-sm' : 'w-1 bg-white/40'}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentMediaIndex ? 'w-3.5 bg-white shadow-sm' : 'w-1.5 bg-white/40'}`}
                 />
               ))}
             </div>
-          </>
         )}
         
         {post.location && (
@@ -339,6 +336,17 @@ export const PostCard: React.FC<PostCardProps> = ({
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes sliderPeek {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-8%); }
+            100% { transform: translateX(0); }
+        }
+        .animate-slider-peek {
+            animation: sliderPeek 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
     </div>
   );
 };
