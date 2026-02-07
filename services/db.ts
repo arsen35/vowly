@@ -59,17 +59,18 @@ export const dbService = {
 
   subscribeToNotifications: (userId: string, callback: (notifs: AppNotification[]) => void) => {
     if (!db) return () => {};
+    // REMOVED: orderBy to avoid mandatory composite index requirement in Firestore
     const q = query(
       collection(db, NOTIFICATIONS_COLLECTION),
       where("userId", "==", userId),
       where("read", "==", false),
-      orderBy("timestamp", "desc"),
-      limit(5)
+      limit(10)
     );
     return onSnapshot(q, (snap) => {
       const notifs: AppNotification[] = [];
       snap.forEach(d => notifs.push({ id: d.id, ...d.data() } as AppNotification));
-      callback(notifs);
+      // Sort manually client-side to ensure it works without indices
+      callback(notifs.sort((a, b) => b.timestamp - a.timestamp));
     });
   },
 

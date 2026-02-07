@@ -106,7 +106,15 @@ const App: React.FC = () => {
     // Preload notification sound
     notificationSound.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
     notificationSound.current.volume = 0.4;
+    notificationSound.current.load();
   }, []);
+
+  const playNotificationSound = () => {
+    if (notificationSound.current) {
+        notificationSound.current.currentTime = 0;
+        notificationSound.current.play().catch(e => console.log("Audio play blocked by browser", e));
+    }
+  };
 
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
@@ -168,24 +176,25 @@ const App: React.FC = () => {
 
             unsubNotifs = dbService.subscribeToNotifications(user.uid, (notifs) => {
                 if (notifs.length > 0) {
-                    // Filter out already active toasts to avoid duplicates
-                    const newNotifs = notifs.filter(n => !activeNotifications.find(an => an.id === n.id));
-                    if (newNotifs.length > 0) {
-                        setActiveNotifications(prev => [...newNotifs, ...prev]);
-                        
-                        // Play sound
-                        notificationSound.current?.play().catch(() => {});
-
-                        // Show Browser Notification if hidden
-                        if (document.visibilityState === 'hidden' && Notification.permission === "granted") {
-                            newNotifs.forEach(n => {
-                                new Notification(n.senderName, {
-                                    body: n.message,
-                                    icon: n.senderAvatar
+                    // Use functional update to avoid stale closures
+                    setActiveNotifications(prev => {
+                        const newNotifs = notifs.filter(n => !prev.find(an => an.id === n.id));
+                        if (newNotifs.length > 0) {
+                            playNotificationSound();
+                            
+                            // Browser level notification
+                            if (document.visibilityState === 'hidden' && Notification.permission === "granted") {
+                                newNotifs.forEach(n => {
+                                    new Notification(n.senderName, {
+                                        body: n.message,
+                                        icon: n.senderAvatar
+                                    });
                                 });
-                            });
+                            }
+                            return [...newNotifs, ...prev];
                         }
-                    }
+                        return prev;
+                    });
                 }
             });
         } else {
@@ -233,6 +242,22 @@ const App: React.FC = () => {
   const removeNotification = (id: string) => {
       setActiveNotifications(prev => prev.filter(n => n.id !== id));
       dbService.markNotificationAsRead(id);
+  };
+
+  const testNotification = () => {
+    const testNotif: AppNotification = {
+      id: 'test_' + Date.now(),
+      userId: currentUser?.id || 'guest',
+      type: 'dm',
+      senderId: 'annabella_system',
+      senderName: 'Annabella Bridal ✨',
+      senderAvatar: 'https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550',
+      message: 'Bildirim sistemi başarıyla test edildi! Bu bir denemedir.',
+      timestamp: Date.now(),
+      read: false
+    };
+    setActiveNotifications(prev => [testNotif, ...prev]);
+    playNotificationSound();
   };
 
   const getPlatform = (): 'ios' | 'android' | 'desktop' => {
@@ -399,8 +424,8 @@ const App: React.FC = () => {
             </div>
           ) : viewState === ViewState.BLOG ? ( <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
           ) : viewState === ViewState.CHAT ? ( <ChatPage isAdmin={isAdmin} currentUser={currentUser} initialUser={chatTargetUser} onLoaded={() => setChatTargetUser(null)} />
-          ) : viewState === ViewState.PROFILE ? ( <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} />
-          ) : viewState === ViewState.USER_PROFILE && viewedUser ? ( <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} onMessageClick={handleSendMessageClick} />
+          ) : viewState === ViewState.PROFILE ? ( <ProfilePage user={currentUser} isAdmin={isAdmin} onOpenAdmin={() => setShowAdminModal(true)} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onDeletePost={setPostToDelete} onLoginSuccess={() => setViewState(ViewState.FEED)} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={handleInstallApp} onUserClick={handleUserClick} onTestNotification={testNotification} />
+          ) : viewState === ViewState.USER_PROFILE && viewedUser ? ( <ProfilePage user={viewedUser} isPublicProfile={true} currentUser={currentUser} isAdmin={isAdmin} posts={posts} onPostClick={(p) => setViewState(ViewState.FEED)} onLogout={handleLogout} onDeleteAccount={() => {}} onDeletePost={setPostToDelete} onLoginSuccess={() => {}} onLike={handleLike} onAddComment={handleAddComment} followingIds={followingIds} onFollowToggle={handleFollowToggle} onInstallApp={() => {}} onUserClick={handleUserClick} onMessageClick={handleSendMessageClick} onTestNotification={() => {}} />
           ) : null}
         </div>
       </main>
