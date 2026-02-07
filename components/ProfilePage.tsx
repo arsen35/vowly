@@ -177,27 +177,31 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
-                {/* 1. SIRA: AKSİYONLAR (BUTONLAR VEYA AYARLAR) */}
-                <div className="flex items-center justify-between mb-4">
+                {/* 1. SIRA: AKSİYONLAR (EN ÜSTTE) */}
+                <div className="flex items-center justify-between mb-4 h-10">
                     {!isOwnProfile ? (
                       <div className="flex items-center gap-2 w-full">
                           <button 
                             onClick={(e) => { e.stopPropagation(); onFollowToggle(user.id); }} 
-                            className={`flex-1 text-[9px] font-bold px-4 py-3 rounded-md border transition-all uppercase tracking-widest text-center ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}
+                            className={`flex-1 text-[9px] font-bold px-4 py-2.5 rounded-md border transition-all uppercase tracking-widest text-center ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}
                           >
                             {isFollowing ? 'Takiptesin' : 'Takip Et'}
                           </button>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); onMessageClick?.(user); }} 
-                            className="flex-1 text-[9px] font-bold px-4 py-3 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-500 dark:text-gray-300 hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50 dark:bg-zinc-900 uppercase tracking-widest text-center flex items-center justify-center gap-2"
+                            onClick={(e) => { e.stopPropagation(); if(onMessageClick) onMessageClick(user); }} 
+                            className="flex-1 text-[9px] font-bold px-4 py-2.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-500 dark:text-gray-300 hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50 dark:bg-zinc-900 uppercase tracking-widest text-center flex items-center justify-center gap-2"
                           >
                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
-                             Mesaj Gönder
+                             Mesaj
                           </button>
                       </div>
                     ) : (
                       <div className="ml-auto relative" ref={settingsRef}>
-                          <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900 shadow-sm"><svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg></button>
+                          <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900 shadow-sm">
+                            <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                              <path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                            </svg>
+                          </button>
                           {showSettings && (
                               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                   {isAdmin && ( <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-b dark:border-zinc-900">Yönetici Paneli</button> )}
@@ -220,7 +224,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 
                 {/* 3. SIRA: İSTATİSTİKLER */}
                 <div className="flex gap-5 items-center">
-                    <div className="flex items-center gap-1.5"><span className="text-sm font-bold leading-none dark:text-white">{userPosts.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Paylaşım</span></div>
+                    <div className="flex items-center gap-1.5 cursor-pointer group" onClick={() => setActiveTab('posts')}><span className="text-sm font-bold leading-none dark:text-white">{userPosts.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Paylaşım</span></div>
                     <div className="flex items-center gap-1.5 cursor-pointer group" onClick={() => setIsFollowModalOpen('followers')}><span className="text-sm font-bold leading-none dark:text-white group-hover:text-wedding-500 transition-colors">{followData.followers.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takipçi</span></div>
                     <div className="flex items-center gap-1.5 cursor-pointer group" onClick={() => setIsFollowModalOpen('following')}><span className="text-sm font-bold leading-none dark:text-white group-hover:text-wedding-500 transition-colors">{followData.following.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takip</span></div>
                 </div>
@@ -236,6 +240,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       </div>
       
+      {/* GRID... (Kalan kısım aynı) */}
       <div className="grid grid-cols-3 gap-1 md:gap-2">
         {isLikedLoading && activeTab === 'liked' ? (
             <div className="col-span-3 py-24 flex flex-col items-center justify-center gap-4 animate-fadeIn">
