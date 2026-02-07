@@ -14,7 +14,8 @@ import { Logo } from './components/Logo';
 import { LoadingScreen } from './components/LoadingScreen'; 
 import { BottomNavigation } from './components/BottomNavigation';
 import { InstallModal } from './components/InstallModal';
-import { Post, User, ViewState, Comment, MediaItem } from './types';
+import { NotificationToast } from './components/NotificationToast';
+import { Post, User, ViewState, Comment, MediaItem, AppNotification } from './types';
 import { dbService } from './services/db';
 import { onAuthStateChanged, signOut, deleteUser } from "firebase/auth";
 import { auth } from './services/firebase';
@@ -34,6 +35,10 @@ const App: React.FC = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [chatTargetUser, setChatTargetUser] = useState<User | null>(null);
   
+  // Notification States
+  const [activeNotifications, setActiveNotifications] = useState<AppNotification[]>([]);
+  const notificationSound = useRef<HTMLAudioElement | null>(null);
+
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   
@@ -93,6 +98,16 @@ const App: React.FC = () => {
     if (viewState !== ViewState.FEED) setViewState(ViewState.FEED);
   };
 
+  // Browser Notification Permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+    // Preload notification sound
+    notificationSound.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+    notificationSound.current.volume = 0.4;
+  }, []);
+
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       setIsLoading(false);
@@ -108,6 +123,7 @@ const App: React.FC = () => {
     let unsubUser: (() => void) | undefined;
     let unsubFollow: (() => void) | undefined;
     let unsubConvs: (() => void) | undefined;
+    let unsubNotifs: (() => void) | undefined;
 
     if (!auth) {
       setIsLoading(false);
@@ -120,6 +136,7 @@ const App: React.FC = () => {
         if (unsubUser) unsubUser();
         if (unsubFollow) unsubFollow();
         if (unsubConvs) unsubConvs();
+        if (unsubNotifs) unsubNotifs();
 
         if (user) {
             const isUserAdmin = ADMIN_EMAILS.includes(user.email || '');
@@ -148,6 +165,29 @@ const App: React.FC = () => {
               const unreadCount = convs.filter(c => c.unreadBy?.includes(user.uid)).length;
               setUnreadDMCount(unreadCount);
             });
+
+            unsubNotifs = dbService.subscribeToNotifications(user.uid, (notifs) => {
+                if (notifs.length > 0) {
+                    // Filter out already active toasts to avoid duplicates
+                    const newNotifs = notifs.filter(n => !activeNotifications.find(an => an.id === n.id));
+                    if (newNotifs.length > 0) {
+                        setActiveNotifications(prev => [...newNotifs, ...prev]);
+                        
+                        // Play sound
+                        notificationSound.current?.play().catch(() => {});
+
+                        // Show Browser Notification if hidden
+                        if (document.visibilityState === 'hidden' && Notification.permission === "granted") {
+                            newNotifs.forEach(n => {
+                                new Notification(n.senderName, {
+                                    body: n.message,
+                                    icon: n.senderAvatar
+                                });
+                            });
+                        }
+                    }
+                }
+            });
         } else {
             setCurrentUser(null);
             setIsAdmin(false);
@@ -167,8 +207,33 @@ const App: React.FC = () => {
         if (unsubUser) unsubUser();
         if (unsubFollow) unsubFollow();
         if (unsubConvs) unsubConvs();
+        if (unsubNotifs) unsubNotifs();
     };
   }, []);
+
+  const handleNotificationClick = (notif: AppNotification) => {
+      dbService.markNotificationAsRead(notif.id);
+      setActiveNotifications(prev => prev.filter(n => n.id !== notif.id));
+      
+      if (notif.type === 'dm') {
+          setViewState(ViewState.CHAT);
+      } else if (notif.type === 'post' && notif.relatedId) {
+          const targetPost = allPosts.find(p => p.id === notif.relatedId);
+          if (targetPost) {
+              setViewState(ViewState.FEED);
+              // Small delay to ensure we are on feed
+              setTimeout(() => {
+                  const el = document.getElementById(`post-${notif.relatedId}`);
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+          }
+      }
+  };
+
+  const removeNotification = (id: string) => {
+      setActiveNotifications(prev => prev.filter(n => n.id !== id));
+      dbService.markNotificationAsRead(id);
+  };
 
   const getPlatform = (): 'ios' | 'android' | 'desktop' => {
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -290,6 +355,18 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
+      {/* Notifications Toasts Container */}
+      <div className="fixed top-0 left-0 right-0 z-[4000] pointer-events-none flex flex-col items-center">
+          {activeNotifications.map(n => (
+              <NotificationToast 
+                key={n.id} 
+                notification={n} 
+                onClose={removeNotification} 
+                onClick={handleNotificationClick} 
+              />
+          ))}
+      </div>
+
       <header className="fixed top-0 left-0 right-0 z-40 bg-white/60 dark:bg-black/40 backdrop-blur-xl border-b border-white/20 dark:border-white/10 h-14">
         <div className="w-full h-full flex items-center justify-between px-4 md:px-[20px] lg:px-[60px] 2xl:px-[100px]">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
@@ -318,7 +395,7 @@ const App: React.FC = () => {
         <div className={`px-0 md:px-[20px] lg:px-[60px] 2xl:px-[100px] ${viewState === ViewState.FEED ? 'pt-0' : 'pt-4'}`}>
           {viewState === ViewState.FEED ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0.5 sm:gap-6">
-                {posts.map(post => ( <PostCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} onUserClick={handleUserClick} currentUserId={currentUser?.id} /> ))}
+                {posts.map(post => ( <div id={`post-${post.id}`} key={post.id}><PostCard post={post} onLike={handleLike} onAddComment={handleAddComment} onDelete={setPostToDelete} isAdmin={isAdmin || post.user.id === currentUser?.id} isFollowing={followingIds.includes(post.user.id)} onFollow={() => handleFollowToggle(post.user.id)} onUserClick={handleUserClick} currentUserId={currentUser?.id} /></div> ))}
             </div>
           ) : viewState === ViewState.BLOG ? ( <BlogPage isAdmin={isAdmin} onOpenLogin={() => setViewState(ViewState.PROFILE)} />
           ) : viewState === ViewState.CHAT ? ( <ChatPage isAdmin={isAdmin} currentUser={currentUser} initialUser={chatTargetUser} onLoaded={() => setChatTargetUser(null)} />

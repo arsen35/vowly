@@ -1,5 +1,5 @@
 
-import { Post, BlogPost, ChatMessage, MediaItem, User, Conversation } from '../types';
+import { Post, BlogPost, ChatMessage, MediaItem, User, Conversation, AppNotification } from '../types';
 import { db, storage } from './firebase';
 import { 
   collection, 
@@ -36,6 +36,7 @@ const FOLLOWS_COLLECTION = 'follows';
 const CONVERSATIONS_COLLECTION = 'conversations';
 const DIRECT_MESSAGES_COLLECTION = 'direct_messages';
 const MAINTENANCE_COLLECTION = 'maintenance';
+const NOTIFICATIONS_COLLECTION = 'notifications';
 
 const checkDbConnection = () => {
   if (!db || !storage) throw new Error("Veritabanı bağlantısı yok.");
@@ -45,7 +46,39 @@ const checkDbConnection = () => {
 const sanitizeData = (data: any) => JSON.parse(JSON.stringify(data));
 
 export const dbService = {
-  // --- MAINTENANCE & CLEANUP (24h Auto-Delete) ---
+  // --- NOTIFICATIONS ---
+  createNotification: async (notification: Omit<AppNotification, 'id' | 'read' | 'timestamp'>) => {
+    const { dbInstance } = checkDbConnection();
+    const newNotif = {
+      ...notification,
+      read: false,
+      timestamp: Date.now()
+    };
+    await addDoc(collection(dbInstance, NOTIFICATIONS_COLLECTION), sanitizeData(newNotif));
+  },
+
+  subscribeToNotifications: (userId: string, callback: (notifs: AppNotification[]) => void) => {
+    if (!db) return () => {};
+    const q = query(
+      collection(db, NOTIFICATIONS_COLLECTION),
+      where("userId", "==", userId),
+      where("read", "==", false),
+      orderBy("timestamp", "desc"),
+      limit(5)
+    );
+    return onSnapshot(q, (snap) => {
+      const notifs: AppNotification[] = [];
+      snap.forEach(d => notifs.push({ id: d.id, ...d.data() } as AppNotification));
+      callback(notifs);
+    });
+  },
+
+  markNotificationAsRead: async (notifId: string) => {
+    const { dbInstance } = checkDbConnection();
+    await updateDoc(doc(dbInstance, NOTIFICATIONS_COLLECTION, notifId), { read: true });
+  },
+
+  // --- MAINTENANCE ---
   performDailyCleanup: async () => {
     const { dbInstance } = checkDbConnection();
     const now = Date.now();
@@ -65,6 +98,10 @@ export const dbService = {
       const globalChatQ = query(collection(dbInstance, CHAT_COLLECTION), where("timestamp", "<", twentyFourHoursAgo));
       const globalChatSnap = await getDocs(globalChatQ);
       globalChatSnap.forEach(d => batch.delete(d.ref));
+
+      const oldNotifsQ = query(collection(dbInstance, NOTIFICATIONS_COLLECTION), where("timestamp", "<", twentyFourHoursAgo));
+      const oldNotifsSnap = await getDocs(oldNotifsQ);
+      oldNotifsSnap.forEach(d => batch.delete(d.ref));
 
       const convsSnap = await getDocs(collection(dbInstance, CONVERSATIONS_COLLECTION));
       for (const convDoc of convsSnap.docs) {
@@ -185,6 +222,17 @@ export const dbService = {
     }, { merge: true });
     
     await batch.commit();
+
+    // Trigger Notification for DM
+    await dbService.createNotification({
+      userId: receiverId,
+      type: 'dm',
+      senderId: sender.id,
+      senderName: sender.name,
+      senderAvatar: sender.avatar,
+      message: `sana yeni bir mesaj gönderdi: "${text.substring(0, 30)}${text.length > 30 ? '...' : ''}"`,
+      relatedId: convId
+    });
   },
 
   markConversationAsRead: async (convId: string, userId: string) => {
@@ -261,7 +309,6 @@ export const dbService = {
 
   getPostsLikedByUser: async (userId: string): Promise<Post[]> => {
     const { dbInstance } = checkDbConnection();
-    // Sıralamayı (orderBy) siliyoruz çünkü index hatası verebiliyor. Manuel sıralayacağız.
     const q = query(
         collection(dbInstance, POSTS_COLLECTION),
         where("likedBy", "array-contains", userId),
@@ -293,6 +340,25 @@ export const dbService = {
         ...postToSave,
         likedBy: post.likedBy || []
     }));
+
+    // Trigger Notification for Followers
+    try {
+        const followerDoc = await getDoc(doc(dbInstance, FOLLOWS_COLLECTION, post.user.id));
+        if (followerDoc.exists()) {
+            const followers = followerDoc.data().followers || [];
+            for (const fId of followers) {
+                await dbService.createNotification({
+                    userId: fId,
+                    type: 'post',
+                    senderId: post.user.id,
+                    senderName: post.user.name,
+                    senderAvatar: post.user.avatar,
+                    message: `yeni bir düğün fotoğrafı paylaştı! ✨`,
+                    relatedId: post.id
+                });
+            }
+        }
+    } catch (err) { console.error("Notif trigger error:", err); }
   },
 
   deletePost: async (id: string): Promise<void> => {

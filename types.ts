@@ -2,7 +2,7 @@
 export interface User {
   id: string;
   name: string;
-  username?: string; // Benzersiz @kullaniciadi
+  username?: string;
   avatar: string;
   bio?: string;
   weddingDate?: string;
@@ -30,7 +30,7 @@ export interface Post {
   caption: string;
   hashtags: string[];
   likes: number;
-  likedBy?: string[]; // Beğenen kullanıcıların ID listesi
+  likedBy?: string[];
   comments: Comment[];
   timestamp: number;
   isLikedByCurrentUser?: boolean;
@@ -61,12 +61,25 @@ export interface ChatMessage {
 }
 
 export interface Conversation {
-  id: string; // user1_user2 formatında
-  participants: string[]; // [uid1, uid2]
+  id: string;
+  participants: string[];
   lastMessage?: string;
   lastMessageTimestamp?: number;
-  otherUser?: User; // Frontend için kolaylık
-  unreadBy?: string[]; // Okunmamış olan kullanıcı ID'leri
+  otherUser?: User;
+  unreadBy?: string[];
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string; // Alıcı
+  type: 'dm' | 'post' | 'follow';
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  message: string;
+  relatedId?: string; // postId veya convId
+  timestamp: number;
+  read: boolean;
 }
 
 export enum ViewState {
