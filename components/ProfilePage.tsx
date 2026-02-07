@@ -73,7 +73,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
-  // Kendi profili olup olmadığını garantileyelim
+  // Kendi profili olup olmadığını kontrol edelim. 
+  // App.tsx'den currentUser gönderilmesi hayati önem taşır.
   const isOwnProfile = !!currentUser && !!user && String(currentUser.id) === String(user.id);
 
   useEffect(() => {
