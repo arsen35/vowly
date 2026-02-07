@@ -73,8 +73,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
-  // Kendi profili olup olmadığını kontrol edelim. 
-  // App.tsx'den currentUser gönderilmesi hayati önem taşır.
   const isOwnProfile = !!currentUser && !!user && String(currentUser.id) === String(user.id);
 
   useEffect(() => {
@@ -171,47 +169,56 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
-                {/* 1. SIRA: AKSİYONLAR (TAKİP/MESAJ VEYA ÜÇ NOKTA) */}
-                <div className="flex items-center justify-between mb-4 h-10 w-full relative">
-                    {!isOwnProfile ? (
-                      <div className="flex items-center gap-2 w-full">
+                {/* 1. SIRA: AKSİYONLAR (TAKİP/MESAJ VE ÜÇ NOKTA) */}
+                <div className="flex items-center gap-2 mb-4 h-10 w-full relative">
+                    {!isOwnProfile && (
+                      <div className="flex items-center gap-2 flex-1">
                           <button 
                             onClick={(e) => { e.stopPropagation(); onFollowToggle(user.id); }} 
-                            className={`flex-1 text-[10px] font-bold px-4 py-3 rounded-md border transition-all uppercase tracking-[0.15em] text-center ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}
+                            className={`flex-1 text-[9px] font-bold px-3 py-2.5 rounded-md border transition-all uppercase tracking-widest text-center ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}
                           >
-                            {isFollowing ? 'TAKİPTESİN' : 'TAKİP ET'}
+                            {isFollowing ? 'Takiptesin' : 'Takip Et'}
                           </button>
                           <button 
                             type="button"
                             onClick={handleMessage} 
-                            className="flex-1 text-[10px] font-bold px-4 py-3 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50/50 dark:bg-zinc-900/50 uppercase tracking-[0.15em] text-center flex items-center justify-center gap-2"
+                            className="flex-1 text-[9px] font-bold px-3 py-2.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50/50 dark:bg-zinc-900/50 uppercase tracking-widest text-center flex items-center justify-center gap-2"
                           >
-                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
-                             MESAJ
+                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                             Mesaj
                           </button>
-                      </div>
-                    ) : (
-                      <div className="ml-auto relative" ref={settingsRef}>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }} 
-                            className="p-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900/50 shadow-sm border border-gray-100 dark:border-zinc-800"
-                          >
-                            <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
-                              <path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-                            </svg>
-                          </button>
-                          {showSettings && (
-                              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                  {isAdmin && ( <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-b dark:border-zinc-900">Yönetici Paneli</button> )}
-                                  <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
-                                  <button onClick={() => { onTestNotification(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors border-t border-b dark:border-zinc-900">Bildirimleri Test Et 🔔</button>
-                                  <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
-                                  <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors border-t dark:border-zinc-900">Çıkış Yap</button>
-                                  <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t dark:border-zinc-900">Hesabı Sil</button>
-                              </div>
-                          )}
                       </div>
                     )}
+                    
+                    <div className={`${isOwnProfile ? 'ml-auto' : ''} relative`} ref={settingsRef}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }} 
+                          className="p-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900/50 shadow-sm border border-gray-100 dark:border-zinc-800"
+                        >
+                          <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                            <path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                          </svg>
+                        </button>
+                        {showSettings && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                {isOwnProfile ? (
+                                    <>
+                                        {isAdmin && ( <button onClick={() => { onOpenAdmin?.(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-b dark:border-zinc-900">Yönetici Paneli</button> )}
+                                        <button onClick={() => { setIsEditModalOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Düzenle</button>
+                                        <button onClick={() => { onTestNotification(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors border-t border-b dark:border-zinc-900">Bildirimleri Test Et 🔔</button>
+                                        <button onClick={() => { onInstallApp(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Uygulamayı Yükle</button>
+                                        <button onClick={() => { onLogout(); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors border-t dark:border-zinc-900">Çıkış Yap</button>
+                                        <button onClick={() => { setIsDeleteAccConfirmOpen(true); setShowSettings(false); }} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t dark:border-zinc-900">Hesabı Sil</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={() => setShowSettings(false)} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">Profili Paylaş</button>
+                                        <button onClick={() => setShowSettings(false)} className="w-full px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t dark:border-zinc-900">Bildir / Engelle</button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* 2. SIRA: İSİM VE KULLANICI ADI */}
