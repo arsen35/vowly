@@ -89,21 +89,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     }
   }, [user]);
 
-  // Sekme değiştiğinde beğenileri çek ve o anki kullanıcıya (viewer) göre işaretle
   useEffect(() => {
     if (activeTab === 'liked' && user) {
         const fetchLikes = async () => {
             setIsLikedLoading(true);
             try {
                 const results = await dbService.getPostsLikedByUser(user.id);
-                // Viewer (izleyen) kişiye göre isLikedByCurrentUser alanını doldur
                 const enrichedResults = results.map(p => ({
                     ...p,
                     isLikedByCurrentUser: currentUser ? (p.likedBy || []).includes(currentUser.id) : false
                 }));
                 setLikedPostsState(enrichedResults);
             } catch (e) {
-                console.error("Likes fetch error:", e);
                 setLikedPostsState([]);
             } finally {
                 setIsLikedLoading(false);
@@ -168,7 +165,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   const userPosts = posts.filter(p => p.user.id === user?.id);
   const displayPosts = activeTab === 'posts' ? userPosts : likedPostsState;
-
   const isFollowing = user ? followingIds.includes(user.id) : false;
 
   return (
@@ -182,16 +178,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 min-w-0">
-                        <h2 className="text-2xl font-bold dark:text-white tracking-tight truncate">{user.name}</h2>
-                        {!isOwnProfile && isPublicProfile && (
-                            <div className="flex items-center gap-2 shrink-0">
-                                <button onClick={() => onFollowToggle(user.id)} className={`text-[10px] font-bold px-4 py-1.5 rounded-md border transition-all uppercase tracking-widest ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}>{isFollowing ? 'Takiptesin' : 'Takip Et'}</button>
-                                <button onClick={() => onMessageClick?.(user)} className="text-[10px] font-bold px-4 py-1.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-400 hover:text-wedding-500 hover:border-wedding-500 transition-all uppercase tracking-widest">MESAJ</button>
-                            </div>
-                        )}
+                    <div className="min-w-0">
+                        <h2 className="text-2xl font-bold dark:text-white tracking-tight truncate mb-1">{user.name}</h2>
+                        <p className="text-[11px] text-gray-400 font-bold">@{user.username || 'user'}</p>
                     </div>
-                    {(isOwnProfile || !isPublicProfile) && (
+                    {isOwnProfile ? (
                         <div className="relative" ref={settingsRef}>
                             <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900"><svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg></button>
                             {showSettings && (
@@ -205,10 +196,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                 </div>
                             )}
                         </div>
+                    ) : (
+                      // BAŞKA PROFİLDEYSE BUTONLAR BURADA
+                      <div className="flex items-center gap-2">
+                          <button onClick={() => onFollowToggle(user.id)} className={`text-[9px] font-bold px-4 py-2 rounded-md border transition-all uppercase tracking-widest ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}>{isFollowing ? 'Takiptesin' : 'Takip Et'}</button>
+                          <button onClick={() => onMessageClick?.(user)} className="p-2 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-400 hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50 dark:bg-zinc-900">
+                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                          </button>
+                      </div>
                     )}
                 </div>
-                <p className="text-[11px] text-gray-400 font-bold mb-3">@{user.username || 'user'}</p>
-                <div className="flex gap-6 items-center">
+                
+                <div className="flex gap-4 items-center mt-3">
                     <div className="flex items-center gap-1.5"><span className="text-sm font-bold leading-none dark:text-white">{userPosts.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Paylaşım</span></div>
                     <div className="flex items-center gap-1.5 cursor-pointer group" onClick={() => setIsFollowModalOpen('followers')}><span className="text-sm font-bold leading-none dark:text-white group-hover:text-wedding-500 transition-colors">{followData.followers.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takipçi</span></div>
                     <div className="flex items-center gap-1.5 cursor-pointer group" onClick={() => setIsFollowModalOpen('following')}><span className="text-sm font-bold leading-none dark:text-white group-hover:text-wedding-500 transition-colors">{followData.following.length}</span><span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold group-hover:text-wedding-500 transition-colors">Takip</span></div>
@@ -216,6 +215,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <p className="text-xs text-gray-500 mt-4 font-normal line-clamp-2 leading-relaxed">{user.bio || "Hikayesini paylaşıyor ✨"}</p>
             </div>
         </div>
+        
         <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setActiveTab('posts')} className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'posts' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}>Paylaşımlar</button>
             <button onClick={() => setActiveTab('liked')} className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'liked' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}>Beğeniler</button>
