@@ -4,6 +4,7 @@ import { dbService } from '../services/db';
 import { ChatMessage, User, Conversation, ViewState } from '../types';
 import { Button } from './Button';
 import { AuthModal } from './AuthModal';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface ChatPageProps {
   isAdmin: boolean;
@@ -27,7 +28,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Deletion States
+  const [convToDelete, setConvToDelete] = useState<Conversation | null>(null);
+  const [menuConvId, setMenuConvId] = useState<string | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (activeTab === 'global') {
@@ -58,6 +65,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
     }
   }, [activeConv, currentUser]);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+            setMenuConvId(null);
+        }
+    };
+    if (menuConvId) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuConvId]);
+
   const startDM = (targetUser: User) => {
     if (!currentUser) return;
     const convId = dbService.getConversationId(currentUser.id, targetUser.id);
@@ -77,6 +94,30 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
     setSearchResults([]);
   };
 
+  const handleLongPressStart = (conv: Conversation) => {
+      longPressTimer.current = setTimeout(() => {
+          setMenuConvId(conv.id);
+          if ('vibrate' in navigator) navigator.vibrate(50);
+      }, 700);
+  };
+
+  const handleLongPressEnd = () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
+
+  const handleDeleteConversation = async () => {
+      if (!convToDelete) return;
+      try {
+          await dbService.deleteConversation(convToDelete.id);
+          if (activeConv?.id === convToDelete.id) setActiveConv(null);
+      } catch (err) {
+          console.error("Deletion failed", err);
+      } finally {
+          setConvToDelete(null);
+          setMenuConvId(null);
+      }
+  };
+
   useEffect(() => {
     if (initialUser && currentUser && conversations.length >= 0) {
         startDM(initialUser);
@@ -85,7 +126,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
   }, [initialUser, currentUser, conversations.length]);
 
   useEffect(() => {
-    // Mesajlar geldikçe en alta kaydır
     if (messagesEndRef.current) {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
@@ -234,19 +274,47 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                                 {conversations.map(c => {
                                     const isUnread = c.unreadBy?.includes(currentUser.id);
                                     return (
-                                        <div key={c.id} onClick={() => setActiveConv(c)} className={`px-5 py-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-900/30 cursor-pointer border-b border-gray-50 dark:border-zinc-900/30 transition-all ${isUnread ? 'bg-wedding-50/20 dark:bg-wedding-500/5' : ''}`}>
+                                        <div 
+                                            key={c.id} 
+                                            onClick={() => setActiveConv(c)}
+                                            onPointerDown={() => handleLongPressStart(c)}
+                                            onPointerUp={handleLongPressEnd}
+                                            onPointerLeave={handleLongPressEnd}
+                                            className={`px-5 py-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-900/30 cursor-pointer border-b border-gray-50 dark:border-zinc-900/30 transition-all relative ${isUnread ? 'bg-wedding-50/20 dark:bg-wedding-500/5' : ''}`}
+                                        >
                                             <div className="relative">
                                                 <img src={c.otherUser?.avatar} className="w-14 h-14 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 shadow-sm" />
                                                 {isUnread && (
                                                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-black animate-pulse flex items-center justify-center text-[8px] text-white font-bold">!</span>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 pr-6">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className={`text-sm dark:text-white truncate ${isUnread ? 'font-bold' : 'font-medium'}`}>{c.otherUser?.name}</span>
                                                     <span className="text-[9px] text-gray-400 whitespace-nowrap ml-2">{c.lastMessageTimestamp ? new Date(c.lastMessageTimestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
                                                 </div>
                                                 <p className={`text-[12px] truncate ${isUnread ? 'font-bold text-gray-900 dark:text-gray-200' : 'text-gray-400'}`}>{c.lastMessage || 'Mesajlaşmaya başlayın...'}</p>
+                                            </div>
+
+                                            {/* Action Menu (3 Dot) */}
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10">
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setMenuConvId(c.id === menuConvId ? null : c.id); }}
+                                                    className="p-2 text-gray-300 hover:text-gray-600 dark:hover:text-white transition-all"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                                                </button>
+                                                {menuConvId === c.id && (
+                                                    <div ref={menuRef} className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setConvToDelete(c); }}
+                                                            className="w-full text-left px-4 py-3 text-[10px] font-bold text-red-500 uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                                            Sohbeti Sil
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -270,10 +338,17 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                             <div className="p-4 border-b border-gray-100 dark:border-zinc-900 flex items-center gap-4 bg-white/80 dark:bg-theme-black/80 backdrop-blur-md shrink-0">
                                 <button onClick={() => setActiveConv(null)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-90"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg></button>
                                 <img src={activeConv.otherUser?.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 shadow-sm" />
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                     <p className="text-sm font-bold dark:text-white leading-none truncate">{activeConv.otherUser?.name}</p>
                                     <p className="text-[10px] text-wedding-500 font-bold italic mt-1.5 uppercase tracking-widest">@{activeConv.otherUser?.username || 'üye'}</p>
                                 </div>
+                                <button 
+                                    onClick={() => setConvToDelete(activeConv)}
+                                    className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                    title="Sohbeti Sil"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                </button>
                             </div>
                             {/* MESSAGES */}
                             <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
@@ -319,6 +394,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                 </div>
             )}
         </div>
+
+        <ConfirmationModal 
+            isOpen={!!convToDelete}
+            title="Sohbeti Sil"
+            message={`${convToDelete?.otherUser?.name} ile olan tüm mesajlaşma geçmişiniz kalıcı olarak silinecektir.`}
+            onConfirm={handleDeleteConversation}
+            onCancel={() => { setConvToDelete(null); setMenuConvId(null); }}
+        />
     </div>
   );
 };

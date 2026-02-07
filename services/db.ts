@@ -59,7 +59,6 @@ export const dbService = {
 
   subscribeToNotifications: (userId: string, callback: (notifs: AppNotification[]) => void) => {
     if (!db) return () => {};
-    // REMOVED: orderBy to avoid mandatory composite index requirement in Firestore
     const q = query(
       collection(db, NOTIFICATIONS_COLLECTION),
       where("userId", "==", userId),
@@ -69,7 +68,6 @@ export const dbService = {
     return onSnapshot(q, (snap) => {
       const notifs: AppNotification[] = [];
       snap.forEach(d => notifs.push({ id: d.id, ...d.data() } as AppNotification));
-      // Sort manually client-side to ensure it works without indices
       callback(notifs.sort((a, b) => b.timestamp - a.timestamp));
     });
   },
@@ -242,6 +240,20 @@ export const dbService = {
     await updateDoc(convRef, {
       unreadBy: arrayRemove(userId)
     });
+  },
+
+  deleteConversation: async (convId: string) => {
+    const { dbInstance } = checkDbConnection();
+    const batch = writeBatch(dbInstance);
+    
+    // Alt mesajları topla ve batch'e ekle
+    const msgsSnap = await getDocs(collection(dbInstance, CONVERSATIONS_COLLECTION, convId, DIRECT_MESSAGES_COLLECTION));
+    msgsSnap.forEach(d => batch.delete(d.ref));
+    
+    // Sohbet dökümanını sil
+    batch.delete(doc(dbInstance, CONVERSATIONS_COLLECTION, convId));
+    
+    await batch.commit();
   },
 
   subscribeToConversations: (uid: string, callback: (convs: Conversation[]) => void) => {
