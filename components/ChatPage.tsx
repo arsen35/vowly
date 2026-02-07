@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { dbService } from '../services/db';
-import { ChatMessage, User, Conversation } from '../types';
+import { ChatMessage, User, Conversation, ViewState } from '../types';
 import { Button } from './Button';
+import { AuthModal } from './AuthModal';
 
 interface ChatPageProps {
   isAdmin: boolean;
@@ -16,6 +17,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   // DM States
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -57,7 +59,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
   }, [activeConv, currentUser]);
 
   const startDM = (targetUser: User) => {
-    const convId = dbService.getConversationId(currentUser!.id, targetUser.id);
+    if (!currentUser) return;
+    const convId = dbService.getConversationId(currentUser.id, targetUser.id);
     const existing = conversations.find(c => c.id === convId);
     
     if (existing) {
@@ -65,7 +68,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
     } else {
         setActiveConv({
             id: convId,
-            participants: [currentUser!.id, targetUser.id],
+            participants: [currentUser.id, targetUser.id],
             otherUser: targetUser,
             unreadBy: []
         });
@@ -79,10 +82,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
         startDM(initialUser);
         onLoaded?.();
     }
-  }, [initialUser, conversations.length]);
+  }, [initialUser, currentUser, conversations.length]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Mesajlar geldikçe en alta kaydır
+    if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [globalMessages, dmMessages, activeConv]);
 
   const handleSearch = async (val: string) => {
@@ -116,12 +122,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
 
   const handleSendDM = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !activeConv || isSending) return;
+    if (!newMessage.trim() || !activeConv || isSending || !currentUser) return;
     setIsSending(true);
     const msgText = newMessage;
     setNewMessage('');
     try {
-        await dbService.sendDirectMessage(currentUser!, activeConv.otherUser!.id, msgText);
+        await dbService.sendDirectMessage(currentUser, activeConv.otherUser!.id, msgText);
     } catch (err) {
         setNewMessage(msgText);
     } finally { setIsSending(false); }
@@ -135,17 +141,22 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
 
   if (!currentUser) {
       return (
-          <div className="flex flex-col items-center justify-center h-[calc(100dvh-64px)] text-center p-6">
-              <h2 className="font-serif text-xl font-bold mb-4 uppercase tracking-widest">Sohbete Katıl</h2>
-              <p className="text-sm text-gray-500 italic">Mesaj yazmak ve DM göndermek için lütfen profilinden giriş yap.</p>
+          <div className="flex flex-col items-center justify-center h-[calc(100dvh-120px)] text-center p-8 animate-fadeIn">
+              <div className="w-20 h-20 rounded-full bg-wedding-50 dark:bg-zinc-900/50 flex items-center justify-center text-wedding-500 mb-6">
+                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+              </div>
+              <h2 className="font-serif text-2xl font-bold mb-4 uppercase tracking-[0.2em] dark:text-white">Sohbete Katıl</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic mb-8 max-w-xs">Diğer gelin adaylarıyla mesajlaşmak ve DM göndermek için giriş yapmalısın.</p>
+              <Button onClick={() => setShowAuthModal(true)} className="w-full max-w-[240px] py-4 uppercase tracking-widest text-xs">Giriş Yap / Kaydol</Button>
+              {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLoginSuccess={() => window.location.reload()} />}
           </div>
       );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] bg-white dark:bg-theme-black relative transition-colors">
+    <div className="flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100dvh-56px)] bg-white dark:bg-theme-black relative transition-colors overflow-hidden">
         {/* Tab Switcher */}
-        <div className="flex border-b border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-zinc-900/50">
+        <div className="flex border-b border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-zinc-900/50 shrink-0">
             <button 
                 onClick={() => { setActiveTab('global'); setActiveConv(null); }}
                 className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${activeTab === 'global' ? 'text-wedding-500 border-b-2 border-wedding-500' : 'text-gray-400'}`}
@@ -163,7 +174,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
             </button>
         </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col relative">
             {activeTab === 'global' ? (
                 <>
                     <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
@@ -180,23 +191,23 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
-                    {/* GLOBAL CHAT INPUT - RADIUS: 5px */}
-                    <form onSubmit={handleSendGlobal} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center">
+                    {/* INPUT AREA */}
+                    <form onSubmit={handleSendGlobal} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center shrink-0">
                         <input 
                             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-[5px] px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all"
-                            placeholder="Mesaj yazın..."
+                            className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-[5px] px-4 py-3 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all"
+                            placeholder="Bir şeyler yaz..."
                         />
-                        <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-[5px] shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
+                        <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-[5px] shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
                         </button>
                     </form>
                 </>
             ) : (
-                <div className="flex flex-col h-full bg-white dark:bg-theme-black">
+                <div className="flex flex-col h-full bg-white dark:bg-theme-black overflow-hidden">
                     {!activeConv ? (
                         <>
-                            <div className="px-5 py-4 border-b border-gray-50 dark:border-zinc-900/50">
+                            <div className="px-5 py-4 border-b border-gray-50 dark:border-zinc-900/50 shrink-0">
                                 <div className="relative group flex items-center">
                                     <svg className="w-4 h-4 absolute left-4 text-gray-400 group-focus-within:text-wedding-500 transition-colors pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                     <input 
@@ -206,7 +217,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                                     />
                                 </div>
                                 {searchResults.length > 0 && (
-                                    <div className="mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[5px] shadow-2xl absolute z-50 w-[calc(100%-2.5rem)] animate-in fade-in slide-in-from-top-1 overflow-hidden">
+                                    <div className="mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[5px] shadow-2xl absolute left-5 right-5 z-[60] animate-in fade-in slide-in-from-top-1 overflow-hidden">
                                         {searchResults.map(u => (
                                             <div key={u.id} onClick={() => startDM(u)} className="p-4 flex items-center gap-4 hover:bg-wedding-50 dark:hover:bg-wedding-900/10 cursor-pointer border-b last:border-0 border-gray-50 dark:border-zinc-800/50 transition-all">
                                                 <img src={u.avatar} className="w-10 h-10 rounded-lg object-cover" />
@@ -254,8 +265,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                             </div>
                         </>
                     ) : (
-                        <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-300">
-                            <div className="p-4 border-b border-gray-100 dark:border-zinc-900 flex items-center gap-4 bg-white/80 dark:bg-theme-black/80 backdrop-blur-md sticky top-0 z-20">
+                        <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-300 absolute inset-0 z-[70] bg-white dark:bg-theme-black">
+                            {/* CONV HEADER */}
+                            <div className="p-4 border-b border-gray-100 dark:border-zinc-900 flex items-center gap-4 bg-white/80 dark:bg-theme-black/80 backdrop-blur-md shrink-0">
                                 <button onClick={() => setActiveConv(null)} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all active:scale-90"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg></button>
                                 <img src={activeConv.otherUser?.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 shadow-sm" />
                                 <div className="min-w-0">
@@ -263,7 +275,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                                     <p className="text-[10px] text-wedding-500 font-bold italic mt-1.5 uppercase tracking-widest">@{activeConv.otherUser?.username || 'üye'}</p>
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-white dark:bg-theme-black">
+                            {/* MESSAGES */}
+                            <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
                                 {dmMessages.map((m, idx) => {
                                     const isLastMessage = idx === dmMessages.length - 1;
                                     const currentC = conversations.find(c => c.id === activeConv.id);
@@ -290,12 +303,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ isAdmin, currentUser, initia
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            {/* DM INPUT - RADIUS: 5px */}
-                            <form onSubmit={handleSendDM} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center">
+                            {/* DM INPUT AREA */}
+                            <form onSubmit={handleSendDM} className="p-3 border-t border-gray-100 dark:border-zinc-900 flex gap-2 bg-white dark:bg-theme-black items-center shrink-0">
                                 <input 
                                     value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-[5px] px-4 py-2.5 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-inner"
-                                    placeholder="Mesaj yazın..."
+                                    className="flex-1 bg-gray-50 dark:bg-zinc-900 rounded-[5px] px-4 py-3 text-xs outline-none border border-gray-100 dark:border-zinc-800 focus:border-wedding-500 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-inner"
+                                    placeholder="Mesajını yaz..."
                                 />
                                 <button type="submit" disabled={!newMessage.trim()} className="bg-wedding-500 text-white w-10 h-10 flex items-center justify-center rounded-[5px] shrink-0 transition-all active:scale-90 hover:bg-wedding-600 shadow-md shadow-wedding-500/20 disabled:opacity-30 disabled:grayscale">
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
