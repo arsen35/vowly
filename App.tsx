@@ -98,21 +98,29 @@ const App: React.FC = () => {
     if (viewState !== ViewState.FEED) setViewState(ViewState.FEED);
   };
 
-  // Browser Notification Permission
+  // Browser Notification Permission & Sound Setup
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
     }
-    // Preload notification sound
-    notificationSound.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
-    notificationSound.current.volume = 0.4;
+    // "Tin Tin" Chime Sound
+    notificationSound.current = new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3');
+    notificationSound.current.volume = 0.5;
     notificationSound.current.load();
   }, []);
 
   const playNotificationSound = () => {
     if (notificationSound.current) {
         notificationSound.current.currentTime = 0;
-        notificationSound.current.play().catch(e => console.log("Audio play blocked by browser", e));
+        notificationSound.current.play().catch(e => {
+            console.log("Audio play blocked, waiting for user interaction");
+            // If blocked, try to play on next click
+            const playOnce = () => {
+                notificationSound.current?.play();
+                window.removeEventListener('click', playOnce);
+            };
+            window.addEventListener('click', playOnce);
+        });
     }
   };
 
@@ -176,18 +184,19 @@ const App: React.FC = () => {
 
             unsubNotifs = dbService.subscribeToNotifications(user.uid, (notifs) => {
                 if (notifs.length > 0) {
-                    // Use functional update to avoid stale closures
                     setActiveNotifications(prev => {
                         const newNotifs = notifs.filter(n => !prev.find(an => an.id === n.id));
                         if (newNotifs.length > 0) {
                             playNotificationSound();
                             
-                            // Browser level notification
-                            if (document.visibilityState === 'hidden' && Notification.permission === "granted") {
+                            // Web standard notification (works when tab is in background)
+                            if (Notification.permission === "granted") {
                                 newNotifs.forEach(n => {
                                     new Notification(n.senderName, {
                                         body: n.message,
-                                        icon: n.senderAvatar
+                                        icon: n.senderAvatar,
+                                        badge: 'https://cdn.shopify.com/s/files/1/0733/2285/6611/files/FAV-CENTER-LOGO-1.png?v=1770124550',
+                                        tag: n.id // prevent duplicates
                                     });
                                 });
                             }
@@ -230,7 +239,6 @@ const App: React.FC = () => {
           const targetPost = allPosts.find(p => p.id === notif.relatedId);
           if (targetPost) {
               setViewState(ViewState.FEED);
-              // Small delay to ensure we are on feed
               setTimeout(() => {
                   const el = document.getElementById(`post-${notif.relatedId}`);
                   el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -256,6 +264,15 @@ const App: React.FC = () => {
       timestamp: Date.now(),
       read: false
     };
+    
+    // Trigger System Notification
+    if (Notification.permission === "granted") {
+        new Notification(testNotif.senderName, {
+            body: testNotif.message,
+            icon: testNotif.senderAvatar
+        });
+    }
+
     setActiveNotifications(prev => [testNotif, ...prev]);
     playNotificationSound();
   };
@@ -380,7 +397,7 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white dark:bg-theme-black pb-24 md:pb-0 transition-colors duration-300 relative`}>
-      {/* Notifications Toasts Container */}
+      {/* Notifications Toasts Container (In-app UI) */}
       <div className="fixed top-0 left-0 right-0 z-[4000] pointer-events-none flex flex-col items-center">
           {activeNotifications.map(n => (
               <NotificationToast 
