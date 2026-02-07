@@ -73,7 +73,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
-  const isOwnProfile = currentUser && user && currentUser.id === user.id;
+  // Kendi profili olup olmadığını garantileyelim
+  const isOwnProfile = !!currentUser && !!user && String(currentUser.id) === String(user.id);
 
   useEffect(() => {
     if (user) {
@@ -120,22 +121,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSettings]);
 
-  useEffect(() => {
-    if (isFollowModalOpen) {
-        const loadUsers = async () => {
-            const ids = isFollowModalOpen === 'followers' ? followData.followers : followData.following;
-            if (!ids || ids.length === 0) { setFollowListUsers([]); return; }
-            setIsFollowListLoading(true);
-            try {
-                const users = await dbService.getUsersByIds(ids);
-                setFollowListUsers(users);
-            } catch (e) { setFollowListUsers([]); } 
-            finally { setIsFollowListLoading(false); }
-        };
-        loadUsers();
-    } else { setFollowListUsers([]); }
-  }, [isFollowModalOpen, followData]);
-
   const handleSaveProfile = async () => {
     if (!user) return;
     setIsSaving(true);
@@ -149,6 +134,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         setIsEditModalOpen(false);
     } catch (e) { alert("Güncellenirken bir hata oluştu."); } 
     finally { setIsSaving(false); }
+  };
+
+  const handleMessage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onMessageClick && user) {
+      onMessageClick(user);
+    }
   };
 
   if (!user) {
@@ -177,29 +170,30 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
-                {/* 1. SIRA: AKSİYONLAR (EN ÜSTTE) */}
-                <div className="flex items-center justify-between mb-4 h-10 w-full">
+                {/* 1. SIRA: AKSİYONLAR (TAKİP/MESAJ VEYA ÜÇ NOKTA) */}
+                <div className="flex items-center justify-between mb-4 h-10 w-full relative">
                     {!isOwnProfile ? (
                       <div className="flex items-center gap-2 w-full">
                           <button 
                             onClick={(e) => { e.stopPropagation(); onFollowToggle(user.id); }} 
-                            className={`flex-1 text-[9px] font-bold px-4 py-2.5 rounded-md border transition-all uppercase tracking-widest text-center ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}
+                            className={`flex-1 text-[10px] font-bold px-4 py-3 rounded-md border transition-all uppercase tracking-[0.15em] text-center ${isFollowing ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'bg-wedding-500 text-white border-wedding-500 hover:bg-wedding-900 shadow-sm'}`}
                           >
-                            {isFollowing ? 'Takiptesin' : 'Takip Et'}
+                            {isFollowing ? 'TAKİPTESİN' : 'TAKİP ET'}
                           </button>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); if(onMessageClick) onMessageClick(user); }} 
-                            className="flex-1 text-[9px] font-bold px-4 py-2.5 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-500 dark:text-gray-300 hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50 dark:bg-zinc-900 uppercase tracking-widest text-center flex items-center justify-center gap-2"
+                            type="button"
+                            onClick={handleMessage} 
+                            className="flex-1 text-[10px] font-bold px-4 py-3 rounded-md border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white hover:text-wedding-500 hover:border-wedding-500 transition-all bg-gray-50/50 dark:bg-zinc-900/50 uppercase tracking-[0.15em] text-center flex items-center justify-center gap-2"
                           >
                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
-                             Mesaj
+                             MESAJ
                           </button>
                       </div>
                     ) : (
-                      <div className="ml-auto relative z-50" ref={settingsRef}>
+                      <div className="ml-auto relative" ref={settingsRef}>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }} 
-                            className="p-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-all active:scale-90"
+                            className="p-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-all active:scale-90 bg-gray-50 dark:bg-zinc-900/50 shadow-sm border border-gray-100 dark:border-zinc-800"
                           >
                             <svg fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
                               <path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
@@ -233,16 +227,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
                 
                 {/* 4. SIRA: BİYO */}
-                <p className="text-xs text-gray-500 mt-5 font-normal leading-relaxed">{user.bio || "Hikayesini paylaşıyor ✨"}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-5 font-normal leading-relaxed">{user.bio || "Hikayesini paylaşıyor ✨"}</p>
             </div>
         </div>
         
+        {/* TABLAR */}
         <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setActiveTab('posts')} className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'posts' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}>Paylaşımlar</button>
             <button onClick={() => setActiveTab('liked')} className={`py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${activeTab === 'liked' ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg' : 'bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-900 text-gray-400 hover:text-gray-900'}`}>Beğeniler</button>
         </div>
       </div>
       
+      {/* İÇERİK GRIDI */}
       <div className="grid grid-cols-3 gap-1 md:gap-2">
         {isLikedLoading && activeTab === 'liked' ? (
             <div className="col-span-3 py-24 flex flex-col items-center justify-center gap-4 animate-fadeIn">
@@ -281,28 +277,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               <div className="w-full max-w-lg mx-auto py-8 px-4 pb-20"><PostCard post={selectedPost} onLike={onLike} onAddComment={onAddComment} onDelete={onDeletePost} isAdmin={isAdmin || currentUser?.id === selectedPost.user.id} isFollowing={followingIds.includes(selectedPost.user.id)} onFollow={() => onFollowToggle(selectedPost.user.id)} onUserClick={onUserClick} currentUserId={currentUser?.id} /></div>
           </div>
       )}
-      {isFollowModalOpen && (
-          <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-              <div className="bg-white dark:bg-zinc-950 rounded-2xl w-full max-w-xs md:max-w-sm max-h-[70vh] flex flex-col shadow-2xl border border-gray-100 dark:border-zinc-900 overflow-hidden">
-                  <div className="p-5 border-b dark:border-zinc-900 flex justify-between items-center bg-white dark:bg-zinc-950"><h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{isFollowModalOpen === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}</h3><button onClick={() => setIsFollowModalOpen(null)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-                  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                      {isFollowListLoading ? ( <div className="py-10 flex justify-center"><div className="w-6 h-6 border-2 border-wedding-500 border-t-transparent rounded-full animate-spin"></div></div>
-                      ) : ( <div className="space-y-1">
-                              {followListUsers.map(listUser => (
-                                  <div key={listUser.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
-                                      <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { onUserClick?.(listUser); setIsFollowModalOpen(null); }}><img src={listUser.avatar} className="w-10 h-10 rounded-xl object-cover border border-gray-100 dark:border-zinc-800 group-hover:scale-105 transition-transform" /><div className="flex flex-col"><span className="text-xs font-bold dark:text-white leading-tight group-hover:text-wedding-500 transition-colors">{listUser.name}</span><span className="text-[9px] text-wedding-500 font-bold">@{listUser.username}</span></div></div>
-                                      {listUser.id !== currentUser?.id && ( <button onClick={() => onFollowToggle(listUser.id)} className={`text-[8px] font-bold px-3 py-1.5 rounded-md border transition-all uppercase tracking-wider ${followingIds.includes(listUser.id) ? 'border-gray-100 dark:border-zinc-800 text-gray-400' : 'border-wedding-500 text-wedding-500 hover:bg-wedding-500 hover:text-white'}`}>{followingIds.includes(listUser.id) ? 'Takip' : 'Takip Et'}</button> )}
-                                  </div>
-                              ))}
-                              {followListUsers.length === 0 && ( <div className="py-12 text-center text-[10px] text-gray-400 font-bold italic">Henüz kimse yok ✨</div> )}
-                          </div>
-                      )}
-                  </div>
-              </div>
-          </div>
-      )}
+
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 bg-black/60 z-[2000] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
             <div className="bg-white dark:bg-zinc-950 rounded-[32px] w-full max-w-sm p-8 animate-in zoom-in-95 relative shadow-2xl border border-gray-100 dark:border-zinc-900">
                 <button onClick={() => setIsEditModalOpen(false)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg></button>
                 <h3 className="text-lg font-bold dark:text-white uppercase tracking-widest mb-10 text-center">Profilini Güncelle</h3>
